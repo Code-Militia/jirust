@@ -1,0 +1,86 @@
+[2023-01-18][23:18:07][surrealdb::kvs][INFO] Starting kvs store in memory
+[2023-01-18][23:18:07][surrealdb::kvs][INFO] Started kvs store in memory
+[2023-01-18][23:18:07][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
+[2023-01-18][23:18:07][hyper::client::connect::dns][DEBUG] resolving host="d2cloud.atlassian.net"
+[2023-01-18][23:18:07][hyper::client::connect::http][DEBUG] connecting to 104.192.142.19:443
+[2023-01-18][23:18:07][hyper::client::connect::http][DEBUG] connected to 104.192.142.19:443
+[2023-01-18][23:18:07][hyper::proto::h1::io][DEBUG] flushed 200 bytes
+[2023-01-18][23:18:08][hyper::proto::h1::io][DEBUG] parsed 17 headers
+[2023-01-18][23:18:08][hyper::proto::h1::conn][DEBUG] incoming body is chunked encoding
+[2023-01-18][23:18:08][hyper::proto::h1::decode][DEBUG] incoming chunked header: 0x9C9 (2505 bytes)
+[2023-01-18][23:18:08][hyper::proto::h1::conn][DEBUG] incoming body completed
+[2023-01-18][23:18:08][hyper::client::pool][DEBUG] pooling idle connection for ("https", d2cloud.atlassian.net)
+[2023-01-18][23:18:08][surrealdb::dbs][DEBUG] Executing: CREATE projects:NVIM SET name = $name, projectId = $id, key = $key
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] [Response { sql: None, time: 1.799625ms, result: Ok(Array(Array([Object(Object({"id": Thing(Thing { tb: "projects", id: String("NVIM") }), "key": Strand(Strand("NVIM")), "name": Strand(Strand("NVIM")), "projectId": Number(Int(10000))}))]))) }]
+[2023-01-18][23:18:08][surrealdb::dbs][DEBUG] Executing: CREATE projects:OPS SET name = $name, projectId = $id, key = $key
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] [Response { sql: None, time: 234.125µs, result: Ok(Array(Array([Object(Object({"id": Thing(Thing { tb: "projects", id: String("OPS") }), "key": Strand(Strand("OPS")), "name": Strand(Strand("DevOps")), "projectId": Number(Int(10002))}))]))) }]
+[2023-01-18][23:18:08][surrealdb::dbs][DEBUG] Executing: CREATE projects:RUST SET name = $name, projectId = $id, key = $key
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] [Response { sql: None, time: 178.791µs, result: Ok(Array(Array([Object(Object({"id": Thing(Thing { tb: "projects", id: String("RUST") }), "key": Strand(Strand("RUST")), "name": Strand(Strand("Rust")), "projectId": Number(Int(10001))}))]))) }]
+[2023-01-18][23:18:08][surrealdb::dbs][DEBUG] Executing: SELECT * FROM projects
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] 
+value of arr Array([Object(Object({"id": Thing(Thing { tb: "projects", id: String("NVIM") }), "key": Strand(Strand("NVIM")), "name": Strand(Strand("NVIM")), "projectId": Number(Int(10000))})), Object(Object({"id": Thing(Thing { tb: "projects", id: String("OPS") }), "key": Strand(Strand("OPS")), "name": Strand(Strand("DevOps")), "projectId": Number(Int(10002))})), Object(Object({"id": Thing(Thing { tb: "projects", id: String("RUST") }), "key": Strand(Strand("RUST")), "name": Strand(Strand("Rust")), "projectId": Number(Int(10001))}))])
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] inside arr iterator Object(Object({"id": Thing(Thing { tb: "projects", id: String("NVIM") }), "key": Strand(Strand("NVIM")), "name": Strand(Strand("NVIM")), "projectId": Number(Int(10000))}))
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] project key "NVIM"
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] inside arr iterator Object(Object({"id": Thing(Thing { tb: "projects", id: String("OPS") }), "key": Strand(Strand("OPS")), "name": Strand(Strand("DevOps")), "projectId": Number(Int(10002))}))
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] project key "OPS"
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] inside arr iterator Object(Object({"id": Thing(Thing { tb: "projects", id: String("RUST") }), "key": Strand(Strand("RUST")), "name": Strand(Strand("Rust")), "projectId": Number(Int(10001))}))
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] project key "RUST"
+[2023-01-18][23:18:08][jirust::jira::projects][INFO] ["NVIM", "OPS", "RUST"]
+[2023-01-18][23:18:08][jirust][INFO] Projects list state !!!! ListState { offset: 0, selected: Some(0) }
+[2023-01-18][23:18:09][surrealdb::dbs][DEBUG] Executing: SELECT * FROM issues WHERE ticketProjectKey = "NVIM"
+[2023-01-18][23:18:09][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
+[2023-01-18][23:18:09][hyper::client::connect::dns][DEBUG] resolving host="d2cloud.atlassian.net"
+[2023-01-18][23:18:09][hyper::client::connect::http][DEBUG] connecting to 104.192.142.19:443
+[2023-01-18][23:18:09][hyper::client::connect::http][DEBUG] connected to 104.192.142.19:443
+[2023-01-18][23:18:09][hyper::proto::h1::io][DEBUG] flushed 217 bytes
+[2023-01-18][23:18:09][hyper::proto::h1::io][DEBUG] parsed 17 headers
+[2023-01-18][23:18:09][hyper::proto::h1::conn][DEBUG] incoming body is chunked encoding
+[2023-01-18][23:18:09][hyper::proto::h1::decode][DEBUG] incoming chunked header: 0x44F2 (17650 bytes)
+[2023-01-18][23:18:09][hyper::proto::h1::conn][DEBUG] incoming body completed
+[2023-01-18][23:18:09][hyper::client::pool][DEBUG] pooling idle connection for ("https", d2cloud.atlassian.net)
+[2023-01-18][23:18:09][surrealdb::dbs][DEBUG] Executing: CREATE issues CONTENT { issueId: $id, key: $key, priority: $priority, project: project:NVIM, status: $status, summary: $summary, ticketProjectId: $project_id, ticketProjectKey: $project_key, ticketProjectName: $project_name, type: $issue_type }
+[2023-01-18][23:18:09][surrealdb::dbs][DEBUG] Executing: CREATE issues CONTENT { issueId: $id, key: $key, priority: $priority, project: project:NVIM, status: $status, summary: $summary, ticketProjectId: $project_id, ticketProjectKey: $project_key, ticketProjectName: $project_name, type: $issue_type }
+[2023-01-18][23:18:09][surrealdb::dbs][DEBUG] Executing: SELECT * FROM issues WHERE ticketProjectKey = "NVIM"
+[2023-01-18][23:51:38][surrealdb::kvs][INFO] Starting kvs store in memory
+[2023-01-18][23:51:38][surrealdb::kvs][INFO] Started kvs store in memory
+[2023-01-18][23:51:38][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
+[2023-01-18][23:51:38][hyper::client::connect::dns][DEBUG] resolving host="d2cloud.atlassian.net"
+[2023-01-18][23:51:38][hyper::client::connect::http][DEBUG] connecting to 104.192.142.18:443
+[2023-01-18][23:51:38][hyper::client::connect::http][DEBUG] connected to 104.192.142.18:443
+[2023-01-18][23:51:38][hyper::proto::h1::io][DEBUG] flushed 200 bytes
+[2023-01-18][23:51:38][hyper::proto::h1::io][DEBUG] parsed 17 headers
+[2023-01-18][23:51:38][hyper::proto::h1::conn][DEBUG] incoming body is chunked encoding
+[2023-01-18][23:51:38][hyper::proto::h1::decode][DEBUG] incoming chunked header: 0x9C9 (2505 bytes)
+[2023-01-18][23:51:38][hyper::proto::h1::conn][DEBUG] incoming body completed
+[2023-01-18][23:51:38][hyper::client::pool][DEBUG] pooling idle connection for ("https", d2cloud.atlassian.net)
+[2023-01-18][23:51:38][surrealdb::dbs][DEBUG] Executing: CREATE projects:NVIM SET name = $name, projectId = $id, key = $key
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] [Response { sql: None, time: 3.384041ms, result: Ok(Array(Array([Object(Object({"id": Thing(Thing { tb: "projects", id: String("NVIM") }), "key": Strand(Strand("NVIM")), "name": Strand(Strand("NVIM")), "projectId": Number(Int(10000))}))]))) }]
+[2023-01-18][23:51:38][surrealdb::dbs][DEBUG] Executing: CREATE projects:OPS SET name = $name, projectId = $id, key = $key
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] [Response { sql: None, time: 285.625µs, result: Ok(Array(Array([Object(Object({"id": Thing(Thing { tb: "projects", id: String("OPS") }), "key": Strand(Strand("OPS")), "name": Strand(Strand("DevOps")), "projectId": Number(Int(10002))}))]))) }]
+[2023-01-18][23:51:38][surrealdb::dbs][DEBUG] Executing: CREATE projects:RUST SET name = $name, projectId = $id, key = $key
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] [Response { sql: None, time: 260.583µs, result: Ok(Array(Array([Object(Object({"id": Thing(Thing { tb: "projects", id: String("RUST") }), "key": Strand(Strand("RUST")), "name": Strand(Strand("Rust")), "projectId": Number(Int(10001))}))]))) }]
+[2023-01-18][23:51:38][surrealdb::dbs][DEBUG] Executing: SELECT * FROM projects
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] 
+value of arr Array([Object(Object({"id": Thing(Thing { tb: "projects", id: String("NVIM") }), "key": Strand(Strand("NVIM")), "name": Strand(Strand("NVIM")), "projectId": Number(Int(10000))})), Object(Object({"id": Thing(Thing { tb: "projects", id: String("OPS") }), "key": Strand(Strand("OPS")), "name": Strand(Strand("DevOps")), "projectId": Number(Int(10002))})), Object(Object({"id": Thing(Thing { tb: "projects", id: String("RUST") }), "key": Strand(Strand("RUST")), "name": Strand(Strand("Rust")), "projectId": Number(Int(10001))}))])
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] inside arr iterator Object(Object({"id": Thing(Thing { tb: "projects", id: String("NVIM") }), "key": Strand(Strand("NVIM")), "name": Strand(Strand("NVIM")), "projectId": Number(Int(10000))}))
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] project key "NVIM"
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] inside arr iterator Object(Object({"id": Thing(Thing { tb: "projects", id: String("OPS") }), "key": Strand(Strand("OPS")), "name": Strand(Strand("DevOps")), "projectId": Number(Int(10002))}))
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] project key "OPS"
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] inside arr iterator Object(Object({"id": Thing(Thing { tb: "projects", id: String("RUST") }), "key": Strand(Strand("RUST")), "name": Strand(Strand("Rust")), "projectId": Number(Int(10001))}))
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] project key "RUST"
+[2023-01-18][23:51:38][jirust::jira::projects][INFO] ["NVIM", "OPS", "RUST"]
+[2023-01-18][23:51:40][surrealdb::dbs][DEBUG] Executing: SELECT * FROM issues WHERE ticketProjectKey = "NVIM"
+[2023-01-18][23:51:40][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
+[2023-01-18][23:51:40][hyper::client::connect::dns][DEBUG] resolving host="d2cloud.atlassian.net"
+[2023-01-18][23:51:40][hyper::client::connect::http][DEBUG] connecting to 104.192.142.18:443
+[2023-01-18][23:51:40][hyper::client::connect::http][DEBUG] connected to 104.192.142.18:443
+[2023-01-18][23:51:40][hyper::proto::h1::io][DEBUG] flushed 217 bytes
+[2023-01-18][23:51:41][hyper::proto::h1::io][DEBUG] parsed 17 headers
+[2023-01-18][23:51:41][hyper::proto::h1::conn][DEBUG] incoming body is chunked encoding
+[2023-01-18][23:51:41][hyper::proto::h1::decode][DEBUG] incoming chunked header: 0x34B (843 bytes)
+[2023-01-18][23:51:41][hyper::proto::h1::decode][DEBUG] incoming chunked header: 0x41A7 (16807 bytes)
+[2023-01-18][23:51:41][hyper::proto::h1::conn][DEBUG] incoming body completed
+[2023-01-18][23:51:41][hyper::client::pool][DEBUG] pooling idle connection for ("https", d2cloud.atlassian.net)
+[2023-01-18][23:51:41][surrealdb::dbs][DEBUG] Executing: CREATE issues CONTENT { issueId: $id, key: $key, priority: $priority, project: project:NVIM, status: $status, summary: $summary, ticketProjectId: $project_id, ticketProjectKey: $project_key, ticketProjectName: $project_name, type: $issue_type }
+[2023-01-18][23:51:41][surrealdb::dbs][DEBUG] Executing: CREATE issues CONTENT { issueId: $id, key: $key, priority: $priority, project: project:NVIM, status: $status, summary: $summary, ticketProjectId: $project_id, ticketProjectKey: $project_key, ticketProjectName: $project_name, type: $issue_type }
+[2023-01-18][23:51:41][surrealdb::dbs][DEBUG] Executing: SELECT * FROM issues WHERE ticketProjectKey = "NVIM"
