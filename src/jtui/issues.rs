@@ -1,9 +1,69 @@
+use crossterm::terminal::enable_raw_mode;
 use tui::{
+    backend::CrosstermBackend,
     layout::Constraint,
     style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, BorderType, Borders, Cell, List, ListItem, ListState, Row, Table},
+    Terminal
 };
+use std::{sync::mpsc, time::{Duration, Instant}, thread};
+use crossterm::event::{self, Event as CEvent};
+use std::io;
+
+// enum Event<I> {
+//     Input(I),
+//     Tick,
+// }
+//
+// #[derive(Copy, Clone, Debug)]
+// enum MenuItem {
+//     Issues,
+// }
+//
+// impl From<MenuItem> for usize {
+//     fn from(input: MenuItem) -> usize {
+//         match input {
+//             MenuItem::Issues => 0,
+//         }
+//     }
+// }
+//
+// pub fn draw_issues() {
+//     enable_raw_mode().expect("can run in raw mode");
+//     let (tx, rx) = mpsc::channel();
+//     let tick_rate = Duration::from_millis(200);
+//     // TODO: Need to understand this better
+//     thread::spawn(move || {
+//         let mut last_tick = Instant::now();
+//         loop {
+//             let timeout = tick_rate
+//                 .checked_sub(last_tick.elapsed())
+//                 .unwrap_or_else(|| Duration::from_secs(0));
+//
+//             if event::poll(timeout).expect("poll works") {
+//                 if let CEvent::Key(key) = event::read().expect("can read events") {
+//                     tx.send(Event::Input(key)).expect("can send events");
+//                 }
+//             }
+//
+//             if last_tick.elapsed() >= tick_rate {
+//                 if let Ok(_) = tx.send(Event::Tick) {
+//                     last_tick = Instant::now();
+//                 }
+//             }
+//         }
+//     });
+//
+//     let stdout = io::stdout();
+//     let backend = CrosstermBackend::new(stdout);
+//     let mut terminal = Terminal::new(backend)?;
+//     terminal.clear()?;
+//
+//     let mut issues_list: Vec<String> = Vec::new();
+//     let mut issues_list_state = ListState::default();
+//     issues_list_state.select(Some(0));
+// }
 
 pub fn render_issues<'a>(
     issue_list: &'a Vec<String>,
