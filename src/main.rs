@@ -91,6 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode().expect("can run in raw mode");
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(200);
+    // TODO: Need to understand this better
     thread::spawn(move || {
         let mut last_tick = Instant::now();
         loop {
