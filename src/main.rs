@@ -1,5 +1,7 @@
 mod jira;
 mod jtui;
+mod activity_manager;
+mod ui;
 
 use jira::auth::{JiraAuth, jira_authentication};
 use jira::projects::JiraProjects;
@@ -32,12 +34,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Datastore::new("memory").await?,
         Session::for_db("jira", "jira"),
     );
-    let auth: JiraAuth = jira_authentication();
 
+    let auth: JiraAuth = jira_authentication();
+    
     let projects = JiraProjects { auth: &auth, db_connection: &db };
     projects.save_jira_projects();
 
-    todo!("Get projects list first");
     todo!("Start component and mock component for projects");
     todo!("Create UI with grey background, white text, and yellow highlights");
 }

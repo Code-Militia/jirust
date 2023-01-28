@@ -1,6 +1,6 @@
+use log::debug;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, env};
+use std::env;
 #[derive(Debug)]
 pub struct JiraAuth {
     pub jira_url: String,
@@ -56,5 +56,6 @@ pub fn jira_authentication() -> JiraAuth {
     let jira_api_version = env::var(env_jira_api_version).expect("$JIRA_API_VERSION is not set");
     let env_jira_api_key = "JIRA_API_KEY";
     let jira_api_key = env::var(env_jira_api_key).expect("$JIRA_API_KEY is not set");
+    debug!("authenticating with JIRA");
     return JiraAuth::new(jira_api_version, jira_url, jira_api_key);
 }
