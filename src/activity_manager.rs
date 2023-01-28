@@ -1,9 +1,9 @@
+use crate::ui::activities::projects::ProjectActivity;
 use std::time::Duration;
 
 use surrealdb::{Datastore, Session};
 
-use crate::ui::actvities
-use crate::{jira::{auth::{JiraAuth, jira_authentication}, projects::JiraProjects}, jtui::projects::ProjectActivity};
+use crate::jira::auth::{JiraAuth, jira_authentication};
 
 pub enum NextActivity {
     NextIssueAcitivity,
@@ -48,8 +48,7 @@ impl ActivityManager {
 
     pub fn jira_projects(&self) -> Option<NextActivity> {
         let db = self.db.expect("Database session not started");
-        let activity = ProjectActivity::new(self.jira_auth, &db, self.ticks);
+        let activity = ProjectActivity::new(self.ticks);
         let result: Option<NextActivity>;
-        
     }
 }
