@@ -42,7 +42,7 @@ impl Activity for ProjectActivity {
     }
 
     fn on_draw(&mut self) {
-
+        
     }
 }
 
