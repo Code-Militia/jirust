@@ -1,10 +1,11 @@
+use surrealdb::{Datastore, Session};
 use log::info;
 use serde::{Deserialize, Serialize};
 use serde_aux::prelude::deserialize_number_from_string;
 use std::collections::BTreeMap;
 use surrealdb::sql::Value;
-use surrealdb::Error as SurrealDbError;
 use super::Jira;
+use super::auth::JiraAuth;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Project {
@@ -23,18 +24,14 @@ pub struct JiraProjects {
 }
 
 // for projects
-impl Jira {}
+// impl Jira {}
 
 // for issues
-impl Jira {}
-
-// For next time, change save projects to build out Projects struct and call save to put into db
+// impl Jira {}
 
 impl JiraProjects {
-    pub async fn new(jira: &Jira) -> anyhow::Result<Self> {
-        let jp = Self::default();
-        Self::save_jira_projects(jira);
-        let projects = jp.get_jira_projects(jira).await?;
+    pub async fn new(jira_auth: &JiraAuth, db: &(Datastore, Session)) -> anyhow::Result<Self> {
+        let projects = Self::save_jira_projects(jira_auth, db).await?;
         Ok(Self {
             is_last: Some(true), // TODO: Will need to refactor to handle pagination
             next_page: None, // TODO: Will need to refactor to handle pagination
@@ -42,11 +39,11 @@ impl JiraProjects {
         })
     }
 
-    async fn get_projects_from_jira_api(jira: &Jira) -> Result<String, reqwest::Error> {
-        let jira_url = jira.auth.get_domain();
-        let jira_api_version = jira.auth.get_api_version();
+    async fn get_projects_from_jira_api(jira_auth: &JiraAuth) -> Result<String, reqwest::Error> {
+        let jira_url = jira_auth.get_domain();
+        let jira_api_version = jira_auth.get_api_version();
         let projects_url = format!("{}/rest/api/{}/project/search", jira_url, jira_api_version);
-        let headers = jira.auth.get_basic_auth();
+        let headers = jira_auth.get_basic_auth();
         let client = reqwest::Client::builder()
             .default_headers(headers)
             .https_only(true)
@@ -56,9 +53,9 @@ impl JiraProjects {
         return response;
     }
 
-    pub async fn save_jira_projects(jira: &Jira) -> anyhow::Result<()> {
-        let (ds, sess) = &jira.db;
-        let resp = Self::get_projects_from_jira_api(jira)
+    pub async fn save_jira_projects(jira_auth: &JiraAuth, db: &(Datastore, Session)) -> anyhow::Result<Vec<Project>> {
+        let (ds, sess) = &db;
+        let resp = Self::get_projects_from_jira_api(jira_auth)
             .await?;
         let resp_slice: &str = &resp[..];
         let object: JiraProjects =
@@ -78,11 +75,11 @@ impl JiraProjects {
             let ress = ds.execute(&query, sess, Some(data), false).await?;
             info!("{ress:?}");
         }
-        Ok(())
+        Ok(object.values)
     }
 
-    pub async fn get_jira_projects(&self, jira: &Jira) -> anyhow::Result<Vec<Project>> {
-        let (ds, sess) = &jira.db;
+    pub async fn get_jira_projects(&self, db: &(Datastore, Session)) -> anyhow::Result<Vec<Project>> {
+        let (ds, sess) = &db;
         let mut resp = Vec::new(); 
         let query = "SELECT * FROM projects;";
         let ress = ds.execute(query, &sess, None, false).await?;

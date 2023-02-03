@@ -2,30 +2,15 @@ mod app;
 mod components;
 mod jira;
 mod jtui;
+mod event;
 
-use std::sync::Arc;
 use anyhow;
 use app::App;
 use chrono;
-use crossterm::event::{self, Event as CEvent, KeyCode};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use fern;
-use jira::auth::jira_authentication;
-use jtui::issues::render_issues;
-use jira::issue;
-use jira::projects;
-use jtui::home::render_home;
-use jtui::projects::render_projects;
 use std::io;
-use std::sync::mpsc;
-use std::thread;
-use std::time::{Duration, Instant};
-use surrealdb::{Datastore, Session};
 use tui::{
     backend::CrosstermBackend,
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Style},
-    widgets::{Block, BorderType, Borders, ListState, Paragraph},
     Terminal,
 };
 
@@ -68,30 +53,25 @@ fn setup_logger() -> Result<(), fern::InitError> {
     Ok(())
 }
 
-pub type DB = (Datastore, Session);
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let db: DB = (
-        Datastore::new("memory").await?,
-        Session::for_db("jira", "jira"),
-    );
-    let auth = jira_authentication();
-
-    let app: App = App::new(auth, db).await?;
+    let mut app: App = App::new().await?;
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
     terminal.clear()?;
 
-    // loop {
-    //     terminal.draw(|f| {
-    //         if let Err(err) = app.draw() {
-    //         
-    //         }
-    //     });
-    // }
+    loop {
+        terminal.draw(|f| {
+            if let Err(err) = app.draw(f) {
+                std::process::exit(1);
+            }
+        })?;
+        {
+            break;
+        }
+    }
 
     Ok(()) 
 }

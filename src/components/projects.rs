@@ -6,20 +6,26 @@ use crate::jira::projects::Project;
 use super::StatefulDrawableComponent;
 
 pub struct ProjectsComponent {
-    projects: Vec<Project>,
+    projects: Vec<String>,
     state: ListState,
 }
 
 impl ProjectsComponent {
-    pub fn new(projects: Vec<Project>) -> Self {
+    pub fn new(projects: &Vec<Project>) -> Self {
         let mut state = ListState::default();
         if projects.is_empty() {
             state.select(Some(0));
         }
 
+        let mut projects_list = vec![];
+
+        for project in projects.iter() {
+            projects_list.push(project.name.clone())
+        }
+
         return Self {
             state,
-            projects
+            projects: projects_list
         }
     }
 
@@ -63,7 +69,7 @@ impl ProjectsComponent {
         self.state.select(Some(self.projects.len() - 1));
     }
 
-    pub fn selected_project(&self) -> Option<&Project> {
+    pub fn selected_project(&self) -> Option<&String> {
         match self.state.selected() {
             Some(i) => self.projects.get(i),
             None => None
@@ -72,14 +78,14 @@ impl ProjectsComponent {
 }
 
 impl StatefulDrawableComponent for ProjectsComponent {
-    fn draw<B: Backend>(&mut self, f: &mut Frame<B>, _rect: Rect, _focused: bool) -> Result<(), Error> {
+    fn draw<B: Backend>(&mut self, f: &mut Frame<B>, _rect: Rect, _focused: bool) -> anyhow::Result<()> {
         let width = 80;
         let height = 20;
         let prjs = &self.projects;
         let mut projects: Vec<ListItem> = Vec::new();
         for p in prjs {
             projects.push(
-                ListItem::new(vec![Spans::from(Span::raw(p.key))])
+                ListItem::new(vec![Spans::from(Span::raw(p))])
                     .style(Style::default()),
             )
         }

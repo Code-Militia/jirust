@@ -1,43 +1,47 @@
-use std::sync::Arc;
-
-use surrealdb::{Datastore, Session};
+use crate::components::StatefulDrawableComponent;
 use tui::{layout::{Layout, Direction, Constraint}, Frame, backend::Backend};
-use crate::jira::{Jira, projects::JiraProjects};
-use crate::jira::auth::JiraAuth;
-use crate::components::projects::ProjectsComponent;
+use crate::{jira::Jira, components::projects::ProjectsComponent};
 
 pub enum Focus {
     ProjectsList
 }
 
 pub struct App {
-    auth: Arc<JiraAuth>,
-    projects: ProjectsComponent,
-    issues: Option<String>,
-    db: Arc<DB>,
-    focus: Focus
+    // auth: Arc<JiraAuth>,
+    // projects: ProjectsComponent,
+    // issues: Option<String>,
+    // db: Arc<DB>,
+    focus: Focus,
+    projects: ProjectsComponent
 }
-pub type DB = (Datastore, Session);
 
 impl App {
-    pub async fn new(auth: JiraAuth, db: DB) -> anyhow::Result<App> {
+    pub async fn new() -> anyhow::Result<App> {
         // Instantiate Jira with Arc
         // If I need to get projects, I would send all of Jira to get projects method
-        let jira = Arc::new(Jira::new().await?);
-        let jira_projects = JiraProjects::new(&jira);
+        let jira = Jira::new().await?;
 
         Ok(Self {
-            auth: Arc::new(auth),
-            projects: ProjectsComponent::new(),
-            issues: None,
-            db: Arc::new(db),
+            // auth: Arc::new(auth),
+            projects: ProjectsComponent::new(&jira.projects.values),
+            // issues: None,
+            // db: Arc::new(db),
             focus: Focus::ProjectsList
         })
     }
 
-    pub fn draw<B: Backend>(&self, f: &mut Frame<'_, B>) -> anyhow::Result<()> {
+    pub fn draw<B: Backend>(&mut self, f: &mut Frame<'_, B>) -> anyhow::Result<()> {
         if let Focus::ProjectsList = self.focus {
-            todo!("Make and draw out projects component"); 
+            self.projects.draw(
+                f,
+                Layout::default()
+                    .constraints([Constraint::Percentage(100)])
+                    .split(f.size())[0],
+                false,
+            )?;
+
+            // TODO: Handle errors and help
+            return Ok(())
         }
 
         let main_chunks = Layout::default()

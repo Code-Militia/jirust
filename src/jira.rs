@@ -1,6 +1,6 @@
 use surrealdb::{Datastore, Session};
 
-use self::auth::{JiraAuth, jira_authentication};
+use self::{auth::{JiraAuth, jira_authentication}, projects::JiraProjects};
 
 pub mod auth;
 pub mod issue;
@@ -10,6 +10,7 @@ pub mod projects;
 pub struct Jira {
     pub auth: JiraAuth,
     pub db: (Datastore, Session),
+    pub projects: JiraProjects
 }
 
 pub type DB = (Datastore, Session);
@@ -21,10 +22,12 @@ impl Jira {
             Datastore::new("memory").await?,
             Session::for_db("jira", "jira"),
         );
+        let projects: JiraProjects = JiraProjects::new(&auth, &db).await?;
 
         Ok(Self {
             auth,
             db,
+            projects
         })
     }
 }
