@@ -1,8 +1,9 @@
 mod app;
 mod components;
+mod config;
+mod event;
 mod jira;
 mod jtui;
-mod event;
 
 use anyhow;
 use app::App;
@@ -66,11 +67,11 @@ async fn main() -> anyhow::Result<()> {
                 std::process::exit(1);
             }
         })?;
-        // match events.next()? {
-        //     Event::Input(key) => match app. {
-        //
-        //     }
-        // }
+        match events.next()? {
+            Event::Input(key) => match app. {
+
+            }
+        }
         {
             break;
         }

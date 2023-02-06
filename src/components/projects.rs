@@ -1,9 +1,9 @@
 use tui::{backend::Backend, Frame, layout::Rect, widgets::{ListState, ListItem, List, Block, Borders, Clear}, text::{Spans, Span}, style::{Style, Color}};
 use std::io::Error;
 
-use crate::jira::projects::Project;
+use crate::{jira::projects::Project, event::key::Key};
 
-use super::StatefulDrawableComponent;
+use super::{StatefulDrawableComponent, Component, commands::CommandInfo, EventState};
 
 pub struct ProjectsComponent {
     projects: Vec<String>,
@@ -108,3 +108,13 @@ impl StatefulDrawableComponent for ProjectsComponent {
         Ok(())
     }
 } 
+
+impl Component for ProjectsComponent {
+    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+
+    fn events(&mut self, key: Key) -> anyhow::Result<EventState> {
+        match key {
+
+        }
+    }
+}

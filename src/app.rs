@@ -74,4 +74,8 @@ impl App {
 
         Ok(())
     }
+
+    fn event() -> anyhow::Result<()> {
+        
+    }
 }
