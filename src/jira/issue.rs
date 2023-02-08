@@ -49,23 +49,30 @@ pub struct TicketData {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct JiraIssuesOutput {
-    startAt: i32,
-    maxResults: i32,
-    total: i32,
-    issues: Vec<TicketData>,
-}
-
-pub struct JiraIssues<'a> {
-    pub auth: &'a JiraAuth,
-    pub db_connection: &'a (Datastore, Session),
+pub struct JiraIssues {
+    startAt: Option<i32>,
+    maxResults: Option<i32>,
+    total: Option<i32>,
+    issues:Vec<TicketData>,
 }
 
 // TODO: handle pagination
-impl<'a> JiraIssues<'_> {
-    async fn get_issues_for_project(&self, project_name: String) -> Result<String, reqwest::Error> {
-        let domain = self.auth.get_domain();
-        let headers = self.auth.get_basic_auth();
+impl JiraIssues {
+    pub async fn new(db: &(Datastore, Session), jira_auth: &JiraAuth) -> anyhow::Result<Self> {
+    // pub async fn new(db: &(Datastore, Session), jira_auth: &JiraAuth, project_name: &str) -> anyhow::Result<Self> {
+        // let issues = Self::save_jira_issues(db, jira_auth, project_name).await?;
+        let issues = Vec::new();
+        Ok(Self {
+            startAt: None,
+            maxResults: None,
+            total: None,
+            issues
+        })
+    }
+
+    async fn get_issues_from_jira_api(jira_auth: &JiraAuth, project_name: String) -> Result<String, reqwest::Error> {
+        let domain = jira_auth.get_domain();
+        let headers = jira_auth.get_basic_auth();
         let url = format!(
             "{}/rest/api/3/search?jql=project%20%3D%20{}",
             domain, project_name
@@ -80,14 +87,17 @@ impl<'a> JiraIssues<'_> {
         return response;
     }
 
-    pub async fn save_jira_issues(&self, project_name: &str) -> Result<(), SurrealDbError> {
-        let (ds, sess) = self.db_connection;
-        let resp = self
-            .get_issues_for_project(project_name.to_string())
+    pub async fn save_jira_issues(
+        db: &(Datastore, Session),
+        jira_auth: &JiraAuth,
+        project_name: &str
+        ) -> Result<Vec<TicketData>, SurrealDbError> {
+        let (ds, sess) = &db; 
+        let resp = Self::get_issues_from_jira_api(&jira_auth, project_name.to_string())
             .await
             .expect("should be response from jira");
         let resp_slice: &str = &resp[..];
-        let object: JiraIssuesOutput =
+        let object: JiraIssues =
             serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
         for issues in object.issues.iter() {
             let query = format!(
@@ -131,15 +141,17 @@ impl<'a> JiraIssues<'_> {
 
             let ress = ds.execute(&query, &sess, Some(data), false).await?;
         }
-        // todo!("Return query errors when we run into them");
-        Ok(())
+        Ok(object.issues)
     }
 
-    async fn query_jira_issues_from_db(
-        &self,
+    async fn get_jira_issues(
         project_key: &str,
+        db: &(Datastore, Session)
     ) -> Result<Vec<String>, SurrealDbError> {
-        let (ds, sess) = self.db_connection;
+        todo!("If issues do not exist on the database, call save_jira_issues()");
+        todo!("if parameter refresh_from_api is passed, call save_jira_issues()");
+        todo!("Both of the above should return from this function and the following code will not run");
+        let (ds, sess) = db;
         let mut resp: Vec<String> = Vec::new();
         let query = format!(
             "SELECT * FROM issues WHERE ticketProjectKey = '{}'",
@@ -159,13 +171,12 @@ impl<'a> JiraIssues<'_> {
                     }
                 }
             }
-            // _ => Err(Box::new(StdIoError::new(ErrorKind::Other, "value was not an array")))
             _ => (), //TODO fix this
         }
         Ok(resp)
     }
 
-    pub async fn get_jira_issues(
+    /* pub async fn get_jira_issues(
         &self,
         project_key: &str,
     ) -> Result<Vec<String>, Box<dyn StdError>> {
@@ -180,5 +191,5 @@ impl<'a> JiraIssues<'_> {
             .query_jira_issues_from_db(project_key)
             .await
             .expect("return an array from db"))
-    }
+    } */
 }

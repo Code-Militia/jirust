@@ -78,7 +78,10 @@ impl JiraProjects {
         Ok(object.values)
     }
 
-    pub async fn get_jira_projects(&self, db: &(Datastore, Session)) -> anyhow::Result<Vec<Project>> {
+    pub async fn get_jira_projects(db: &(Datastore, Session)) -> anyhow::Result<Vec<Project>> {
+        todo!("If projects do not exist on the database, call save_jira_projects()");
+        todo!("if parameter refresh_from_api is passed, call save_jira_projects()");
+        todo!("Both of the above should return from this function and the following code will not run");
         let (ds, sess) = &db;
         let mut resp = Vec::new(); 
         let query = "SELECT * FROM projects;";

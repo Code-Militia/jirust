@@ -13,7 +13,7 @@ pub struct App {
     // db: Arc<DB>,
     focus: Focus,
     projects: ProjectsComponent,
-    config: Config
+    config: Config,
 }
 
 impl App {
@@ -28,7 +28,7 @@ impl App {
             // issues: None,
             // db: Arc::new(db),
             focus: Focus::ProjectsList,
-            config: config.clone()
+            config: config.clone(),
         })
     }
 
@@ -80,6 +80,12 @@ impl App {
     fn event() -> anyhow::Result<()> {
         todo!("This needs to be filled");
         // return Ok(EventState::Consumed)
+    }
+
+    fn update_issues(&self) -> anyhow::Result<()> {
+        if let Some(project) = self.projects.selected_project() {
+            
+        }
     }
 
     fn component_event(&self, key: Key) -> anyhow::Result<EventState> {
