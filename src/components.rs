@@ -55,13 +55,13 @@ pub trait Component {
 
     fn event(&mut self, key: crate::event::key::Key) -> anyhow::Result<EventState>;
 
-    async fn async_event(
-        &mut self,
-        _key: crate::event::key::Key,
-        _pool: &Box<dyn Pool>, // TODO: change this to issues pool instead of databases
-    ) -> Result<EventState> {
-        Ok(EventState::NotConsumed)
-    }
+    // async fn async_event(
+    //     &mut self,
+    //     _key: crate::event::key::Key,
+    //     _pool: &Box<dyn Pool>, // TODO: change this to issues pool instead of databases
+    // ) -> Result<EventState> {
+    //     Ok(EventState::NotConsumed)
+    // }
 
     fn focused(&self) -> bool {
         false
@@ -75,11 +75,11 @@ pub trait Component {
 
     fn hide(&mut self) {}
 
-    fn show(&mut self) -> Result<()> {
+    fn show(&mut self) -> anyhow::Result<()> {
         Ok(())
     }
 
-    fn toggle_visible(&mut self) -> Result<()> {
+    fn toggle_visible(&mut self) -> anyhow::Result<()> {
         if self.is_visible() {
             self.hide();
             Ok(())

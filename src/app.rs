@@ -1,4 +1,4 @@
-use crate::components::StatefulDrawableComponent;
+use crate::{components::{StatefulDrawableComponent, EventState, Component}, event::key::Key, config::Config};
 use tui::{layout::{Layout, Direction, Constraint}, Frame, backend::Backend};
 use crate::{jira::Jira, components::projects::ProjectsComponent};
 
@@ -12,21 +12,23 @@ pub struct App {
     // issues: Option<String>,
     // db: Arc<DB>,
     focus: Focus,
-    projects: ProjectsComponent
+    projects: ProjectsComponent,
+    config: Config
 }
 
 impl App {
-    pub async fn new() -> anyhow::Result<App> {
+    pub async fn new(config: Config) -> anyhow::Result<App> {
         // Instantiate Jira with Arc
         // If I need to get projects, I would send all of Jira to get projects method
         let jira = Jira::new().await?;
 
         Ok(Self {
             // auth: Arc::new(auth),
-            projects: ProjectsComponent::new(&jira.projects.values),
+            projects: ProjectsComponent::new(&jira.projects.values, config.key_config.clone()),
             // issues: None,
             // db: Arc::new(db),
-            focus: Focus::ProjectsList
+            focus: Focus::ProjectsList,
+            config: config.clone()
         })
     }
 
@@ -76,6 +78,32 @@ impl App {
     }
 
     fn event() -> anyhow::Result<()> {
-        
+        todo!("This needs to be filled");
+        // return Ok(EventState::Consumed)
+    }
+
+    fn component_event(&self, key: Key) -> anyhow::Result<EventState> {
+        /* if self.error.event(key)?.is_consumed() {
+            return Ok(EventState::Consumed);
+        } */
+
+        /* if !matches!(self.focus, Focus::ConnectionList) && self.help.event(key)?.is_consumed() {
+            return Ok(EventState::Consumed);
+        } */
+
+        match self.focus {
+            Focus::ProjectsList => {
+                if self.projects.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed)
+                }
+
+                if key == self.config.key_config.enter {
+                    todo!("Execute update issues by selecting project first");
+                    // return Ok(EventState::Consumed)
+                }
+            }
+        }
+
+        return Ok(EventState::Consumed)
     }
 }

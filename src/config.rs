@@ -1,10 +1,17 @@
-use std::io::{BufReader, Read};
 use crate::event::key::Key;
 
-use serde::{Deserialize};
+use serde::Deserialize;
 
 #[cfg(test)] // TODO: What does this do?
 use serde::Serialize;
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Config {
+   #[serde(default)]
+    pub key_config: KeyConfig,
+    // #[serde(default)]
+    // pub log_level: LogLevel,
+}
 
 #[derive(Debug, Deserialize, Clone)]
 #[cfg_attr(test, derive(Serialize))]
@@ -86,9 +93,29 @@ impl Default for KeyConfig {
     }
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            // conn: vec![Connection {
+            //     r#type: DatabaseType::MySql,
+            //     name: None,
+            //     user: Some("root".to_string()),
+            //     host: Some("localhost".to_string()),
+            //     port: Some(3306),
+            //     path: None,
+            //     password: None,
+            //     database: None,
+            // }],
+            key_config: KeyConfig::default(),
+            // log_level: LogLevel::default(),
+        }
+    }
+}
+
 impl Config {
-    pub fn new(config: &CliConfig) -> anyhow::Result<Self> {
-        let config_path = if let Some(config_path) = &config.config_path {
+    // pub fn new(config: &CliConfig) -> anyhow::Result<Self> {
+    pub fn new() -> anyhow::Result<Self> {
+        /* let config_path = if let Some(config_path) = &config.config_path {
             config_path.clone()
         } else {
             get_app_config_path()?.join("config.toml")
@@ -103,7 +130,7 @@ impl Config {
                 Ok(config) => return Ok(config),
                 Err(e) => panic!("fail to parse config file: {}", e),
             }
-        }
+        } */
         Ok(Config::default())
     }
 }

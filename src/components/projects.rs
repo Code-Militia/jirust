@@ -1,17 +1,17 @@
 use tui::{backend::Backend, Frame, layout::Rect, widgets::{ListState, ListItem, List, Block, Borders, Clear}, text::{Spans, Span}, style::{Style, Color}};
-use std::io::Error;
 
-use crate::{jira::projects::Project, event::key::Key};
+use crate::{jira::projects::Project, event::key::Key, config::KeyConfig};
 
 use super::{StatefulDrawableComponent, Component, commands::CommandInfo, EventState};
 
 pub struct ProjectsComponent {
     projects: Vec<String>,
     state: ListState,
+    key_config: KeyConfig
 }
 
 impl ProjectsComponent {
-    pub fn new(projects: &Vec<Project>) -> Self {
+    pub fn new(projects: &Vec<Project>, key_config: KeyConfig) -> Self {
         let mut state = ListState::default();
         if projects.is_empty() {
             state.select(Some(0));
@@ -25,7 +25,8 @@ impl ProjectsComponent {
 
         return Self {
             state,
-            projects: projects_list
+            projects: projects_list,
+            key_config
         }
     }
 
@@ -112,9 +113,27 @@ impl StatefulDrawableComponent for ProjectsComponent {
 impl Component for ProjectsComponent {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
-    fn events(&mut self, key: Key) -> anyhow::Result<EventState> {
-        match key {
-
+    fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if key == self.key_config.scroll_down {
+            self.next_project(1);
+            return Ok(EventState::NotConsumed)
+        } else if key == self.key_config.scroll_up {
+            self.previous_project(1); 
+            return Ok(EventState::NotConsumed)
+        } else if key == self.key_config.scroll_down_multiple_lines {
+            self.next_project(10);
+            return Ok(EventState::NotConsumed)
+        } else if key == self.key_config.scroll_up_multiple_lines {
+            self.previous_project(10);
+            return Ok(EventState::NotConsumed)
+        } else if key == self.key_config.scroll_to_bottom {
+            self.go_to_bottom();
+            return Ok(EventState::NotConsumed)
+        } else if key == self.key_config.scroll_to_top {
+            self.go_to_top();
+            return Ok(EventState::NotConsumed)
         }
+        return Ok(EventState::Consumed)
+
     }
 }
