@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use std::error::Error as StdError;
 use surrealdb::sql::Value;
 use surrealdb::Error as SurrealDbError;
-use surrealdb::{Datastore, Session};
+// use surrealdb::{Datastore, Session};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TicketProject {
@@ -147,11 +147,14 @@ impl JiraIssues {
     async fn get_jira_issues(
         project_key: &str,
         db: &(Datastore, Session)
-    ) -> Result<Vec<String>, SurrealDbError> {
+    ) -> Result<Vec<TicketData>, SurrealDbError> {
         todo!("If issues do not exist on the database, call save_jira_issues()");
         todo!("if parameter refresh_from_api is passed, call save_jira_issues()");
         todo!("Both of the above should return from this function and the following code will not run");
         let (ds, sess) = db;
+
+        
+
         let mut resp: Vec<String> = Vec::new();
         let query = format!(
             "SELECT * FROM issues WHERE ticketProjectKey = '{}'",
@@ -164,8 +167,10 @@ impl JiraIssues {
                 for index in arr.iter() {
                     match index {
                         Value::Object(obj) => {
-                            let issue = obj.get("key").unwrap().to_owned().as_string();
-                            resp.push(issue);
+                            let key = obj.get("key").unwrap().to_owned().as_string();
+                            let id = obj.get("id").unwrap().to_owned().as_string();
+                            let fields = obj.get("fields").unwrap().to_owned();
+                            resp.push();
                         }
                         _ => (), //TODO fix this
                     }
