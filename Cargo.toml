@@ -16,13 +16,11 @@ tui = "0.19.0"
 
 reqwest = "0.11.11"
 
-futures = "0.3"
+futures = "0.3.26"
 
 tokio = { version = "1.12.0", features = ["full"] }
-# sqlite = "0.30.3"
 serde-aux = "4.1.2"
-# surrealdb = "1.0.0-beta.8"
-surrealdb = { git = "https://github.com/surrealdb/surrealdb.git", rev = "953a2008e27e1ef468cdc68be8a6d35ef8c70eb6"}
+surrealdb = { version = "1.0.0-beta.8", features = ["kv-mem"] }
 log = "0.4.17"
 fern = "0.6.1"
 chrono = "0.4.23"
@@ -31,3 +29,6 @@ async-trait = "0.1.64"
 structopt = "0.3.26"
 # async-recursion = "1.0.0"
 # rusqlite = "0.28.0"
+
+[patch.crates-io]
+surrealdb = { git = "https://github.com/surrealdb/surrealdb.git", rev = "3f0afd9d72dd041ce638817fe8857b5a7adc5117"}

@@ -6,7 +6,6 @@ use self::{auth::{JiraAuth, jira_authentication}, projects::JiraProjects, issue:
 
 pub mod auth;
 pub mod issue;
-pub mod jira_db;
 pub mod projects;
 
 pub struct Jira {
@@ -20,8 +19,9 @@ impl Jira {
     pub async fn new() -> anyhow::Result<Jira> {
         let auth = jira_authentication();
         let db = connect("mem://").await?;
+        db.use_ns("noc").use_db("database").await?;
         let projects: JiraProjects = JiraProjects::new(&auth, &db).await?;
-        let issues: JiraIssues = JiraIssues::new(&db, &auth).await?;
+        let issues: JiraIssues = JiraIssues::new(&auth).await?;
 
         Ok(Self {
             auth,

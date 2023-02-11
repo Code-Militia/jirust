@@ -83,12 +83,10 @@ impl App {
     }
 
     fn update_issues(&self) -> anyhow::Result<()> {
-        if let Some(project) = self.projects.selected_project() {
-            
-        }
+        todo!("create update issues method to force updates from client");
     }
 
-    fn component_event(&self, key: Key) -> anyhow::Result<EventState> {
+    fn component_event(&mut self, key: Key) -> anyhow::Result<EventState> {
         /* if self.error.event(key)?.is_consumed() {
             return Ok(EventState::Consumed);
         } */
