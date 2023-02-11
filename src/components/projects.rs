@@ -1,13 +1,20 @@
-use tui::{backend::Backend, Frame, layout::Rect, widgets::{ListState, ListItem, List, Block, Borders, Clear}, text::{Spans, Span}, style::{Style, Color}};
+use tui::{
+    backend::Backend,
+    layout::Rect,
+    style::{Color, Style},
+    text::{Span, Spans},
+    widgets::{Block, Borders, Clear, List, ListItem, ListState},
+    Frame,
+};
 
-use crate::{jira::projects::Project, event::key::Key, config::KeyConfig};
+use crate::{config::KeyConfig, event::key::Key, jira::projects::Project};
 
-use super::{StatefulDrawableComponent, Component, commands::CommandInfo, EventState};
+use super::{commands::CommandInfo, Component, EventState, StatefulDrawableComponent};
 
 pub struct ProjectsComponent {
     projects: Vec<String>,
     state: ListState,
-    key_config: KeyConfig
+    key_config: KeyConfig,
 }
 
 impl ProjectsComponent {
@@ -26,8 +33,8 @@ impl ProjectsComponent {
         return Self {
             state,
             projects: projects_list,
-            key_config
-        }
+            key_config,
+        };
     }
 
     pub fn next_project(&mut self, line: usize) {
@@ -39,7 +46,7 @@ impl ProjectsComponent {
                     Some(i + line)
                 }
             }
-            None => None
+            None => None,
         };
     }
 
@@ -52,7 +59,7 @@ impl ProjectsComponent {
                     Some(i - line)
                 }
             }
-            None => None
+            None => None,
         };
     }
 
@@ -73,22 +80,24 @@ impl ProjectsComponent {
     pub fn selected_project(&self) -> Option<&String> {
         match self.state.selected() {
             Some(i) => self.projects.get(i),
-            None => None
+            None => None,
         }
     }
 }
 
 impl StatefulDrawableComponent for ProjectsComponent {
-    fn draw<B: Backend>(&mut self, f: &mut Frame<B>, _rect: Rect, _focused: bool) -> anyhow::Result<()> {
+    fn draw<B: Backend>(
+        &mut self,
+        f: &mut Frame<B>,
+        _rect: Rect,
+        _focused: bool,
+    ) -> anyhow::Result<()> {
         let width = 80;
         let height = 20;
         let prjs = &self.projects;
         let mut projects: Vec<ListItem> = Vec::new();
         for p in prjs {
-            projects.push(
-                ListItem::new(vec![Spans::from(Span::raw(p))])
-                    .style(Style::default()),
-            )
+            projects.push(ListItem::new(vec![Spans::from(Span::raw(p))]).style(Style::default()))
         }
 
         let projects = List::new(projects)
@@ -108,7 +117,7 @@ impl StatefulDrawableComponent for ProjectsComponent {
 
         Ok(())
     }
-} 
+}
 
 impl Component for ProjectsComponent {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
@@ -116,24 +125,23 @@ impl Component for ProjectsComponent {
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
             self.next_project(1);
-            return Ok(EventState::NotConsumed)
+            return Ok(EventState::NotConsumed);
         } else if key == self.key_config.scroll_up {
-            self.previous_project(1); 
-            return Ok(EventState::NotConsumed)
+            self.previous_project(1);
+            return Ok(EventState::NotConsumed);
         } else if key == self.key_config.scroll_down_multiple_lines {
             self.next_project(10);
-            return Ok(EventState::NotConsumed)
+            return Ok(EventState::NotConsumed);
         } else if key == self.key_config.scroll_up_multiple_lines {
             self.previous_project(10);
-            return Ok(EventState::NotConsumed)
+            return Ok(EventState::NotConsumed);
         } else if key == self.key_config.scroll_to_bottom {
             self.go_to_bottom();
-            return Ok(EventState::NotConsumed)
+            return Ok(EventState::NotConsumed);
         } else if key == self.key_config.scroll_to_top {
             self.go_to_top();
-            return Ok(EventState::NotConsumed)
+            return Ok(EventState::NotConsumed);
         }
-        return Ok(EventState::Consumed)
-
+        return Ok(EventState::Consumed);
     }
 }

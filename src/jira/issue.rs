@@ -1,9 +1,9 @@
-use log::info;
-use surrealdb::Surreal;
-use surrealdb::engine::any::Any;
 use super::auth::JiraAuth;
+use log::info;
 use serde::{Deserialize, Serialize};
+use surrealdb::engine::any::Any;
 use surrealdb::Error as SurrealDbError;
+use surrealdb::Surreal;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TicketProject {
@@ -48,7 +48,7 @@ pub struct JiraIssues {
     start_at: Option<i32>,
     max_results: Option<i32>,
     total: Option<i32>,
-    issues:Vec<TicketData>,
+    issues: Vec<TicketData>,
 }
 
 // TODO: handle pagination
@@ -59,11 +59,14 @@ impl JiraIssues {
             start_at: None,
             max_results: None,
             total: None,
-            issues
+            issues,
         })
     }
 
-    async fn get_issues_from_jira_api(jira_auth: &JiraAuth, project_name: String) -> Result<String, reqwest::Error> {
+    async fn get_issues_from_jira_api(
+        jira_auth: &JiraAuth,
+        project_name: String,
+    ) -> Result<String, reqwest::Error> {
         let domain = jira_auth.get_domain();
         let headers = jira_auth.get_basic_auth();
         let url = format!(
@@ -83,8 +86,8 @@ impl JiraIssues {
     pub async fn save_jira_issues(
         db: &Surreal<Any>,
         jira_auth: &JiraAuth,
-        project_name: &str
-        ) -> Result<Vec<TicketData>, SurrealDbError> {
+        project_name: &str,
+    ) -> Result<Vec<TicketData>, SurrealDbError> {
         let resp = Self::get_issues_from_jira_api(&jira_auth, project_name.to_string())
             .await
             .expect("should be response from jira");
@@ -92,9 +95,7 @@ impl JiraIssues {
         let object: JiraIssues =
             serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
         for issues in object.issues.iter() {
-            let issue_insert = db.create(("issues", &issues.key))
-                .content(issues)
-                .await?;
+            let issue_insert = db.create(("issues", &issues.key)).content(issues).await?;
             info!("{issue_insert:?}");
         }
         Ok(object.issues)
@@ -102,7 +103,7 @@ impl JiraIssues {
 
     async fn get_jira_issues(
         project_key: &str,
-        db: &Surreal<Any>
+        db: &Surreal<Any>,
     ) -> Result<Vec<TicketData>, SurrealDbError> {
         let issues: Vec<TicketData> = db.select("issues").await?;
         info!("{issues:?}");

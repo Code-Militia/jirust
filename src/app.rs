@@ -1,9 +1,18 @@
-use crate::{components::{StatefulDrawableComponent, EventState, Component}, event::key::Key, config::Config};
-use tui::{layout::{Layout, Direction, Constraint}, Frame, backend::Backend};
-use crate::{jira::Jira, components::projects::ProjectsComponent};
+use crate::{components::projects::ProjectsComponent, jira::Jira};
+use crate::{
+    components::{error::ErrorComponent, Component, EventState, StatefulDrawableComponent},
+    config::{Config, KeyConfig},
+    event::key::Key,
+};
+use tui::{
+    backend::Backend,
+    layout::{Constraint, Direction, Layout},
+    Frame,
+};
 
 pub enum Focus {
-    ProjectsList
+    Projects,
+    Issues,
 }
 
 pub struct App {
@@ -13,7 +22,8 @@ pub struct App {
     // db: Arc<DB>,
     focus: Focus,
     projects: ProjectsComponent,
-    config: Config,
+    pub config: Config,
+    pub error: ErrorComponent,
 }
 
 impl App {
@@ -24,16 +34,17 @@ impl App {
 
         Ok(Self {
             // auth: Arc::new(auth),
-            projects: ProjectsComponent::new(&jira.projects.values, config.key_config.clone()),
             // issues: None,
             // db: Arc::new(db),
-            focus: Focus::ProjectsList,
             config: config.clone(),
+            error: ErrorComponent::new(config.key_config.clone()),
+            focus: Focus::Projects,
+            projects: ProjectsComponent::new(&jira.projects.values, config.key_config.clone()),
         })
     }
 
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<'_, B>) -> anyhow::Result<()> {
-        if let Focus::ProjectsList = self.focus {
+        if let Focus::Projects = self.focus {
             self.projects.draw(
                 f,
                 Layout::default()
@@ -43,62 +54,58 @@ impl App {
             )?;
 
             // TODO: Handle errors and help
-            return Ok(())
+            return Ok(());
         }
 
         let main_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints(
-                [
-                    Constraint::Percentage(30),
-                    Constraint::Percentage(100)
-                ]
-            )
+            .constraints([Constraint::Percentage(30), Constraint::Percentage(100)])
             .split(f.size());
 
         let issues_left_chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints(
-                [
-                    Constraint::Percentage(40),
-                ]
-            )
+            .constraints([Constraint::Percentage(40)])
             .split(main_chunks[0]);
 
         let issues_right_chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints(
-                [
-                    Constraint::Percentage(65)
-                ]
-            )
+            .constraints([Constraint::Percentage(65)])
             .split(main_chunks[1]);
 
         Ok(())
     }
 
-    fn event() -> anyhow::Result<()> {
-        todo!("This needs to be filled");
+    pub async fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if self.component_event(key).await?.is_consumed() {
+            return Ok(EventState::Consumed);
+        }
+
+        if self.move_focus(key)?.is_consumed() {
+            return Ok(EventState::Consumed);
+        };
+
+        Ok(EventState::NotConsumed)
+        // todo!("This needs to be filled");
         // return Ok(EventState::Consumed)
     }
 
-    fn update_issues(&self) -> anyhow::Result<()> {
+    pub async fn update_issues(&self) -> anyhow::Result<()> {
         todo!("create update issues method to force updates from client");
     }
 
-    fn component_event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        /* if self.error.event(key)?.is_consumed() {
+    pub async fn component_event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if self.error.event(key)?.is_consumed() {
             return Ok(EventState::Consumed);
-        } */
+        }
 
-        /* if !matches!(self.focus, Focus::ConnectionList) && self.help.event(key)?.is_consumed() {
-            return Ok(EventState::Consumed);
-        } */
+        // if !matches!(self.focus, Focus::Projects) && self.help.event(key)?.is_consumed() {
+        //     return Ok(EventState::Consumed);
+        // }
 
         match self.focus {
-            Focus::ProjectsList => {
+            Focus::Projects => {
                 if self.projects.event(key)?.is_consumed() {
-                    return Ok(EventState::Consumed)
+                    return Ok(EventState::Consumed);
                 }
 
                 if key == self.config.key_config.enter {
@@ -106,8 +113,34 @@ impl App {
                     // return Ok(EventState::Consumed)
                 }
             }
+            Focus::Issues => {
+                todo!("Need to return an issues list");
+            }
         }
 
-        return Ok(EventState::Consumed)
+        return Ok(EventState::Consumed);
+    }
+
+    fn move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if key == self.config.key_config.focus_connections {
+            self.focus = Focus::Projects;
+            return Ok(EventState::Consumed);
+        }
+
+        match self.focus {
+            Focus::Projects => {
+                if key == self.config.key_config.enter {
+                    self.focus = Focus::Issues;
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::Issues => {
+                todo!("Add keys for issues");
+                // if key == self.config.key_config.enter {
+                //
+                // }
+            }
+        }
+        return Ok(EventState::NotConsumed);
     }
 }

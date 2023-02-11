@@ -7,3 +7,48 @@
 [2023-02-11][16:24:12][jirust::jira::projects][INFO] Hello from insert Project { key: "OPS", name: "DevOps" }
 [2023-02-11][16:24:12][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
 [2023-02-11][16:24:12][jirust::jira::projects][INFO] Hello from insert Project { key: "RUST", name: "Rust" }
+[2023-02-11][17:38:54][surrealdb::kvs][INFO] Starting kvs store in memory
+[2023-02-11][17:38:54][surrealdb::kvs][INFO] Started kvs store in memory
+[2023-02-11][17:38:54][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
+[2023-02-11][17:38:55][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
+[2023-02-11][17:38:55][jirust::jira::projects][INFO] Project { key: "NVIM", name: "NVIM" }
+[2023-02-11][17:38:55][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
+[2023-02-11][17:38:55][jirust::jira::projects][INFO] Project { key: "OPS", name: "DevOps" }
+[2023-02-11][17:38:55][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
+[2023-02-11][17:38:55][jirust::jira::projects][INFO] Project { key: "RUST", name: "Rust" }
+[2023-02-11][17:39:12][surrealdb::kvs][INFO] Starting kvs store in memory
+[2023-02-11][17:39:12][surrealdb::kvs][INFO] Started kvs store in memory
+[2023-02-11][17:39:12][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
+[2023-02-11][17:39:13][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
+[2023-02-11][17:39:13][jirust::jira::projects][INFO] Project { key: "NVIM", name: "NVIM" }
+[2023-02-11][17:39:13][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
+[2023-02-11][17:39:13][jirust::jira::projects][INFO] Project { key: "OPS", name: "DevOps" }
+[2023-02-11][17:39:13][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
+[2023-02-11][17:39:13][jirust::jira::projects][INFO] Project { key: "RUST", name: "Rust" }
+[2023-02-11][17:47:17][surrealdb::kvs][INFO] Starting kvs store in memory
+[2023-02-11][17:47:17][surrealdb::kvs][INFO] Started kvs store in memory
+[2023-02-11][17:47:17][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
+[2023-02-11][17:47:18][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
+[2023-02-11][17:47:18][jirust::jira::projects][INFO] Project { key: "NVIM", name: "NVIM" }
+[2023-02-11][17:47:18][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
+[2023-02-11][17:47:18][jirust::jira::projects][INFO] Project { key: "OPS", name: "DevOps" }
+[2023-02-11][17:47:18][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
+[2023-02-11][17:47:18][jirust::jira::projects][INFO] Project { key: "RUST", name: "Rust" }
+[2023-02-11][17:49:43][surrealdb::kvs][INFO] Starting kvs store in memory
+[2023-02-11][17:49:43][surrealdb::kvs][INFO] Started kvs store in memory
+[2023-02-11][17:49:43][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
+[2023-02-11][17:49:43][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
+[2023-02-11][17:49:43][jirust::jira::projects][INFO] Project { key: "NVIM", name: "NVIM" }
+[2023-02-11][17:49:43][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
+[2023-02-11][17:49:43][jirust::jira::projects][INFO] Project { key: "OPS", name: "DevOps" }
+[2023-02-11][17:49:43][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
+[2023-02-11][17:49:43][jirust::jira::projects][INFO] Project { key: "RUST", name: "Rust" }
+[2023-02-11][17:52:03][surrealdb::kvs][INFO] Starting kvs store in memory
+[2023-02-11][17:52:03][surrealdb::kvs][INFO] Started kvs store in memory
+[2023-02-11][17:52:03][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
+[2023-02-11][17:52:04][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
+[2023-02-11][17:52:04][jirust::jira::projects][INFO] Project { key: "NVIM", name: "NVIM" }
+[2023-02-11][17:52:04][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
+[2023-02-11][17:52:04][jirust::jira::projects][INFO] Project { key: "OPS", name: "DevOps" }
+[2023-02-11][17:52:04][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
+[2023-02-11][17:52:04][jirust::jira::projects][INFO] Project { key: "RUST", name: "Rust" }

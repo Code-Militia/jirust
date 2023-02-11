@@ -1,8 +1,8 @@
-use log::info;
-use surrealdb::Surreal;
-use surrealdb::engine::any::Any;
-use serde::{Deserialize, Serialize};
 use super::auth::JiraAuth;
+use log::info;
+use serde::{Deserialize, Serialize};
+use surrealdb::engine::any::Any;
+use surrealdb::Surreal;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Project {
@@ -23,8 +23,8 @@ impl JiraProjects {
         let projects = Self::save_jira_projects(jira_auth, db).await?;
         Ok(Self {
             is_last: Some(true), // TODO: Will need to refactor to handle pagination
-            next_page: None, // TODO: Will need to refactor to handle pagination
-            values: projects
+            next_page: None,     // TODO: Will need to refactor to handle pagination
+            values: projects,
         })
     }
 
@@ -43,17 +43,20 @@ impl JiraProjects {
     }
 
     // TODO: handle pagination
-    pub async fn save_jira_projects(jira_auth: &JiraAuth, db: &Surreal<Any>) -> anyhow::Result<Vec<Project>> {
-        let resp = Self::get_projects_from_jira_api(jira_auth)
-            .await?;
+    pub async fn save_jira_projects(
+        jira_auth: &JiraAuth,
+        db: &Surreal<Any>,
+    ) -> anyhow::Result<Vec<Project>> {
+        let resp = Self::get_projects_from_jira_api(jira_auth).await?;
         let resp_slice: &str = &resp[..];
         let object: JiraProjects =
             serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
         for project in object.values.iter() {
-            let project_insert: Project = db.create(("project", &project.key))
+            let project_insert: Project = db
+                .create(("project", &project.key))
                 .content(project)
                 .await?;
-            info!("Hello from insert {project_insert:?}");
+            info!("{project_insert:?}");
         }
         Ok(object.values)
     }

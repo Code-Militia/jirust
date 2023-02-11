@@ -1,11 +1,11 @@
-pub mod projects;
 pub mod commands;
+pub mod error;
+pub mod projects;
 
 use commands::CommandInfo;
 
 use async_trait::async_trait;
-use tui::{backend::Backend, Frame, layout::Rect};
-
+use tui::{backend::Backend, layout::Rect, Frame};
 
 #[derive(PartialEq, Debug)]
 pub enum EventState {
@@ -34,7 +34,12 @@ pub trait DrawableComponent {
 }
 
 pub trait StatefulDrawableComponent {
-    fn draw<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect, focused: bool) -> anyhow::Result<()>;
+    fn draw<B: Backend>(
+        &mut self,
+        f: &mut Frame<B>,
+        rect: Rect,
+        focused: bool,
+    ) -> anyhow::Result<()>;
 }
 
 pub trait MovableComponent {

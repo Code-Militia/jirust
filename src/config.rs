@@ -1,4 +1,4 @@
-use crate::event::key::Key;
+use crate::{event::key::Key, log::LogLevel};
 
 use serde::Deserialize;
 
@@ -7,10 +7,10 @@ use serde::Serialize;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Config {
-   #[serde(default)]
+    #[serde(default)]
     pub key_config: KeyConfig,
-    // #[serde(default)]
-    // pub log_level: LogLevel,
+    #[serde(default)]
+    pub log_level: LogLevel,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -41,13 +41,13 @@ pub struct KeyConfig {
     pub extend_selection_by_one_cell_right: Key,
     pub extend_selection_by_one_cell_up: Key,
     pub extend_selection_by_one_cell_down: Key,
-    pub tab_records: Key,
-    pub tab_columns: Key,
-    pub tab_constraints: Key,
-    pub tab_foreign_keys: Key,
-    pub tab_indexes: Key,
-    pub tab_sql_editor: Key,
-    pub tab_properties: Key,
+    // pub tab_records: Key,
+    // pub tab_columns: Key,
+    // pub tab_constraints: Key,
+    // pub tab_foreign_keys: Key,
+    // pub tab_indexes: Key,
+    // pub tab_sql_editor: Key,
+    // pub tab_properties: Key,
     pub extend_or_shorten_widget_width_to_right: Key,
     pub extend_or_shorten_widget_width_to_left: Key,
 }
@@ -80,13 +80,13 @@ impl Default for KeyConfig {
             extend_selection_by_one_cell_right: Key::Char('L'),
             extend_selection_by_one_cell_down: Key::Char('J'),
             extend_selection_by_one_cell_up: Key::Char('K'),
-            tab_records: Key::Char('1'),
-            tab_properties: Key::Char('2'),
-            tab_sql_editor: Key::Char('3'),
-            tab_columns: Key::Char('4'),
-            tab_constraints: Key::Char('5'),
-            tab_foreign_keys: Key::Char('6'),
-            tab_indexes: Key::Char('7'),
+            // tab_records: Key::Char('1'),
+            // tab_properties: Key::Char('2'),
+            // tab_sql_editor: Key::Char('3'),
+            // tab_columns: Key::Char('4'),
+            // tab_constraints: Key::Char('5'),
+            // tab_foreign_keys: Key::Char('6'),
+            // tab_indexes: Key::Char('7'),
             extend_or_shorten_widget_width_to_right: Key::Char('>'),
             extend_or_shorten_widget_width_to_left: Key::Char('<'),
         }
@@ -107,7 +107,7 @@ impl Default for Config {
             //     database: None,
             // }],
             key_config: KeyConfig::default(),
-            // log_level: LogLevel::default(),
+            log_level: LogLevel::default(),
         }
     }
 }

@@ -1,8 +1,12 @@
-use surrealdb::Surreal;
 use surrealdb::engine::any::connect;
 use surrealdb::engine::any::Any;
+use surrealdb::Surreal;
 
-use self::{auth::{JiraAuth, jira_authentication}, projects::JiraProjects, issue::JiraIssues};
+use self::{
+    auth::{jira_authentication, JiraAuth},
+    issue::JiraIssues,
+    projects::JiraProjects,
+};
 
 pub mod auth;
 pub mod issue;
@@ -12,7 +16,7 @@ pub struct Jira {
     pub auth: JiraAuth,
     pub db: Surreal<Any>,
     pub projects: JiraProjects,
-    pub issues: JiraIssues
+    pub issues: JiraIssues,
 }
 
 impl Jira {
@@ -27,7 +31,7 @@ impl Jira {
             auth,
             db,
             projects,
-            issues
+            issues,
         })
     }
 }
