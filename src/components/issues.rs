@@ -72,12 +72,12 @@ impl IssuesComponent {
         self.state.select(Some(self.issues.len() - 1));
     }
 
-    // pub fn selected_issues(&self) -> Option<&String> {
-    //     match self.state.selected() {
-    //         Some(i) => self.issues.get(i),
-    //         None => None,
-    //     }
-    // }
+    pub fn selected_issues(&self) -> Option<&TicketData> {
+        match self.state.selected() {
+            Some(i) => self.issues.get(i),
+            None => None,
+        }
+    }
 }
 
 impl StatefulDrawableComponent for IssuesComponent {

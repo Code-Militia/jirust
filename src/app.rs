@@ -26,12 +26,9 @@ pub struct App {
 
 impl App {
     pub async fn new(config: Config) -> anyhow::Result<App> {
-        // Instantiate Jira with Arc
-        // If I need to get projects, I would send all of Jira to get projects method
         let jira = Jira::new().await?;
 
         Ok(Self {
-            // issues: None,
             config: config.clone(),
             error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,

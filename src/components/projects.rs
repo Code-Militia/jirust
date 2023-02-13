@@ -12,7 +12,7 @@ use crate::{config::KeyConfig, event::key::Key, jira::projects::Project};
 use super::{commands::CommandInfo, Component, EventState, StatefulDrawableComponent};
 
 pub struct ProjectsComponent {
-    projects: Vec<String>,
+    projects: Vec<Project>,
     state: ListState,
     key_config: KeyConfig,
 }
@@ -24,15 +24,9 @@ impl ProjectsComponent {
             state.select(Some(0));
         }
 
-        let mut projects_list = vec![];
-
-        for project in projects.iter() {
-            projects_list.push(project.name.clone())
-        }
-
         return Self {
             state,
-            projects: projects_list,
+            projects: projects.to_vec(),
             key_config,
         };
     }
@@ -81,7 +75,7 @@ impl ProjectsComponent {
         self.state.select(Some(self.projects.len() - 1));
     }
 
-    pub fn selected_project(&self) -> Option<&String> {
+    pub fn selected_project(&self) -> Option<&Project> {
         match self.state.selected() {
             Some(i) => self.projects.get(i),
             None => None,
@@ -101,7 +95,7 @@ impl StatefulDrawableComponent for ProjectsComponent {
         let prjs = &self.projects;
         let mut projects: Vec<ListItem> = Vec::new();
         for p in prjs {
-            projects.push(ListItem::new(vec![Spans::from(Span::raw(p))]).style(Style::default()))
+            projects.push(ListItem::new(vec![Spans::from(Span::raw(&p.key))]).style(Style::default()))
         }
 
         let projects_block = List::new(projects)
