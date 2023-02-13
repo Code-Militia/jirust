@@ -7,41 +7,32 @@ use tui::{
     Frame,
 };
 
-use crate::{config::KeyConfig, event::key::Key, jira::projects::Project};
+use crate::{config::KeyConfig, event::key::Key, jira::issue::TicketData};
 
 use super::{commands::CommandInfo, Component, EventState, StatefulDrawableComponent};
 
-pub struct ProjectsComponent {
-    projects: Vec<String>,
+pub struct IssuesComponent {
+    issues: Vec<TicketData>,
     state: ListState,
     key_config: KeyConfig,
 }
 
-impl ProjectsComponent {
-    pub fn new(projects: &Vec<Project>, key_config: KeyConfig) -> Self {
+impl IssuesComponent {
+    pub fn new(key_config: KeyConfig) -> Self {
         let mut state = ListState::default();
-        if !projects.is_empty() {
-            state.select(Some(0));
-        }
-
-        let mut projects_list = vec![];
-
-        for project in projects.iter() {
-            projects_list.push(project.name.clone())
-        }
 
         return Self {
             state,
-            projects: projects_list,
+            issues: vec![],
             key_config,
         };
     }
 
-    pub fn next_project(&mut self, line: usize) {
+    pub fn next_issues(&mut self, line: usize) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i + line >= self.projects.len() {
-                    Some(self.projects.len() - 1)
+                if i + line >= self.issues.len() {
+                    Some(self.issues.len() - 1)
                 } else {
                     Some(i + line)
                 }
@@ -52,7 +43,7 @@ impl ProjectsComponent {
         self.state.select(i);
     }
 
-    pub fn previous_project(&mut self, line: usize) {
+    pub fn previous_issues(&mut self, line: usize) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i <= line {
@@ -68,28 +59,28 @@ impl ProjectsComponent {
     }
 
     pub fn go_to_top(&mut self) {
-        if self.projects.is_empty() {
+        if self.issues.is_empty() {
             return;
         }
         self.state.select(Some(0));
     }
 
     pub fn go_to_bottom(&mut self) {
-        if self.projects.is_empty() {
+        if self.issues.is_empty() {
             return;
         }
-        self.state.select(Some(self.projects.len() - 1));
+        self.state.select(Some(self.issues.len() - 1));
     }
 
-    pub fn selected_project(&self) -> Option<&String> {
-        match self.state.selected() {
-            Some(i) => self.projects.get(i),
-            None => None,
-        }
-    }
+    // pub fn selected_issues(&self) -> Option<&String> {
+    //     match self.state.selected() {
+    //         Some(i) => self.issues.get(i),
+    //         None => None,
+    //     }
+    // }
 }
 
-impl StatefulDrawableComponent for ProjectsComponent {
+impl StatefulDrawableComponent for IssuesComponent {
     fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
@@ -98,14 +89,14 @@ impl StatefulDrawableComponent for ProjectsComponent {
     ) -> anyhow::Result<()> {
         let width = 80;
         let height = 20;
-        let prjs = &self.projects;
-        let mut projects: Vec<ListItem> = Vec::new();
-        for p in prjs {
-            projects.push(ListItem::new(vec![Spans::from(Span::raw(p))]).style(Style::default()))
+        let isus = &self.issues;
+        let mut issues: Vec<ListItem> = Vec::new();
+        for i in isus {
+            issues.push(ListItem::new(vec![Spans::from(Span::raw(&i.key))]).style(Style::default()))
         }
 
-        let projects_block = List::new(projects)
-            .block(Block::default().borders(Borders::ALL).title("Projects"))
+        let issues_block = List::new(issues)
+            .block(Block::default().borders(Borders::ALL).title("Issues"))
             .highlight_style(Style::default().bg(Color::Blue))
             .style(Style::default());
 
@@ -117,27 +108,27 @@ impl StatefulDrawableComponent for ProjectsComponent {
         );
 
         f.render_widget(Clear, area);
-        f.render_stateful_widget(projects_block, area, &mut self.state);
+        f.render_stateful_widget(issues_block, area, &mut self.state);
 
         Ok(())
     }
 }
 
-impl Component for ProjectsComponent {
+impl Component for IssuesComponent {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
-            self.next_project(1);
+            self.next_issues(1);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_up {
-            self.previous_project(1);
+            self.previous_issues(1);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_down_multiple_lines {
-            self.next_project(10);
+            self.next_issues(10);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_up_multiple_lines {
-            self.previous_project(10);
+            self.previous_issues(10);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_bottom {
             self.go_to_bottom();

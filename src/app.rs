@@ -1,3 +1,4 @@
+use crate::components::issues::IssuesComponent;
 use crate::{components::projects::ProjectsComponent, jira::Jira};
 use crate::{
     components::{error::ErrorComponent, Component, EventState, StatefulDrawableComponent},
@@ -16,10 +17,7 @@ pub enum Focus {
 }
 
 pub struct App {
-    // auth: Arc<JiraAuth>,
-    // projects: ProjectsComponent,
-    // issues: Option<String>,
-    // db: Arc<DB>,
+    issues: IssuesComponent,
     focus: Focus,
     projects: ProjectsComponent,
     pub config: Config,
@@ -33,12 +31,11 @@ impl App {
         let jira = Jira::new().await?;
 
         Ok(Self {
-            // auth: Arc::new(auth),
             // issues: None,
-            // db: Arc::new(db),
             config: config.clone(),
             error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,
+            issues: IssuesComponent::new(config.key_config.clone()),
             projects: ProjectsComponent::new(&jira.projects.values, config.key_config.clone()),
         })
     }
@@ -67,18 +64,23 @@ impl App {
             .constraints([Constraint::Percentage(40)])
             .split(main_chunks[0]);
 
+        let issues_list = issues_left_chunks[0];
+        let issues_metadata = issues_left_chunks[1];
+
         let issues_right_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(65)])
             .split(main_chunks[1]);
 
+        let issues_description = issues_left_chunks[0];
+        let issues_updates = issues_left_chunks[1];
+
+
         Ok(())
     }
 
     pub async fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        // let t1 = self.component_event(key).await?;
         if self.component_event(key).await?.is_consumed() {
-            // println!("t1 is --- {t1:?}");
             return Ok(EventState::Consumed);
         }
 
@@ -110,8 +112,8 @@ impl App {
                 }
 
                 if key == self.config.key_config.enter {
-                    todo!("Execute update issues by selecting project first");
-                    // return Ok(EventState::Consumed)
+                    self.update_issues().await?;
+                    return Ok(EventState::Consumed)
                 }
             }
             Focus::Issues => {

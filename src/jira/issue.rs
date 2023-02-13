@@ -22,24 +22,24 @@ pub struct TicketPriority {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TicketIssueType {
-    name: String,
-    subtask: bool,
+    pub name: String,
+    pub subtask: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TicketFields {
-    issuetype: TicketIssueType,
-    priority: TicketPriority,
-    project: TicketProject,
-    labels: Vec<String>,
-    status: TicketStatus,
-    summary: String,
+    pub issuetype: TicketIssueType,
+    pub priority: TicketPriority,
+    pub project: TicketProject,
+    pub labels: Vec<String>,
+    pub status: TicketStatus,
+    pub summary: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TicketData {
-    key: String,
-    fields: TicketFields,
+    pub fields: TicketFields,
+    pub key: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
