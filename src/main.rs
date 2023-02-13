@@ -14,6 +14,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
+use ::log::log_enabled;
 use std::io;
 use tui::{backend::CrosstermBackend, Terminal};
 
@@ -41,6 +42,7 @@ async fn main() -> anyhow::Result<()> {
         match events.next()? {
             Event::Input(key) => match app.event(key).await {
                 Ok(state) => {
+                    // println!("{state:?}");
                     if !state.is_consumed()
                         && (key == app.config.key_config.quit || key == app.config.key_config.exit)
                     {

@@ -76,7 +76,9 @@ impl App {
     }
 
     pub async fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        // let t1 = self.component_event(key).await?;
         if self.component_event(key).await?.is_consumed() {
+            // println!("t1 is --- {t1:?}");
             return Ok(EventState::Consumed);
         }
 
@@ -86,7 +88,6 @@ impl App {
 
         Ok(EventState::NotConsumed)
         // todo!("This needs to be filled");
-        // return Ok(EventState::Consumed)
     }
 
     pub async fn update_issues(&self) -> anyhow::Result<()> {
@@ -118,11 +119,11 @@ impl App {
             }
         }
 
-        return Ok(EventState::Consumed);
+        return Ok(EventState::NotConsumed);
     }
 
     fn move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
-        if key == self.config.key_config.focus_connections {
+        if key == self.config.key_config.focus_projects {
             self.focus = Focus::Projects;
             return Ok(EventState::Consumed);
         }

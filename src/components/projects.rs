@@ -20,7 +20,7 @@ pub struct ProjectsComponent {
 impl ProjectsComponent {
     pub fn new(projects: &Vec<Project>, key_config: KeyConfig) -> Self {
         let mut state = ListState::default();
-        if projects.is_empty() {
+        if !projects.is_empty() {
             state.select(Some(0));
         }
 
@@ -48,6 +48,8 @@ impl ProjectsComponent {
             }
             None => None,
         };
+
+        self.state.select(i);
     }
 
     pub fn previous_project(&mut self, line: usize) {
@@ -61,6 +63,8 @@ impl ProjectsComponent {
             }
             None => None,
         };
+
+        self.state.select(i);
     }
 
     pub fn go_to_top(&mut self) {
@@ -125,23 +129,23 @@ impl Component for ProjectsComponent {
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
             self.next_project(1);
-            return Ok(EventState::NotConsumed);
+            return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_up {
             self.previous_project(1);
-            return Ok(EventState::NotConsumed);
+            return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_down_multiple_lines {
             self.next_project(10);
-            return Ok(EventState::NotConsumed);
+            return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_up_multiple_lines {
             self.previous_project(10);
-            return Ok(EventState::NotConsumed);
+            return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_bottom {
             self.go_to_bottom();
-            return Ok(EventState::NotConsumed);
+            return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_top {
             self.go_to_top();
-            return Ok(EventState::NotConsumed);
+            return Ok(EventState::Consumed);
         }
-        return Ok(EventState::Consumed);
+        return Ok(EventState::NotConsumed);
     }
 }
