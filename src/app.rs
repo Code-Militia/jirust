@@ -1,4 +1,4 @@
-use crate::components::issues::IssuesComponent;
+use crate::components::issues::TicketComponent;
 use crate::{components::projects::ProjectsComponent, jira::Jira};
 use crate::{
     components::{error::ErrorComponent, Component, EventState, StatefulDrawableComponent},
@@ -13,13 +13,14 @@ use tui::{
 
 pub enum Focus {
     Projects,
-    Issues,
+    Tickets,
 }
 
 pub struct App {
-    issues: IssuesComponent,
     focus: Focus,
+    jira: Jira,
     projects: ProjectsComponent,
+    tickets: TicketComponent,
     pub config: Config,
     pub error: ErrorComponent,
 }
@@ -27,13 +28,15 @@ pub struct App {
 impl App {
     pub async fn new(config: Config) -> anyhow::Result<App> {
         let jira = Jira::new().await?;
+        let projects = &jira.projects.values.clone();
 
         Ok(Self {
             config: config.clone(),
             error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,
-            issues: IssuesComponent::new(config.key_config.clone()),
-            projects: ProjectsComponent::new(&jira.projects.values, config.key_config.clone()),
+            jira,
+            tickets: TicketComponent::new(config.key_config.clone()),
+            projects: ProjectsComponent::new(projects, config.key_config.clone()),
         })
     }
 
@@ -56,22 +59,21 @@ impl App {
             .constraints([Constraint::Percentage(30), Constraint::Percentage(100)])
             .split(f.size());
 
-        let issues_left_chunks = Layout::default()
+        let ticket_left_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(40)])
             .split(main_chunks[0]);
 
-        let issues_list = issues_left_chunks[0];
-        let issues_metadata = issues_left_chunks[1];
+        let ticket_list = ticket_left_chunks[0];
+        let ticket_metadata = ticket_left_chunks[1];
 
-        let issues_right_chunks = Layout::default()
+        let ticket_right_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(65)])
             .split(main_chunks[1]);
 
-        let issues_description = issues_left_chunks[0];
-        let issues_updates = issues_left_chunks[1];
-
+        let ticket_description = ticket_left_chunks[0];
+        let ticket_updates = ticket_left_chunks[1];
 
         Ok(())
     }
@@ -89,8 +91,9 @@ impl App {
         // todo!("This needs to be filled");
     }
 
-    pub async fn update_issues(&self) -> anyhow::Result<()> {
-        // if let Some(project) = self.projects.selected_project() 
+    pub async fn update_tickets(&self, project_key: &str) -> anyhow::Result<()> {
+        // if let Some(project) = self.projects.selected_project()
+        self.tickets.update(&self.jira.db, &self.jira.auth, project_key, &self.jira.tickets).await?;
         todo!("create update issues method to force updates from client");
     }
 
@@ -109,12 +112,14 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
-                if key == self.config.key_config.enter {
-                    self.update_issues().await?;
-                    return Ok(EventState::Consumed)
+                if let Some(project) = self.projects.selected_project() {
+                    if key == self.config.key_config.enter {
+                        self.update_tickets(&project.key).await?;
+                        return Ok(EventState::Consumed);
+                    }
                 }
             }
-            Focus::Issues => {
+            Focus::Tickets => {
                 todo!("Need to return an issues list");
             }
         }
@@ -131,11 +136,11 @@ impl App {
         match self.focus {
             Focus::Projects => {
                 if key == self.config.key_config.enter {
-                    self.focus = Focus::Issues;
+                    self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
             }
-            Focus::Issues => {
+            Focus::Tickets => {
                 todo!("Add keys for issues");
                 // if key == self.config.key_config.enter {
                 //

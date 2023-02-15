@@ -1,8 +1,7 @@
+use super::SurrealAny;
 use super::auth::JiraAuth;
 use log::info;
 use serde::{Deserialize, Serialize};
-use surrealdb::engine::any::Any;
-use surrealdb::Surreal;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Project {
@@ -19,8 +18,8 @@ pub struct JiraProjects {
 }
 
 impl JiraProjects {
-    pub async fn new(jira_auth: &JiraAuth, db: &Surreal<Any>) -> anyhow::Result<Self> {
-        let projects = Self::get_jira_projects(jira_auth, db).await?;
+    pub async fn new(jira_auth: &JiraAuth, db: &SurrealAny) -> anyhow::Result<Self> {
+        let projects = Self::get_jira_projects(db, jira_auth).await?;
         Ok(Self {
             is_last: Some(true), // TODO: Will need to refactor to handle pagination
             next_page: None,     // TODO: Will need to refactor to handle pagination
@@ -44,8 +43,8 @@ impl JiraProjects {
 
     // TODO: handle pagination
     pub async fn save_jira_projects(
+        db: &SurrealAny,
         jira_auth: &JiraAuth,
-        db: &Surreal<Any>,
     ) -> anyhow::Result<Vec<Project>> {
         let resp = Self::get_projects_from_jira_api(jira_auth).await?;
         let resp_slice: &str = &resp[..];
@@ -61,10 +60,13 @@ impl JiraProjects {
         Ok(object.values)
     }
 
-    pub async fn get_jira_projects(jira_auth: &JiraAuth, db: &Surreal<Any>) -> anyhow::Result<Vec<Project>> {
+    pub async fn get_jira_projects(
+        db: &SurrealAny,
+        jira_auth: &JiraAuth,
+    ) -> anyhow::Result<Vec<Project>> {
         let projects: Vec<Project> = db.select("project").await?;
         if projects.is_empty() {
-            return Ok(Self::save_jira_projects(jira_auth, db).await?);
+            return Ok(Self::save_jira_projects(db, jira_auth).await?);
         }
         info!("{projects:?}");
         Ok(projects)

@@ -95,7 +95,8 @@ impl StatefulDrawableComponent for ProjectsComponent {
         let prjs = &self.projects;
         let mut projects: Vec<ListItem> = Vec::new();
         for p in prjs {
-            projects.push(ListItem::new(vec![Spans::from(Span::raw(&p.key))]).style(Style::default()))
+            projects
+                .push(ListItem::new(vec![Spans::from(Span::raw(&p.key))]).style(Style::default()))
         }
 
         let projects_block = List::new(projects)

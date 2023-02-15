@@ -1,3 +1,6 @@
+use surrealdb::Surreal;
+use surrealdb::Error as SurrealDbError;
+use surrealdb::engine::any::Any;
 use tui::{
     backend::Backend,
     layout::Rect,
@@ -7,32 +10,34 @@ use tui::{
     Frame,
 };
 
-use crate::{config::KeyConfig, event::key::Key, jira::issue::TicketData};
+use crate::{config::KeyConfig, event::key::Key, jira::{issue::{TicketData, JiraTickets}, auth::JiraAuth}};
 
 use super::{commands::CommandInfo, Component, EventState, StatefulDrawableComponent};
 
-pub struct IssuesComponent {
-    issues: Vec<TicketData>,
-    state: ListState,
+type SurrealAny = Surreal<Any>;
+
+pub struct TicketComponent {
     key_config: KeyConfig,
+    state: ListState,
+    ticket: Vec<TicketData>,
 }
 
-impl IssuesComponent {
+impl TicketComponent {
     pub fn new(key_config: KeyConfig) -> Self {
         let mut state = ListState::default();
 
         return Self {
             state,
-            issues: vec![],
+            ticket: vec![],
             key_config,
         };
     }
 
-    pub fn next_issues(&mut self, line: usize) {
+    pub fn next_ticket(&mut self, line: usize) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i + line >= self.issues.len() {
-                    Some(self.issues.len() - 1)
+                if i + line >= self.ticket.len() {
+                    Some(self.ticket.len() - 1)
                 } else {
                     Some(i + line)
                 }
@@ -43,7 +48,7 @@ impl IssuesComponent {
         self.state.select(i);
     }
 
-    pub fn previous_issues(&mut self, line: usize) {
+    pub fn previous_ticket(&mut self, line: usize) {
         let i = match self.state.selected() {
             Some(i) => {
                 if i <= line {
@@ -59,28 +64,39 @@ impl IssuesComponent {
     }
 
     pub fn go_to_top(&mut self) {
-        if self.issues.is_empty() {
+        if self.ticket.is_empty() {
             return;
         }
         self.state.select(Some(0));
     }
 
     pub fn go_to_bottom(&mut self) {
-        if self.issues.is_empty() {
+        if self.ticket.is_empty() {
             return;
         }
-        self.state.select(Some(self.issues.len() - 1));
+        self.state.select(Some(self.ticket.len() - 1));
     }
 
-    pub fn selected_issues(&self) -> Option<&TicketData> {
+    pub fn selected_ticket(&self) -> Option<&TicketData> {
         match self.state.selected() {
-            Some(i) => self.issues.get(i),
+            Some(i) => self.ticket.get(i),
             None => None,
         }
     }
+
+    pub async fn update(
+        &self,
+        db: &SurrealAny,
+        jira_auth: &JiraAuth,
+        project_key: &str,
+        ticket: &JiraTickets,
+        ) -> Result<Vec<TicketData>, SurrealDbError> {
+        let update_ticket = ticket.get_jira_tickets(db, jira_auth, project_key).await?;
+        Ok(update_ticket)
+    }
 }
 
-impl StatefulDrawableComponent for IssuesComponent {
+impl StatefulDrawableComponent for TicketComponent {
     fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
@@ -89,13 +105,13 @@ impl StatefulDrawableComponent for IssuesComponent {
     ) -> anyhow::Result<()> {
         let width = 80;
         let height = 20;
-        let isus = &self.issues;
-        let mut issues: Vec<ListItem> = Vec::new();
+        let isus = &self.ticket;
+        let mut tickets: Vec<ListItem> = Vec::new();
         for i in isus {
-            issues.push(ListItem::new(vec![Spans::from(Span::raw(&i.key))]).style(Style::default()))
+            tickets.push(ListItem::new(vec![Spans::from(Span::raw(&i.key))]).style(Style::default()))
         }
 
-        let issues_block = List::new(issues)
+        let ticket_block = List::new(tickets)
             .block(Block::default().borders(Borders::ALL).title("Issues"))
             .highlight_style(Style::default().bg(Color::Blue))
             .style(Style::default());
@@ -108,27 +124,27 @@ impl StatefulDrawableComponent for IssuesComponent {
         );
 
         f.render_widget(Clear, area);
-        f.render_stateful_widget(issues_block, area, &mut self.state);
+        f.render_stateful_widget(ticket_block, area, &mut self.state);
 
         Ok(())
     }
 }
 
-impl Component for IssuesComponent {
+impl Component for TicketComponent {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
-            self.next_issues(1);
+            self.next_ticket(1);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_up {
-            self.previous_issues(1);
+            self.previous_ticket(1);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_down_multiple_lines {
-            self.next_issues(10);
+            self.next_ticket(10);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_up_multiple_lines {
-            self.previous_issues(10);
+            self.previous_ticket(10);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_bottom {
             self.go_to_bottom();
