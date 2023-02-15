@@ -90,6 +90,7 @@ impl App {
     }
 
     pub async fn update_issues(&self) -> anyhow::Result<()> {
+        // if let Some(project) = self.projects.selected_project() 
         todo!("create update issues method to force updates from client");
     }
 

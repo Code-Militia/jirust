@@ -20,7 +20,7 @@ pub struct JiraProjects {
 
 impl JiraProjects {
     pub async fn new(jira_auth: &JiraAuth, db: &Surreal<Any>) -> anyhow::Result<Self> {
-        let projects = Self::save_jira_projects(jira_auth, db).await?;
+        let projects = Self::get_jira_projects(jira_auth, db).await?;
         Ok(Self {
             is_last: Some(true), // TODO: Will need to refactor to handle pagination
             next_page: None,     // TODO: Will need to refactor to handle pagination
@@ -61,8 +61,11 @@ impl JiraProjects {
         Ok(object.values)
     }
 
-    pub async fn get_jira_projects(db: &Surreal<Any>) -> anyhow::Result<Vec<Project>> {
+    pub async fn get_jira_projects(jira_auth: &JiraAuth, db: &Surreal<Any>) -> anyhow::Result<Vec<Project>> {
         let projects: Vec<Project> = db.select("project").await?;
+        if projects.is_empty() {
+            return Ok(Self::save_jira_projects(jira_auth, db).await?);
+        }
         info!("{projects:?}");
         Ok(projects)
     }
