@@ -1,4 +1,5 @@
-use crate::components::issues::TicketComponent;
+use crate::components::DrawableComponent;
+use crate::components::tickets::TicketComponent;
 use crate::{components::projects::ProjectsComponent, jira::Jira};
 use crate::{
     components::{error::ErrorComponent, Component, EventState, StatefulDrawableComponent},
@@ -72,8 +73,10 @@ impl App {
             .constraints([Constraint::Percentage(65)])
             .split(main_chunks[1]);
 
-        let ticket_description = ticket_left_chunks[0];
-        let ticket_updates = ticket_left_chunks[1];
+        let ticket_description = ticket_right_chunks[0];
+        let ticket_updates = ticket_right_chunks[1];
+
+        self.tickets.draw(f, ticket_list, matches!(self.focus, Focus::Tickets))?;
 
         Ok(())
     }

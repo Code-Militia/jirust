@@ -1,6 +1,7 @@
 pub mod commands;
 pub mod error;
-pub mod issues;
+pub mod tickets;
+pub mod tickets_metadata;
 pub mod projects;
 
 use commands::CommandInfo;

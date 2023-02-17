@@ -6,12 +6,12 @@ pub type SurrealAny = Surreal<Any>;
 
 use self::{
     auth::{jira_authentication, JiraAuth},
-    issue::JiraTickets,
+    tickets::JiraTickets,
     projects::JiraProjects,
 };
 
 pub mod auth;
-pub mod issue;
+pub mod tickets;
 pub mod projects;
 
 pub struct Jira {
