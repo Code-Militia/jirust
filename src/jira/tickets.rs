@@ -47,18 +47,18 @@ pub struct JiraTickets {
     start_at: Option<i32>,
     max_results: Option<i32>,
     total: Option<i32>,
-    tickets: Vec<TicketData>,
+    issues: Vec<TicketData>,
 }
 
 // TODO: handle pagination
 impl JiraTickets {
     pub async fn new() -> anyhow::Result<Self> {
-        let tickets = Vec::new();
+        let issues = Vec::new();
         Ok(Self {
             start_at: None,
             max_results: None,
             total: None,
-            tickets,
+            issues,
         })
     }
 
@@ -93,11 +93,11 @@ impl JiraTickets {
         let resp_slice: &str = &resp[..];
         let object: JiraTickets =
             serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
-        for ticket in object.tickets.iter() {
-            let issue_insert = db.create(("tickets", &ticket.key)).content(ticket).await?;
-            info!("{issue_insert:?}");
+        for ticket in object.issues.iter() {
+            let issue_insert: TicketData = db.create(("tickets", &ticket.key)).content(&ticket).await?;
+            info!("Creating ticket inside db -- {issue_insert:?}");
         }
-        Ok(object.tickets)
+        Ok(object.issues)
     }
 
     pub async fn get_jira_tickets(

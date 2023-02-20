@@ -1,4 +1,3 @@
-use crate::components::DrawableComponent;
 use crate::components::tickets::TicketComponent;
 use crate::{components::projects::ProjectsComponent, jira::Jira};
 use crate::{
@@ -6,11 +5,17 @@ use crate::{
     config::{Config, KeyConfig},
     event::key::Key,
 };
+use log::info;
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
     Frame,
 };
+
+pub enum LoadState {
+    Complete,
+    Loading
+}
 
 pub enum Focus {
     Projects,
@@ -20,6 +25,7 @@ pub enum Focus {
 pub struct App {
     focus: Focus,
     jira: Jira,
+    load_state: LoadState,
     projects: ProjectsComponent,
     tickets: TicketComponent,
     pub config: Config,
@@ -36,6 +42,7 @@ impl App {
             error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,
             jira,
+            load_state: LoadState::Complete,
             tickets: TicketComponent::new(config.key_config.clone()),
             projects: ProjectsComponent::new(projects, config.key_config.clone()),
         })
@@ -45,9 +52,7 @@ impl App {
         if let Focus::Projects = self.focus {
             self.projects.draw(
                 f,
-                Layout::default()
-                    .constraints([Constraint::Percentage(100)])
-                    .split(f.size())[0],
+                f.size(),
                 false,
             )?;
 
@@ -57,26 +62,35 @@ impl App {
 
         let main_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(30), Constraint::Percentage(100)])
+            .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
             .split(f.size());
+
+        info!("main chunks -- {:?}", main_chunks);
 
         let ticket_left_chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(40)])
+            .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
             .split(main_chunks[0]);
+
+        info!("ticket left chunks -- {:?}", ticket_left_chunks);
 
         let ticket_list = ticket_left_chunks[0];
         let ticket_metadata = ticket_left_chunks[1];
 
         let ticket_right_chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(65)])
+            .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
             .split(main_chunks[1]);
 
-        let ticket_description = ticket_right_chunks[0];
-        let ticket_updates = ticket_right_chunks[1];
+        info!("ticket right chunks -- {:?}", ticket_right_chunks);
+
+        // let ticket_description = ticket_right_chunks[0];
+        // let ticket_worklog = ticket_right_chunks[1];
 
         self.tickets.draw(f, ticket_list, matches!(self.focus, Focus::Tickets))?;
+        self.tickets.draw_metadata(f, ticket_metadata)?;
+        // self.tickets.draw_description(f, ticket_description)?;
+        // self.tickets.draw_work_log(f, ticket_worklog)?;
 
         Ok(())
     }
@@ -94,10 +108,15 @@ impl App {
         // todo!("This needs to be filled");
     }
 
-    pub async fn update_tickets(&self, project_key: &str) -> anyhow::Result<()> {
+    pub async fn update_tickets(&mut self) -> anyhow::Result<()> {
         // if let Some(project) = self.projects.selected_project()
-        self.tickets.update(&self.jira.db, &self.jira.auth, project_key, &self.jira.tickets).await?;
-        todo!("create update issues method to force updates from client");
+        let project = self.projects.selected_project().unwrap(); // TODO: Refactor to handle
+                                                                 // possible panic
+        info!("Selected project -- {:?}", &project.key);
+        self.tickets.update(&self.jira.db, &self.jira.auth, &mut self.load_state, &project.key, &self.jira.tickets).await?;
+        info!("Tickets returned from jira -- {:?}", self.tickets);
+        self.focus = Focus::Tickets;
+        Ok(())
     }
 
     pub async fn component_event(&mut self, key: Key) -> anyhow::Result<EventState> {
@@ -115,15 +134,15 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
-                if let Some(project) = self.projects.selected_project() {
-                    if key == self.config.key_config.enter {
-                        self.update_tickets(&project.key).await?;
-                        return Ok(EventState::Consumed);
-                    }
+                if key == self.config.key_config.enter {
+                    self.update_tickets().await?;
+                    return Ok(EventState::Consumed);
                 }
             }
             Focus::Tickets => {
-                todo!("Need to return an issues list");
+                if self.tickets.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
             }
         }
 
@@ -144,10 +163,7 @@ impl App {
                 }
             }
             Focus::Tickets => {
-                todo!("Add keys for issues");
-                // if key == self.config.key_config.enter {
-                //
-                // }
+                return Ok(EventState::NotConsumed)
             }
         }
         return Ok(EventState::NotConsumed);

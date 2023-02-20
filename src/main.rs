@@ -5,8 +5,9 @@ mod event;
 mod jira;
 mod jtui;
 
-mod log;
+// mod log;
 
+use log::{debug, error, log_enabled, info, Level};
 use crate::event::event::Event;
 use anyhow;
 use app::App;
@@ -14,11 +15,30 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
+use serde::{Deserialize, Serialize};
 use std::io;
 use tui::{backend::CrosstermBackend, Terminal};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    env_logger::init();
+
+    // use surrealdb::engine::any::connect;
+    // #[derive(Debug, Deserialize, Serialize)]
+    // struct T1 {
+    //     tf: i32
+    // } 
+    // let db = connect("mem://").await?;
+    // db.use_ns("noc").use_db("database").await?;
+    // for n in 1..10000 {
+    //     let c: T1 = db.create(("T1", n)).content(T1 {
+    //         tf: n
+    //     }).await?;
+    //     info!("Db create test -- ${:?}", c);
+    // }
+    // let v: Vec<T1>  = db.select("T1").await?;
+    // info!("Db select test -- ${:?}", v);
+
     let config = config::Config::new().unwrap();
 
     setup_terminal()?;
@@ -34,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
     loop {
         terminal.draw(|f| {
             if let Err(err) = app.draw(f) {
-                outln!(config #Error, "error: {}", err.to_string());
+                // outln!(config #Error, "error: {}", err.to_string());
                 std::process::exit(1);
             }
         })?;

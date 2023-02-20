@@ -27,6 +27,7 @@ chrono = "0.4.23"
 anyhow = "1.0.68"
 async-trait = "0.1.64"
 structopt = "0.3.26"
+env_logger = "0.10.0"
 # async-recursion = "1.0.0"
 # rusqlite = "0.28.0"
 

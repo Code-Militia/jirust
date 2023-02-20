@@ -1,13 +1,12 @@
 pub mod commands;
 pub mod error;
 pub mod tickets;
-pub mod tickets_metadata;
 pub mod projects;
 
 use commands::CommandInfo;
 
 use async_trait::async_trait;
-use tui::{backend::Backend, layout::Rect, Frame};
+use tui::{backend::Backend, layout::{Rect, Layout}, Frame};
 
 #[derive(PartialEq, Debug)]
 pub enum EventState {
@@ -34,6 +33,13 @@ impl From<bool> for EventState {
 pub trait DrawableComponent {
     fn draw<B: Backend>(&self, f: &mut Frame<B>, rect: Rect, focused: bool) -> anyhow::Result<()>;
 }
+
+// pub trait TicketDrawableComponent {
+//     fn draw<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect, focused: bool) -> anyhow::Result<()>;
+//     fn draw_metadata<B: Backend>(&self, f: &mut Frame<B>, rect: Rect) -> anyhow::Result<()>;
+//     fn draw_description<B: Backend>(&self, f: &mut Frame<B>, rect: Rect) -> anyhow::Result<()>;
+//     fn draw_work_log<B: Backend>(&self, f: &mut Frame<B>, rect: Rect) -> anyhow::Result<()>;
+// }
 
 pub trait StatefulDrawableComponent {
     fn draw<B: Backend>(

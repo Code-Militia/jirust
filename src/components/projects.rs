@@ -87,11 +87,9 @@ impl StatefulDrawableComponent for ProjectsComponent {
     fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
-        _rect: Rect,
+        rect: Rect,
         _focused: bool,
     ) -> anyhow::Result<()> {
-        let width = 80;
-        let height = 20;
         let prjs = &self.projects;
         let mut projects: Vec<ListItem> = Vec::new();
         for p in prjs {
@@ -104,15 +102,8 @@ impl StatefulDrawableComponent for ProjectsComponent {
             .highlight_style(Style::default().bg(Color::Blue))
             .style(Style::default());
 
-        let area = Rect::new(
-            (f.size().width.saturating_sub(width)) / 2,
-            (f.size().height.saturating_sub(height)) / 2,
-            width.min(f.size().width),
-            height.min(f.size().height),
-        );
-
-        f.render_widget(Clear, area);
-        f.render_stateful_widget(projects_block, area, &mut self.state);
+        f.render_widget(Clear, rect);
+        f.render_stateful_widget(projects_block, rect, &mut self.state);
 
         Ok(())
     }

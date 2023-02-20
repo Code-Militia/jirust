@@ -1,70 +1,97 @@
+use log::info;
 use surrealdb::Surreal;
-use surrealdb::Error as SurrealDbError;
 use surrealdb::engine::any::Any;
 use tui::{
     backend::Backend,
     layout::Rect,
     style::{Color, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Clear, List, ListItem, ListState},
+    widgets::{Block, Borders, List, ListItem, ListState, Clear},
     Frame,
 };
 
+use crate::app::LoadState;
 use crate::{config::KeyConfig, event::key::Key, jira::{tickets::{TicketData, JiraTickets}, auth::JiraAuth}};
 
-use super::DrawableComponent;
+// use super::DrawableComponent;
+// use super::StatefulDrawableComponent;
 use super::{commands::CommandInfo, Component, EventState};
 
 type SurrealAny = Surreal<Any>;
 
+#[derive(Debug)]
 pub struct TicketComponent {
     key_config: KeyConfig,
     state: ListState,
-    ticket: Vec<TicketData>,
+    tickets: Vec<TicketData>,
 }
 
-impl DrawableComponent for TicketComponent {
-    fn draw<B: Backend>(
-        &self,
+impl TicketComponent {
+    pub fn draw<B: Backend>(
+        &mut self,
         f: &mut Frame<B>,
-        _rect: Rect,
+        rect: Rect,
         _focused: bool,
     ) -> anyhow::Result<()> {
-        let width = 80;
-        let height = 20;
-        let tckts = &self.ticket;
+        let tckts = &self.tickets;
         let mut tickets: Vec<ListItem> = Vec::new();
         for i in tckts {
             tickets.push(ListItem::new(vec![Spans::from(Span::raw(&i.key))]).style(Style::default()))
         }
 
-        let ticket_block = List::new(tickets)
+        let ticket_list_block = List::new(tickets)
             .block(Block::default().borders(Borders::ALL).title("Tickets"))
             .highlight_style(Style::default().bg(Color::Blue))
             .style(Style::default());
 
-        let area = Rect::new(
-            (f.size().width.saturating_sub(width)) / 2,
-            (f.size().height.saturating_sub(height)) / 2,
-            width.min(f.size().width),
-            height.min(f.size().height),
-        );
-
-        f.render_widget(Clear, area);
-        // f.render_stateful_widget(ticket_block, area, &mut self.state);
+        f.render_widget(Clear, rect);
+        f.render_stateful_widget(ticket_list_block, rect, &mut self.state);
 
         Ok(())
     }
+
+    pub fn draw_metadata<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect) -> anyhow::Result<()> {
+        f.render_widget(Clear, rect);
+
+        let ticket = match self.state.selected().and_then(|i| self.tickets.get(i)) {
+            None => return Ok(()),
+            Some(ticket_data) => ticket_data
+        };
+
+        let labels: Vec<_> = ticket.fields.labels.iter()
+            .map(|label| {
+                ListItem::new(label.as_str())
+            })
+            .collect();
+
+        let labels_block = List::new(labels)
+            .block(Block::default().borders(Borders::ALL).title("Labels"))
+            .highlight_style(Style::default().bg(Color::Blue));
+
+        f.render_stateful_widget(labels_block, rect, &mut self.state);
+
+        Ok(()) 
+    }
+    //
+    // fn draw_work_log<B: Backend>(&self, f: &mut Frame<B>, _rect: Rect) -> anyhow::Result<()> {
+    //     Ok(())
+    // }
+    //
+    // fn draw_description<B: Backend>(&self, f: &mut Frame<B>, _rect: Rect) -> anyhow::Result<()> {
+    //     Ok(()) 
+    // }
+
 }
 
 
 impl TicketComponent {
     pub fn new(key_config: KeyConfig) -> Self {
         let mut state = ListState::default();
+        state.select(Some(0));
 
         return Self {
             state,
-            ticket: vec![],
+            tickets: vec![],
             key_config,
         };
     }
@@ -72,8 +99,8 @@ impl TicketComponent {
     pub fn next_ticket(&mut self, line: usize) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i + line >= self.ticket.len() {
-                    Some(self.ticket.len() - 1)
+                if i + line >= self.tickets.len() {
+                    Some(self.tickets.len() - 1)
                 } else {
                     Some(i + line)
                 }
@@ -100,35 +127,40 @@ impl TicketComponent {
     }
 
     pub fn go_to_top(&mut self) {
-        if self.ticket.is_empty() {
+        if self.tickets.is_empty() {
             return;
         }
         self.state.select(Some(0));
     }
 
     pub fn go_to_bottom(&mut self) {
-        if self.ticket.is_empty() {
+        if self.tickets.is_empty() {
             return;
         }
-        self.state.select(Some(self.ticket.len() - 1));
+        self.state.select(Some(self.tickets.len() - 1));
     }
 
     pub fn selected_ticket(&self) -> Option<&TicketData> {
         match self.state.selected() {
-            Some(i) => self.ticket.get(i),
+            Some(i) => self.tickets.get(i),
             None => None,
         }
     }
 
     pub async fn update(
-        &self,
+        &mut self,
         db: &SurrealAny,
         jira_auth: &JiraAuth,
+        load_state: &mut LoadState,
         project_key: &str,
         ticket: &JiraTickets,
-        ) -> Result<Vec<TicketData>, SurrealDbError> {
-        let update_ticket = ticket.get_jira_tickets(db, jira_auth, project_key).await?;
-        Ok(update_ticket)
+        ) -> anyhow::Result<()> {
+        // Call self.load_state = LoadState::loading
+        *load_state = LoadState::Loading;
+        self.tickets = ticket.get_jira_tickets(db, jira_auth, project_key).await?;
+        // Chekc to see if there is a return from JIRA or DB and change state to complete
+        info!("Calling tickets update componeent {:?}", self.tickets);
+        Ok(())
     }
 }
 

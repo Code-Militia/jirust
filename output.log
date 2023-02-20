@@ -1,54 +1,260 @@
-[2023-02-11][16:24:11][surrealdb::kvs][INFO] Starting kvs store in memory
-[2023-02-11][16:24:11][surrealdb::kvs][INFO] Started kvs store in memory
-[2023-02-11][16:24:11][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
-[2023-02-11][16:24:12][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
-[2023-02-11][16:24:12][jirust::jira::projects][INFO] Hello from insert Project { key: "NVIM", name: "NVIM" }
-[2023-02-11][16:24:12][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
-[2023-02-11][16:24:12][jirust::jira::projects][INFO] Hello from insert Project { key: "OPS", name: "DevOps" }
-[2023-02-11][16:24:12][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
-[2023-02-11][16:24:12][jirust::jira::projects][INFO] Hello from insert Project { key: "RUST", name: "Rust" }
-[2023-02-11][17:38:54][surrealdb::kvs][INFO] Starting kvs store in memory
-[2023-02-11][17:38:54][surrealdb::kvs][INFO] Started kvs store in memory
-[2023-02-11][17:38:54][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
-[2023-02-11][17:38:55][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
-[2023-02-11][17:38:55][jirust::jira::projects][INFO] Project { key: "NVIM", name: "NVIM" }
-[2023-02-11][17:38:55][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
-[2023-02-11][17:38:55][jirust::jira::projects][INFO] Project { key: "OPS", name: "DevOps" }
-[2023-02-11][17:38:55][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
-[2023-02-11][17:38:55][jirust::jira::projects][INFO] Project { key: "RUST", name: "Rust" }
-[2023-02-11][17:39:12][surrealdb::kvs][INFO] Starting kvs store in memory
-[2023-02-11][17:39:12][surrealdb::kvs][INFO] Started kvs store in memory
-[2023-02-11][17:39:12][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
-[2023-02-11][17:39:13][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
-[2023-02-11][17:39:13][jirust::jira::projects][INFO] Project { key: "NVIM", name: "NVIM" }
-[2023-02-11][17:39:13][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
-[2023-02-11][17:39:13][jirust::jira::projects][INFO] Project { key: "OPS", name: "DevOps" }
-[2023-02-11][17:39:13][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
-[2023-02-11][17:39:13][jirust::jira::projects][INFO] Project { key: "RUST", name: "Rust" }
-[2023-02-11][17:47:17][surrealdb::kvs][INFO] Starting kvs store in memory
-[2023-02-11][17:47:17][surrealdb::kvs][INFO] Started kvs store in memory
-[2023-02-11][17:47:17][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
-[2023-02-11][17:47:18][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
-[2023-02-11][17:47:18][jirust::jira::projects][INFO] Project { key: "NVIM", name: "NVIM" }
-[2023-02-11][17:47:18][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
-[2023-02-11][17:47:18][jirust::jira::projects][INFO] Project { key: "OPS", name: "DevOps" }
-[2023-02-11][17:47:18][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
-[2023-02-11][17:47:18][jirust::jira::projects][INFO] Project { key: "RUST", name: "Rust" }
-[2023-02-11][17:49:43][surrealdb::kvs][INFO] Starting kvs store in memory
-[2023-02-11][17:49:43][surrealdb::kvs][INFO] Started kvs store in memory
-[2023-02-11][17:49:43][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
-[2023-02-11][17:49:43][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
-[2023-02-11][17:49:43][jirust::jira::projects][INFO] Project { key: "NVIM", name: "NVIM" }
-[2023-02-11][17:49:43][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
-[2023-02-11][17:49:43][jirust::jira::projects][INFO] Project { key: "OPS", name: "DevOps" }
-[2023-02-11][17:49:43][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
-[2023-02-11][17:49:43][jirust::jira::projects][INFO] Project { key: "RUST", name: "Rust" }
-[2023-02-11][17:52:03][surrealdb::kvs][INFO] Starting kvs store in memory
-[2023-02-11][17:52:03][surrealdb::kvs][INFO] Started kvs store in memory
-[2023-02-11][17:52:03][reqwest::connect][DEBUG] starting new connection: https://d2cloud.atlassian.net/
-[2023-02-11][17:52:04][surrealdb::dbs][DEBUG] Executing: CREATE project:NVIM CONTENT { key: 'NVIM', name: 'NVIM' } RETURN AFTER
-[2023-02-11][17:52:04][jirust::jira::projects][INFO] Project { key: "NVIM", name: "NVIM" }
-[2023-02-11][17:52:04][surrealdb::dbs][DEBUG] Executing: CREATE project:OPS CONTENT { key: 'OPS', name: 'DevOps' } RETURN AFTER
-[2023-02-11][17:52:04][jirust::jira::projects][INFO] Project { key: "OPS", name: "DevOps" }
-[2023-02-11][17:52:04][surrealdb::dbs][DEBUG] Executing: CREATE project:RUST CONTENT { key: 'RUST', name: 'Rust' } RETURN AFTER
-[2023-02-11][17:52:04][jirust::jira::projects][INFO] Project { key: "RUST", name: "Rust" }
+warning: unused import: `KeyConfig`
+ --> src/app.rs:6:22
+  |
+6 |     config::{Config, KeyConfig},
+  |                      ^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `surrealdb::Error as SurrealDbError`
+ --> src/components/tickets.rs:2:5
+  |
+2 | use surrealdb::Error as SurrealDbError;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Clear`
+ --> src/components/tickets.rs:9:31
+  |
+9 |     widgets::{Block, Borders, Clear, List, ListItem, ListState},
+  |                               ^^^^^
+
+warning: unused import: `Layout`
+ --> src/components.rs:9:44
+  |
+9 | use tui::{backend::Backend, layout::{Rect, Layout}, Frame};
+  |                                            ^^^^^^
+
+warning: unused imports: `Deserialize`, `Serialize`
+ --> src/jira/auth.rs:2:13
+  |
+2 | use serde::{Deserialize, Serialize};
+  |             ^^^^^^^^^^^  ^^^^^^^^^
+
+warning: unused import: `collections::HashMap`
+ --> src/jira/auth.rs:3:11
+  |
+3 | use std::{collections::HashMap, env};
+  |           ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Event as CEvent`, `self`
+ --> src/jtui/issues.rs:1:24
+  |
+1 | use crossterm::event::{self, Event as CEvent};
+  |                        ^^^^  ^^^^^^^^^^^^^^^
+
+warning: unused import: `crossterm::terminal::enable_raw_mode`
+ --> src/jtui/issues.rs:2:5
+  |
+2 | use crossterm::terminal::enable_raw_mode;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::io`
+ --> src/jtui/issues.rs:3:5
+  |
+3 | use std::io;
+  |     ^^^^^^^
+
+warning: unused imports: `Duration`, `Instant`, `sync::mpsc`, `thread`
+ --> src/jtui/issues.rs:5:5
+  |
+5 |     sync::mpsc,
+  |     ^^^^^^^^^^
+6 |     thread,
+  |     ^^^^^^
+7 |     time::{Duration, Instant},
+  |            ^^^^^^^^  ^^^^^^^
+
+warning: unused imports: `Terminal`, `backend::CrosstermBackend`
+  --> src/jtui/issues.rs:10:5
+   |
+10 |     backend::CrosstermBackend,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+15 |     Terminal,
+   |     ^^^^^^^^
+
+warning: unused imports: `Level`, `debug`, `error`, `info`, `log_enabled`
+  --> src/main.rs:10:11
+   |
+10 | use log::{debug, error, log_enabled, info, Level};
+   |           ^^^^^  ^^^^^  ^^^^^^^^^^^  ^^^^  ^^^^^
+
+warning: unused variable: `f`
+  --> src/components/tickets.rs:59:41
+   |
+59 |     fn draw_metadata<B: Backend>(&self, f: &mut Frame<B>, _rect: Rect) -> anyhow::Result<()> {
+   |                                         ^ help: if this is intentional, prefix it with an underscore: `_f`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `f`
+  --> src/components/tickets.rs:63:41
+   |
+63 |     fn draw_work_log<B: Backend>(&self, f: &mut Frame<B>, _rect: Rect) -> anyhow::Result<()> {
+   |                                         ^ help: if this is intentional, prefix it with an underscore: `_f`
+
+warning: unused variable: `f`
+  --> src/components/tickets.rs:67:44
+   |
+67 |     fn draw_description<B: Backend>(&self, f: &mut Frame<B>, _rect: Rect) -> anyhow::Result<()> {
+   |                                            ^ help: if this is intentional, prefix it with an underscore: `_f`
+
+warning: unused variable: `err`
+  --> src/main.rs:38:24
+   |
+38 |             if let Err(err) = app.draw(f) {
+   |                        ^^^ help: if this is intentional, prefix it with an underscore: `_err`
+
+warning: variable does not need to be mutable
+  --> src/components/tickets.rs:76:13
+   |
+76 |         let mut state = ListState::default();
+   |             ----^^^^^
+   |             |
+   |             help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` on by default
+
+warning: static `CMD_GROUP_GENERAL` is never used
+ --> src/components/commands.rs:3:8
+  |
+3 | static CMD_GROUP_GENERAL: &str = "-- General --";
+  |        ^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: static `CMD_GROUP_TABLE` is never used
+ --> src/components/commands.rs:4:8
+  |
+4 | static CMD_GROUP_TABLE: &str = "-- Table --";
+  |        ^^^^^^^^^^^^^^^
+
+warning: static `CMD_GROUP_DATABASES` is never used
+ --> src/components/commands.rs:5:8
+  |
+5 | static CMD_GROUP_DATABASES: &str = "-- Databases --";
+  |        ^^^^^^^^^^^^^^^^^^^
+
+warning: static `CMD_GROUP_PROPERTIES` is never used
+ --> src/components/commands.rs:6:8
+  |
+6 | static CMD_GROUP_PROPERTIES: &str = "-- Properties --";
+  |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `scroll` is never used
+  --> src/components/commands.rs:35:8
+   |
+35 | pub fn scroll(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^
+
+warning: function `scroll_up_down_multiple_lines` is never used
+  --> src/components/commands.rs:45:8
+   |
+45 | pub fn scroll_up_down_multiple_lines(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `scroll_to_top_bottom` is never used
+  --> src/components/commands.rs:55:8
+   |
+55 | pub fn scroll_to_top_bottom(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `expand_collapse` is never used
+  --> src/components/commands.rs:65:8
+   |
+65 | pub fn expand_collapse(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^^^^^^
+
+warning: function `filter` is never used
+  --> src/components/commands.rs:72:8
+   |
+72 | pub fn filter(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^
+
+warning: function `move_focus` is never used
+  --> src/components/commands.rs:76:8
+   |
+76 | pub fn move_focus(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^
+
+warning: function `extend_selection_by_one_cell` is never used
+  --> src/components/commands.rs:86:8
+   |
+86 | pub fn extend_selection_by_one_cell(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `extend_or_shorten_widget_width` is never used
+  --> src/components/commands.rs:99:8
+   |
+99 | pub fn extend_or_shorten_widget_width(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `help` is never used
+   --> src/components/commands.rs:169:8
+    |
+169 | pub fn help(key_config: &KeyConfig) -> CommandText {
+    |        ^^^^
+
+warning: function `exit_pop_up` is never used
+   --> src/components/commands.rs:176:8
+    |
+176 | pub fn exit_pop_up(key_config: &KeyConfig) -> CommandText {
+    |        ^^^^^^^^^^^
+
+warning: associated function `new` is never used
+  --> src/components/commands.rs:16:18
+   |
+16 |     pub const fn new(name: String, group: &'static str) -> Self {
+   |                  ^^^
+
+warning: associated function `new` is never used
+  --> src/components/commands.rs:30:18
+   |
+30 |     pub const fn new(text: CommandText) -> Self {
+   |                  ^^^
+
+warning: associated function `selected_ticket` is never used
+   --> src/components/tickets.rs:129:12
+    |
+129 |     pub fn selected_ticket(&self) -> Option<&TicketData> {
+    |            ^^^^^^^^^^^^^^^
+
+warning: associated function `set_domain` is never used
+  --> src/jira/auth.rs:12:12
+   |
+12 |     pub fn set_domain(&mut self, url: String) {
+   |            ^^^^^^^^^^
+
+warning: associated function `set_api_version` is never used
+  --> src/jira/auth.rs:16:12
+   |
+16 |     pub fn set_api_version(&mut self, api_version: String) {
+   |            ^^^^^^^^^^^^^^^
+
+warning: associated function `set_api_key` is never used
+  --> src/jira/auth.rs:20:12
+   |
+20 |     pub fn set_api_key(&mut self, jira_api_key: String) {
+   |            ^^^^^^^^^^^
+
+warning: function `render_home` is never used
+ --> src/jtui/home.rs:8:8
+  |
+8 | pub fn render_home<'a>() -> Paragraph<'a> {
+  |        ^^^^^^^^^^^
+
+warning: function `render_issues` is never used
+  --> src/jtui/issues.rs:72:8
+   |
+72 | pub fn render_issues<'a>(
+   |        ^^^^^^^^^^^^^
+
+warning: function `render_projects` is never used
+ --> src/jtui/projects.rs:8:8
+  |
+8 | pub fn render_projects<'a>(
+  |        ^^^^^^^^^^^^^^^
+
+warning: `jirust` (bin "jirust") generated 40 warnings
+    Finished dev [unoptimized + debuginfo] target(s) in 0.20s
+     Running `target/debug/jirust`

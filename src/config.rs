@@ -1,4 +1,5 @@
-use crate::{event::key::Key, log::LogLevel};
+// use crate::{event::key::Key, log::LogLevel};
+use crate::event::key::Key;
 
 use serde::Deserialize;
 
@@ -9,8 +10,8 @@ use serde::Serialize;
 pub struct Config {
     #[serde(default)]
     pub key_config: KeyConfig,
-    #[serde(default)]
-    pub log_level: LogLevel,
+    // #[serde(default)]
+    // pub log_level: LogLevel,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -93,7 +94,7 @@ impl Default for Config {
             //     database: None,
             // }],
             key_config: KeyConfig::default(),
-            log_level: LogLevel::default(),
+            // log_level: LogLevel::default(),
         }
     }
 }

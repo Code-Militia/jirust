@@ -1,9 +1,11 @@
+use log::info;
 use surrealdb::engine::any::connect;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 
 pub type SurrealAny = Surreal<Any>;
 
+use self::tickets::TicketData;
 use self::{
     auth::{jira_authentication, JiraAuth},
     tickets::JiraTickets,
