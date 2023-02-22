@@ -20,13 +20,15 @@ use super::{commands::CommandInfo, Component, EventState};
 type SurrealAny = Surreal<Any>;
 
 #[derive(Debug)]
-pub struct TicketComponent {
+pub struct TicketWidget {
+    components_state: ListState,
     key_config: KeyConfig,
-    state: ListState,
+    labels_state: ListState,
+    tickets_state: ListState,
     tickets: Vec<TicketData>,
 }
 
-impl TicketComponent {
+impl TicketWidget {
     pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
@@ -45,15 +47,15 @@ impl TicketComponent {
             .style(Style::default());
 
         f.render_widget(Clear, rect);
-        f.render_stateful_widget(ticket_list_block, rect, &mut self.state);
+        f.render_stateful_widget(ticket_list_block, rect, &mut self.tickets_state);
 
         Ok(())
     }
 
-    pub fn draw_metadata<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect) -> anyhow::Result<()> {
+    pub fn draw_labels<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect) -> anyhow::Result<()> {
         f.render_widget(Clear, rect);
 
-        let ticket = match self.state.selected().and_then(|i| self.tickets.get(i)) {
+        let ticket = match self.tickets_state.selected().and_then(|i| self.tickets.get(i)) {
             None => return Ok(()),
             Some(ticket_data) => ticket_data
         };
@@ -68,7 +70,30 @@ impl TicketComponent {
             .block(Block::default().borders(Borders::ALL).title("Labels"))
             .highlight_style(Style::default().bg(Color::Blue));
 
-        f.render_stateful_widget(labels_block, rect, &mut self.state);
+        f.render_stateful_widget(labels_block, rect, &mut self.labels_state);
+
+        Ok(()) 
+    }
+
+    pub fn draw_components<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect) -> anyhow::Result<()> {
+        f.render_widget(Clear, rect);
+
+        let ticket = match self.tickets_state.selected().and_then(|i| self.tickets.get(i)) {
+            None => return Ok(()),
+            Some(ticket_data) => ticket_data
+        };
+
+        let components: Vec<_> = ticket.fields.components.iter()
+            .map(|component| {
+                ListItem::new(component.name.as_str())
+            })
+            .collect();
+
+        let components_block = List::new(components)
+            .block(Block::default().borders(Borders::ALL).title("Components"))
+            .highlight_style(Style::default().bg(Color::Blue));
+
+        f.render_stateful_widget(components_block, rect, &mut self.components_state);
 
         Ok(()) 
     }
@@ -84,35 +109,50 @@ impl TicketComponent {
 }
 
 
-impl TicketComponent {
+impl TicketWidget {
     pub fn new(key_config: KeyConfig) -> Self {
-        let mut state = ListState::default();
-        state.select(Some(0));
+        let mut components_state = ListState::default();
+        let mut labels_state = ListState::default();
+        let mut tickets_state = ListState::default();
+        components_state.select(Some(0));
+        labels_state.select(Some(0));
+        tickets_state.select(Some(0));
 
         return Self {
-            state,
-            tickets: vec![],
+            components_state,
             key_config,
+            labels_state,
+            tickets: vec![],
+            tickets_state,
         };
     }
 
     pub fn next_ticket(&mut self, line: usize) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i + line >= self.tickets.len() {
-                    Some(self.tickets.len() - 1)
-                } else {
-                    Some(i + line)
-                }
-            }
-            None => None,
-        };
+        let i = self.tickets_state.selected().map(|i| {
+            (i + line).min(self.tickets.len() - 1)
+        });
 
-        self.state.select(i);
+        self.tickets_state.select(i);
+    }
+
+    pub fn next_label(&mut self, line: usize) {
+        let ticket = self.selected_ticket();
+        // let i = match self.state.selected() {
+        //     Some(i) => {
+        //         if i + line >= self.tickets.len() {
+        //             Some(self.tickets.len() - 1)
+        //         } else {
+        //             Some(i + line)
+        //         }
+        //     }
+        //     None => None,
+        // };
+
+        self.labels_state.select(i);
     }
 
     pub fn previous_ticket(&mut self, line: usize) {
-        let i = match self.state.selected() {
+        let i = match self.tickets_state.selected() {
             Some(i) => {
                 if i <= line {
                     Some(0)
@@ -123,25 +163,29 @@ impl TicketComponent {
             None => None,
         };
 
-        self.state.select(i);
+        self.tickets_state.select(i);
     }
 
     pub fn go_to_top(&mut self) {
         if self.tickets.is_empty() {
             return;
         }
-        self.state.select(Some(0));
+        self.tickets_state.select(Some(0));
     }
 
     pub fn go_to_bottom(&mut self) {
         if self.tickets.is_empty() {
             return;
         }
-        self.state.select(Some(self.tickets.len() - 1));
+        self.tickets_state.select(Some(self.tickets.len() - 1));
     }
 
     pub fn selected_ticket(&self) -> Option<&TicketData> {
-        match self.state.selected() {
+        // let ticket = match self.tickets_state.selected().and_then(|i| self.tickets.get(i)) {
+        //     None => return Ok(()),
+        //     Some(ticket_data) => ticket_data
+        // };
+        match self.tickets_state.selected() {
             Some(i) => self.tickets.get(i),
             None => None,
         }
@@ -164,7 +208,17 @@ impl TicketComponent {
     }
 }
 
-impl Component for TicketComponent {
+impl TicketWidget {
+    pub fn label_event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if key == self.key_config.scroll_down {
+            self.next_label(1);
+            return Ok(EventState::Consumed)
+        }
+        return Ok(EventState::NotConsumed)
+    }
+}
+
+impl Component for TicketWidget {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {

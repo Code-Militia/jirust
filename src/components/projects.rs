@@ -11,13 +11,13 @@ use crate::{config::KeyConfig, event::key::Key, jira::projects::Project};
 
 use super::{commands::CommandInfo, Component, EventState, StatefulDrawableComponent};
 
-pub struct ProjectsComponent {
+pub struct ProjectsWidget {
     projects: Vec<Project>,
     state: ListState,
     key_config: KeyConfig,
 }
 
-impl ProjectsComponent {
+impl ProjectsWidget {
     pub fn new(projects: &Vec<Project>, key_config: KeyConfig) -> Self {
         let mut state = ListState::default();
         if !projects.is_empty() {
@@ -83,7 +83,7 @@ impl ProjectsComponent {
     }
 }
 
-impl StatefulDrawableComponent for ProjectsComponent {
+impl StatefulDrawableComponent for ProjectsWidget {
     fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
@@ -109,7 +109,7 @@ impl StatefulDrawableComponent for ProjectsComponent {
     }
 }
 
-impl Component for ProjectsComponent {
+impl Component for ProjectsWidget {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
