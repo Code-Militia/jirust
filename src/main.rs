@@ -1,9 +1,9 @@
 mod app;
-mod widgets;
 mod config;
 mod event;
 mod jira;
 mod jtui;
+mod widgets;
 
 // mod log;
 

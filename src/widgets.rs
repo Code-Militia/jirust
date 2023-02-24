@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod components;
 pub mod error;
 pub mod labels;
 pub mod projects;

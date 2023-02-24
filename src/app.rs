@@ -1,21 +1,22 @@
+use crate::widgets::components::ComponentsWidget;
 use crate::widgets::labels::LabelsWidget;
 use crate::widgets::tickets::TicketWidget;
-use crate::{widgets::projects::ProjectsWidget, jira::Jira};
 use crate::{
-    widgets::{error::ErrorComponent, Component, EventState, StatefulDrawableComponent},
     config::Config,
     event::key::Key,
+    widgets::{error::ErrorComponent, Component, EventState, StatefulDrawableComponent},
 };
+use crate::{jira::Jira, widgets::projects::ProjectsWidget};
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
     Frame,
 };
 
-pub enum LoadState {
-    Complete,
-    Loading,
-}
+// pub enum LoadState {
+//     Complete,
+//     Loading,
+// }
 
 pub enum Focus {
     Projects,
@@ -25,6 +26,7 @@ pub enum Focus {
 }
 
 pub struct App {
+    components: ComponentsWidget,
     focus: Focus,
     jira: Jira,
     labels: LabelsWidget,
@@ -41,6 +43,7 @@ impl App {
         let projects = &jira.projects.values.clone();
 
         Ok(Self {
+            components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
             error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,
@@ -88,10 +91,11 @@ impl App {
 
         self.tickets
             .draw(f, ticket_list, matches!(self.focus, Focus::Tickets))?;
-        // self.tickets.draw_labels(f, ticket_labels)?;
         self.labels
             .draw(f, ticket_labels, self.tickets.selected())?;
-        self.tickets.draw_components(f, ticket_component)?;
+        // self.tickets.draw_components(f, ticket_component)?;
+        self.components
+            .draw(f, ticket_component, self.tickets.selected())?;
         // self.tickets.draw_description(f, ticket_description)?;
         // self.tickets.draw_work_log(f, ticket_worklog)?;
 
@@ -137,6 +141,19 @@ impl App {
         Ok(())
     }
 
+    pub async fn update_components(&mut self) -> anyhow::Result<()> {
+        let empty_vec = Vec::new();
+        match self.tickets.selected() {
+            None => {
+                self.components.update(&empty_vec).await?;
+            }
+            Some(t) => {
+                self.components.update(&t.fields.components).await?;
+            }
+        };
+        Ok(())
+    }
+
     pub async fn component_event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if self.error.event(key)?.is_consumed() {
             return Ok(EventState::Consumed);
@@ -168,19 +185,16 @@ impl App {
                 }
             }
             Focus::Labels => {
-                // if self.tickets.label_event(key)?.is_consumed() {
-                //     return Ok(EventState::Consumed);
-                // }
                 if self.labels.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
 
                 if key == self.config.key_config.focus_below {
-                    // TODO: self.update_components().await?;
+                    self.update_components().await?;
                 }
             }
             Focus::Components => {
-                if self.tickets.event(key)?.is_consumed() {
+                if self.components.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
             }
