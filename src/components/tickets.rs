@@ -135,56 +135,70 @@ impl TicketWidget {
         self.tickets_state.select(i);
     }
 
-    pub fn next_label(&mut self, line: usize) {
-        let ticket = self.selected_ticket();
-        // let i = match self.state.selected() {
-        //     Some(i) => {
-        //         if i + line >= self.tickets.len() {
-        //             Some(self.tickets.len() - 1)
-        //         } else {
-        //             Some(i + line)
-        //         }
-        //     }
-        //     None => None,
-        // };
+    // pub fn next_label(&mut self, line: usize) {
+    //     let labels_len = self.selected_ticket().map(|t| t.fields.labels.len()).unwrap_or(0);
+    //     let i = self.labels_state.selected().map(|_i| {
+    //         line.min(labels_len - 1)
+    //     });
+    //
+    //     self.labels_state.select(i);
+    // }
 
+    pub fn next_label(&mut self, line: usize) {
+        let labels_len = self.selected_ticket().map(|t| t.fields.labels.len()).unwrap_or(0);
+        let i = self.labels_state.selected().map(|i| {
+            (i + line).min(labels_len - 1)
+        });
         self.labels_state.select(i);
     }
 
     pub fn previous_ticket(&mut self, line: usize) {
-        let i = match self.tickets_state.selected() {
-            Some(i) => {
-                if i <= line {
-                    Some(0)
-                } else {
-                    Some(i - line)
-                }
-            }
-            None => None,
-        };
+        let i = self.tickets_state.selected().map(|i| {
+            (i - line).min(self.tickets.len() - 1)
+        });
 
         self.tickets_state.select(i);
     }
 
-    pub fn go_to_top(&mut self) {
+    pub fn previous_label(&mut self, line: usize) {
+        let labels_len = self.selected_ticket().map(|t| t.fields.labels.len()).unwrap_or(0);
+        let i = self.labels_state.selected().map(|i| {
+            (i - line).min(labels_len - 1)
+        });
+        self.labels_state.select(i);
+    }
+
+    pub fn label_go_to_top(&mut self) {
+        let ticket = self.selected_ticket().unwrap();
+        if ticket.fields.labels.is_empty() {
+            return;
+        }
+        self.labels_state.select(Some(0))
+    }
+
+    pub fn ticket_go_to_top(&mut self) {
         if self.tickets.is_empty() {
             return;
         }
         self.tickets_state.select(Some(0));
     }
 
-    pub fn go_to_bottom(&mut self) {
+    pub fn ticket_go_to_bottom(&mut self) {
         if self.tickets.is_empty() {
             return;
         }
         self.tickets_state.select(Some(self.tickets.len() - 1));
     }
 
+    pub fn label_go_to_bottom(&mut self) {
+        let ticket = self.selected_ticket().unwrap();
+        if ticket.fields.labels.is_empty() {
+            return;
+        }
+        self.labels_state.select(Some(ticket.fields.labels.len() - 1))
+    }
+
     pub fn selected_ticket(&self) -> Option<&TicketData> {
-        // let ticket = match self.tickets_state.selected().and_then(|i| self.tickets.get(i)) {
-        //     None => return Ok(()),
-        //     Some(ticket_data) => ticket_data
-        // };
         match self.tickets_state.selected() {
             Some(i) => self.tickets.get(i),
             None => None,
@@ -213,6 +227,21 @@ impl TicketWidget {
         if key == self.key_config.scroll_down {
             self.next_label(1);
             return Ok(EventState::Consumed)
+        } else if key == self.key_config.scroll_up {
+            self.previous_label(1);
+            return Ok(EventState::Consumed)
+        } else if key == self.key_config.scroll_down_multiple_lines {
+            self.next_label(10);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_up_multiple_lines {
+            self.previous_label(10);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_to_bottom {
+            self.label_go_to_bottom();
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_to_top {
+            self.label_go_to_top();
+            return Ok(EventState::Consumed);
         }
         return Ok(EventState::NotConsumed)
     }
@@ -235,10 +264,10 @@ impl Component for TicketWidget {
             self.previous_ticket(10);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_bottom {
-            self.go_to_bottom();
+            self.ticket_go_to_bottom();
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_top {
-            self.go_to_top();
+            self.ticket_go_to_top();
             return Ok(EventState::Consumed);
         }
         return Ok(EventState::NotConsumed);

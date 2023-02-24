@@ -155,7 +155,7 @@ impl App {
                 }
             }
             Focus::Labels => {
-                if self.tickets.event(key)?.is_consumed() {
+                if self.tickets.label_event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
             }
