@@ -1,5 +1,5 @@
 mod app;
-mod components;
+mod widgets;
 mod config;
 mod event;
 mod jira;
@@ -7,7 +7,6 @@ mod jtui;
 
 // mod log;
 
-use log::{debug, error, log_enabled, info, Level};
 use crate::event::event::Event;
 use anyhow;
 use app::App;
@@ -15,6 +14,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
+use log::{debug, error, info, log_enabled, Level};
 use serde::{Deserialize, Serialize};
 use std::io;
 use tui::{backend::CrosstermBackend, Terminal};
@@ -27,7 +27,7 @@ async fn main() -> anyhow::Result<()> {
     // #[derive(Debug, Deserialize, Serialize)]
     // struct T1 {
     //     tf: i32
-    // } 
+    // }
     // let db = connect("mem://").await?;
     // db.use_ns("noc").use_db("database").await?;
     // for n in 1..10000 {

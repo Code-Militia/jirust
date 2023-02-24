@@ -1,5 +1,5 @@
-use super::SurrealAny;
 use super::auth::JiraAuth;
+use super::SurrealAny;
 use log::info;
 use serde::{Deserialize, Serialize};
 use surrealdb::Error as SurrealDbError;
@@ -100,7 +100,8 @@ impl JiraTickets {
         let object: JiraTickets =
             serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
         for ticket in object.issues.iter() {
-            let issue_insert: TicketData = db.create(("tickets", &ticket.key)).content(&ticket).await?;
+            let issue_insert: TicketData =
+                db.create(("tickets", &ticket.key)).content(&ticket).await?;
             info!("Creating ticket inside db -- {issue_insert:?}");
         }
         Ok(object.issues)

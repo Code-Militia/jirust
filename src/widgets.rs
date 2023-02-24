@@ -1,12 +1,17 @@
 pub mod commands;
 pub mod error;
-pub mod tickets;
+pub mod labels;
 pub mod projects;
+pub mod tickets;
 
 use commands::CommandInfo;
 
 use async_trait::async_trait;
-use tui::{backend::Backend, layout::{Rect, Layout}, Frame};
+use tui::{
+    backend::Backend,
+    layout::{Layout, Rect},
+    Frame,
+};
 
 #[derive(PartialEq, Debug)]
 pub enum EventState {

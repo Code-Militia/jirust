@@ -1,5 +1,5 @@
-use super::SurrealAny;
 use super::auth::JiraAuth;
+use super::SurrealAny;
 use log::info;
 use serde::{Deserialize, Serialize};
 

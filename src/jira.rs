@@ -8,13 +8,13 @@ pub type SurrealAny = Surreal<Any>;
 use self::tickets::TicketData;
 use self::{
     auth::{jira_authentication, JiraAuth},
-    tickets::JiraTickets,
     projects::JiraProjects,
+    tickets::JiraTickets,
 };
 
 pub mod auth;
-pub mod tickets;
 pub mod projects;
+pub mod tickets;
 
 pub struct Jira {
     pub auth: JiraAuth,
