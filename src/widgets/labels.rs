@@ -2,14 +2,13 @@ use crate::event::key::Key;
 use tui::{
     backend::Backend,
     layout::Rect,
-    style::{Color, Style},
-    widgets::{Block, Borders, Clear, List, ListItem, ListState},
+    widgets::{Clear, List, ListItem, ListState},
     Frame,
 };
 
 use crate::{config::KeyConfig, jira::tickets::TicketData};
 
-use super::EventState;
+use super::{draw_block_style, draw_highlight_style, EventState};
 
 #[derive(Debug)]
 pub struct LabelsWidget {
@@ -22,28 +21,31 @@ impl LabelsWidget {
     pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
+        focused: bool,
         rect: Rect,
         selected_ticket: Option<&TicketData>,
     ) -> anyhow::Result<()> {
         f.render_widget(Clear, rect);
+        let title = "Labels";
 
         let ticket = match selected_ticket {
             None => return Ok(()),
             Some(ticket_data) => ticket_data,
         };
 
-        let labels: Vec<_> = ticket
+        let list_items: Vec<_> = ticket
             .fields
             .labels
             .iter()
             .map(|label| ListItem::new(label.as_str()))
             .collect();
 
-        let labels_block = List::new(labels)
-            .block(Block::default().borders(Borders::ALL).title("Labels"))
-            .highlight_style(Style::default().bg(Color::Blue));
+        let labels_list = List::new(list_items)
+            .block(draw_block_style(focused, &title))
+            .highlight_style(draw_highlight_style())
+            .highlight_symbol("-> ");
 
-        f.render_stateful_widget(labels_block, rect, &mut self.state);
+        f.render_stateful_widget(labels_list, rect, &mut self.state);
 
         Ok(())
     }

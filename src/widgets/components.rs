@@ -1,16 +1,14 @@
 use crate::{event::key::Key, jira::tickets::TicketComponent};
-use log::info;
 use tui::{
     backend::Backend,
     layout::Rect,
-    style::{Color, Style},
-    widgets::{Block, Borders, Clear, List, ListItem, ListState},
+    widgets::{Clear, List, ListItem, ListState},
     Frame,
 };
 
 use crate::{config::KeyConfig, jira::tickets::TicketData};
 
-use super::EventState;
+use super::{draw_block_style, draw_highlight_style, EventState};
 
 #[derive(Debug)]
 pub struct ComponentsWidget {
@@ -23,28 +21,31 @@ impl ComponentsWidget {
     pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
+        focused: bool,
         rect: Rect,
         selected_ticket: Option<&TicketData>,
     ) -> anyhow::Result<()> {
         f.render_widget(Clear, rect);
 
+        let title = "Components";
         let ticket = match selected_ticket {
             None => return Ok(()),
             Some(ticket_data) => ticket_data,
         };
 
-        let components: Vec<_> = ticket
+        let list_items: Vec<_> = ticket
             .fields
             .components
             .iter()
             .map(|component| ListItem::new(component.name.as_str()))
             .collect();
 
-        let block = List::new(components)
-            .block(Block::default().borders(Borders::ALL).title("Components"))
-            .highlight_style(Style::default().bg(Color::Blue));
+        let list = List::new(list_items)
+            .block(draw_block_style(focused, &title))
+            .highlight_style(draw_highlight_style())
+            .highlight_symbol("-> ");
 
-        f.render_stateful_widget(block, rect, &mut self.state);
+        f.render_stateful_widget(list, rect, &mut self.state);
 
         Ok(())
     }

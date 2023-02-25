@@ -5,7 +5,7 @@ use tui::{
     layout::Rect,
     style::{Color, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Clear, List, ListItem, ListState},
+    widgets::{Block, BorderType, Borders, Clear, List, ListItem, ListState},
     Frame,
 };
 
@@ -18,13 +18,12 @@ use crate::{
     },
 };
 
-use super::{commands::CommandInfo, Component, EventState};
+use super::{commands::CommandInfo, Component, EventState, draw_block_style, draw_highlight_style};
 
 type SurrealAny = Surreal<Any>;
 
 #[derive(Debug)]
 pub struct TicketWidget {
-    components_state: ListState,
     key_config: KeyConfig,
     state: ListState,
     pub tickets: Vec<TicketData>,
@@ -34,62 +33,27 @@ impl TicketWidget {
     pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
+        focused: bool,
         rect: Rect,
-        _focused: bool,
     ) -> anyhow::Result<()> {
+        let title = "Tickets";
         let tckts = &self.tickets;
-        let mut tickets: Vec<ListItem> = Vec::new();
+        let mut list_items: Vec<ListItem> = Vec::new();
         for i in tckts {
-            tickets
+            list_items
                 .push(ListItem::new(vec![Spans::from(Span::raw(&i.key))]).style(Style::default()))
         }
 
-        let ticket_list_block = List::new(tickets)
-            .block(Block::default().borders(Borders::ALL).title("Tickets"))
-            .highlight_style(Style::default().bg(Color::Blue))
-            .style(Style::default());
+        let list = List::new(list_items)
+            .block(draw_block_style(focused, &title))
+            .highlight_style(draw_highlight_style())
+            .highlight_symbol("-> ");
 
         f.render_widget(Clear, rect);
-        f.render_stateful_widget(ticket_list_block, rect, &mut self.state);
+        f.render_stateful_widget(list, rect, &mut self.state);
 
         Ok(())
     }
-
-    pub fn draw_components<B: Backend>(
-        &mut self,
-        f: &mut Frame<B>,
-        rect: Rect,
-    ) -> anyhow::Result<()> {
-        f.render_widget(Clear, rect);
-
-        let ticket = match self.state.selected().and_then(|i| self.tickets.get(i)) {
-            None => return Ok(()),
-            Some(ticket_data) => ticket_data,
-        };
-
-        let components: Vec<_> = ticket
-            .fields
-            .components
-            .iter()
-            .map(|component| ListItem::new(component.name.as_str()))
-            .collect();
-
-        let components_block = List::new(components)
-            .block(Block::default().borders(Borders::ALL).title("Components"))
-            .highlight_style(Style::default().bg(Color::Blue));
-
-        f.render_stateful_widget(components_block, rect, &mut self.components_state);
-
-        Ok(())
-    }
-    //
-    // fn draw_work_log<B: Backend>(&self, f: &mut Frame<B>, _rect: Rect) -> anyhow::Result<()> {
-    //     Ok(())
-    // }
-    //
-    // fn draw_description<B: Backend>(&self, f: &mut Frame<B>, _rect: Rect) -> anyhow::Result<()> {
-    //     Ok(())
-    // }
 }
 
 impl TicketWidget {
@@ -102,7 +66,6 @@ impl TicketWidget {
         state.select(Some(0));
 
         return Self {
-            components_state,
             key_config,
             tickets: vec![],
             state,

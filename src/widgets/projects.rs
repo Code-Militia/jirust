@@ -1,15 +1,15 @@
 use tui::{
     backend::Backend,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     text::{Span, Spans},
-    widgets::{Block, Borders, Clear, List, ListItem, ListState},
+    widgets::{Clear, List, ListItem, ListState},
     Frame,
 };
 
 use crate::{config::KeyConfig, event::key::Key, jira::projects::Project};
 
-use super::{commands::CommandInfo, Component, EventState, StatefulDrawableComponent};
+use super::{commands::CommandInfo, Component, EventState, draw_block_style, draw_highlight_style};
 
 pub struct ProjectsWidget {
     projects: Vec<Project>,
@@ -83,27 +83,29 @@ impl ProjectsWidget {
     }
 }
 
-impl StatefulDrawableComponent for ProjectsWidget {
-    fn draw<B: Backend>(
+impl ProjectsWidget {
+    pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
+        focused: bool,
         rect: Rect,
-        _focused: bool,
+        // _focused: bool,
     ) -> anyhow::Result<()> {
+        let title = "Projects";
         let prjs = &self.projects;
-        let mut projects: Vec<ListItem> = Vec::new();
+        let mut list_items: Vec<ListItem> = Vec::new();
         for p in prjs {
-            projects
+            list_items
                 .push(ListItem::new(vec![Spans::from(Span::raw(&p.key))]).style(Style::default()))
         }
 
-        let projects_block = List::new(projects)
-            .block(Block::default().borders(Borders::ALL).title("Projects"))
-            .highlight_style(Style::default().bg(Color::Blue))
-            .style(Style::default());
+        let list = List::new(list_items)
+            .block(draw_block_style(focused, &title))
+            .highlight_style(draw_highlight_style())
+            .highlight_symbol("-> ");
 
         f.render_widget(Clear, rect);
-        f.render_stateful_widget(projects_block, rect, &mut self.state);
+        f.render_stateful_widget(list, rect, &mut self.state);
 
         Ok(())
     }

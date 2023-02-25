@@ -11,6 +11,8 @@ use async_trait::async_trait;
 use tui::{
     backend::Backend,
     layout::{Layout, Rect},
+    style::{Color, Style},
+    widgets::{Block, BorderType, Borders, ListItem, List},
     Frame,
 };
 
@@ -106,4 +108,24 @@ pub trait Component {
             self.show()
         }
     }
+}
+
+pub fn draw_block_style(focused: bool, title: &str) -> Block {
+    if focused {
+        Block::default()
+            .border_type(BorderType::Double)
+            .borders(Borders::ALL)
+            .title(title)
+            .title_alignment(tui::layout::Alignment::Center)
+    } else {
+        Block::default()
+            .border_type(BorderType::Plain)
+            .borders(Borders::ALL)
+            .title(title)
+            .title_alignment(tui::layout::Alignment::Center)
+    }
+}
+
+pub fn draw_highlight_style() -> Style {
+    Style::default().bg(Color::Blue)
 }

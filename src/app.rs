@@ -57,7 +57,7 @@ impl App {
 
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<'_, B>) -> anyhow::Result<()> {
         if let Focus::Projects = self.focus {
-            self.projects.draw(f, f.size(), false)?;
+            self.projects.draw(f, matches!(self.focus, Focus::Projects), f.size())?;
 
             // TODO: Handle errors and help
             return Ok(());
@@ -90,12 +90,20 @@ impl App {
         // let ticket_worklog = ticket_right_chunks[1];
 
         self.tickets
-            .draw(f, ticket_list, matches!(self.focus, Focus::Tickets))?;
-        self.labels
-            .draw(f, ticket_labels, self.tickets.selected())?;
+            .draw(f, matches!(self.focus, Focus::Tickets), ticket_list)?;
+        self.labels.draw(
+            f,
+            matches!(self.focus, Focus::Labels),
+            ticket_labels,
+            self.tickets.selected(),
+        )?;
         // self.tickets.draw_components(f, ticket_component)?;
-        self.components
-            .draw(f, ticket_component, self.tickets.selected())?;
+        self.components.draw(
+            f,
+            matches!(self.focus, Focus::Components),
+            ticket_component,
+            self.tickets.selected(),
+        )?;
         // self.tickets.draw_description(f, ticket_description)?;
         // self.tickets.draw_work_log(f, ticket_worklog)?;
 
