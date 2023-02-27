@@ -1,5 +1,6 @@
 use crate::event::key::Key;
 use html2md::parse_html;
+use log::info;
 use tui::{
     backend::Backend,
     layout::{Rect, Alignment},
@@ -62,16 +63,14 @@ impl DescriptionWidget {
     }
 
     pub fn down(&mut self, lines: u16) {
-        self.scroll += lines;
-        self.scroll %= 100;
+        self.scroll = self.scroll.saturating_add(lines);
+        if self.scroll >= 100 {
+            self.scroll = 0
+        }
     } 
 
     pub fn up(&mut self, lines: u16) {
-        if self.scroll == 0 {
-            return
-        }
-        self.scroll -= lines;
-        self.scroll %= 100;
+        self.scroll = self.scroll.saturating_sub(lines);
     } 
 }
 
