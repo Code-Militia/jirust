@@ -2,10 +2,8 @@ use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tui::{
     backend::Backend,
-    layout::Rect,
-    style::Style,
-    text::{Span, Spans},
-    widgets::{Clear, List, ListItem, ListState},
+    layout::{Constraint, Rect},
+    widgets::{Cell, Clear, ListState, Row, Table, TableState},
     Frame,
 };
 
@@ -18,14 +16,14 @@ use crate::{
     },
 };
 
-use super::{commands::CommandInfo, Component, EventState, draw_block_style, draw_highlight_style};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 type SurrealAny = Surreal<Any>;
 
 #[derive(Debug)]
 pub struct TicketWidget {
     key_config: KeyConfig,
-    state: ListState,
+    state: TableState,
     pub tickets: Vec<TicketData>,
 }
 
@@ -37,20 +35,60 @@ impl TicketWidget {
         rect: Rect,
     ) -> anyhow::Result<()> {
         let title = "Tickets";
-        let tckts = &self.tickets;
-        let mut list_items: Vec<ListItem> = Vec::new();
-        for i in tckts {
-            list_items
-                .push(ListItem::new(vec![Spans::from(Span::raw(&i.key))]).style(Style::default()))
-        }
 
-        let list = List::new(list_items)
+        let header_cells = ["Key", "Type", "Status", "Assignee", "Creator", "Reporter"];
+        let headers = Row::new(header_cells);
+        let tickets = &self.tickets;
+        let table_items: Vec<_> = tickets
+            .iter()
+            .map(|ticket| {
+                let assignee = match &ticket.fields.assignee {
+                    Some(i) => i.display_name.as_str(),
+                    _ => "Unassigned",
+                };
+                let creator = match &ticket.fields.creator {
+                    Some(i) => i.display_name.as_str(),
+                    _ => "",
+                };
+                let reporter = match &ticket.fields.reporter {
+                    Some(i) => i.display_name.as_str(),
+                    _ => "",
+                };
+                vec![
+                    ticket.key.as_str(),
+                    ticket.fields.issuetype.name.as_str(),
+                    ticket.fields.status.name.as_str(),
+                    assignee,
+                    creator,
+                    reporter,
+                ]
+            })
+            .collect();
+        let rows = table_items.iter().map(|item| {
+            let height = item
+                .iter()
+                .map(|content| content.chars().filter(|c| *c == '\n').count())
+                .max()
+                .unwrap_or(0)
+                + 1;
+            let cells = item.iter().map(|c| Cell::from(*c));
+            Row::new(cells).height(height as u16)
+        });
+        let table = Table::new(rows)
+            .header(headers)
             .block(draw_block_style(focused, &title))
             .highlight_style(draw_highlight_style())
-            .highlight_symbol("-> ");
+            .widths(&[
+                Constraint::Percentage(15),
+                Constraint::Percentage(10),
+                Constraint::Percentage(15),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+            ]);
 
         f.render_widget(Clear, rect);
-        f.render_stateful_widget(list, rect, &mut self.state);
+        f.render_stateful_widget(table, rect, &mut self.state);
 
         Ok(())
     }
@@ -60,7 +98,7 @@ impl TicketWidget {
     pub fn new(key_config: KeyConfig) -> Self {
         let mut components_state = ListState::default();
         let mut labels_state = ListState::default();
-        let mut state = ListState::default();
+        let mut state = TableState::default();
         components_state.select(Some(0));
         labels_state.select(Some(0));
         state.select(Some(0));

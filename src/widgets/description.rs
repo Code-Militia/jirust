@@ -3,15 +3,14 @@ use html2md::parse_html;
 use log::info;
 use tui::{
     backend::Backend,
-    layout::{Rect, Alignment},
+    layout::{Alignment, Rect},
     widgets::{Clear, Paragraph, Wrap},
-    Frame
+    Frame,
 };
 
 use crate::{config::KeyConfig, jira::tickets::TicketData};
 
 use super::{draw_block_style, EventState};
-
 
 #[derive(Debug)]
 pub struct DescriptionWidget {
@@ -38,7 +37,6 @@ impl DescriptionWidget {
 
         let mut text = ticket.rendered_fields.description.clone();
         text = parse_html(&text);
-         
 
         let paragraph = Paragraph::new(text)
             .block(draw_block_style(focused, title))
@@ -54,7 +52,6 @@ impl DescriptionWidget {
 
 impl DescriptionWidget {
     pub fn new(key_config: KeyConfig) -> Self {
-
         return Self {
             description: String::new(),
             key_config,
@@ -67,11 +64,11 @@ impl DescriptionWidget {
         if self.scroll >= 100 {
             self.scroll = 0
         }
-    } 
+    }
 
     pub fn up(&mut self, lines: u16) {
         self.scroll = self.scroll.saturating_sub(lines);
-    } 
+    }
 }
 
 impl DescriptionWidget {

@@ -9,7 +9,7 @@ use tui::{
 
 use crate::{config::KeyConfig, event::key::Key, jira::projects::Project};
 
-use super::{commands::CommandInfo, Component, EventState, draw_block_style, draw_highlight_style};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 pub struct ProjectsWidget {
     projects: Vec<Project>,
@@ -101,8 +101,7 @@ impl ProjectsWidget {
 
         let list = List::new(list_items)
             .block(draw_block_style(focused, &title))
-            .highlight_style(draw_highlight_style())
-            .highlight_symbol("-> ");
+            .highlight_style(draw_highlight_style());
 
         f.render_widget(Clear, rect);
         f.render_stateful_widget(list, rect, &mut self.state);

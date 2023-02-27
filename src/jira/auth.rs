@@ -1,4 +1,4 @@
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, env};
@@ -42,7 +42,12 @@ impl JiraAuth {
         return &self.jira_api_version;
     }
 
-    pub fn new(jira_api_version: String, jira_api_key: String, jira_email: String, jira_url: String) -> Self {
+    pub fn new(
+        jira_api_version: String,
+        jira_api_key: String,
+        jira_email: String,
+        jira_url: String,
+    ) -> Self {
         return JiraAuth {
             jira_api_key,
             jira_api_version,
@@ -61,6 +66,7 @@ pub fn jira_authentication() -> JiraAuth {
     let jira_api_version = env::var(env_jira_api_version).expect("$JIRA_API_VERSION is not set");
     let jira_api_key = env::var(env_jira_api_key).expect("$JIRA_API_KEY is not set");
     let jira_email = env::var(env_jira_email).expect("$JIRA_EMAIL is not set");
-    let jira_encoded_auth: String = general_purpose::STANDARD_NO_PAD.encode(format!("{jira_email}:{jira_api_key}"));
+    let jira_encoded_auth: String =
+        general_purpose::STANDARD_NO_PAD.encode(format!("{jira_email}:{jira_api_key}"));
     return JiraAuth::new(jira_api_version, jira_encoded_auth, jira_email, jira_url);
 }
