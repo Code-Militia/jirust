@@ -38,7 +38,7 @@ pub struct TicketStatus {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TicketPriority {
-    name: String,
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -36,7 +36,7 @@ impl TicketWidget {
     ) -> anyhow::Result<()> {
         let title = "Tickets";
 
-        let header_cells = ["Key", "Type", "Status", "Assignee", "Creator", "Reporter"];
+        let header_cells = ["Key", "Priority", "Type", "Status", "Assignee", "Creator", "Reporter"];
         let headers = Row::new(header_cells);
         let tickets = &self.tickets;
         let table_items: Vec<_> = tickets
@@ -56,6 +56,7 @@ impl TicketWidget {
                 };
                 vec![
                     ticket.key.as_str(),
+                    ticket.fields.priority.name.as_str(),
                     ticket.fields.issuetype.name.as_str(),
                     ticket.fields.status.name.as_str(),
                     assignee,
