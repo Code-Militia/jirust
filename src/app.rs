@@ -69,7 +69,7 @@ impl App {
 
         let main_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
+            .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
             .split(f.size());
 
         let ticket_left_chunks = Layout::default()
@@ -87,11 +87,10 @@ impl App {
 
         let ticket_right_chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
+            .constraints([Constraint::Percentage(100)])
             .split(main_chunks[1]);
 
         let ticket_description = ticket_right_chunks[0];
-        // let ticket_worklog = ticket_right_chunks[1];
 
         self.tickets
             .draw(f, matches!(self.focus, Focus::Tickets), ticket_list)?;
@@ -108,8 +107,6 @@ impl App {
             self.tickets.selected(),
         )?;
         self.description.draw(f, matches!(self.focus, Focus::Description), ticket_description, self.tickets.selected())?;
-        // self.tickets.draw_description(f, ticket_description)?;
-        // self.tickets.draw_work_log(f, ticket_worklog)?;
 
         Ok(())
     }

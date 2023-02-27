@@ -42,8 +42,7 @@ impl LabelsWidget {
 
         let labels_list = List::new(list_items)
             .block(draw_block_style(focused, &title))
-            .highlight_style(draw_highlight_style())
-            .highlight_symbol("-> ");
+            .highlight_style(draw_highlight_style());
 
         f.render_stateful_widget(labels_list, rect, &mut self.state);
 

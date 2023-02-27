@@ -101,8 +101,7 @@ impl ProjectsWidget {
 
         let list = List::new(list_items)
             .block(draw_block_style(focused, &title))
-            .highlight_style(draw_highlight_style())
-            .highlight_symbol("-> ");
+            .highlight_style(draw_highlight_style());
 
         f.render_widget(Clear, rect);
         f.render_stateful_widget(list, rect, &mut self.state);

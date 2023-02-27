@@ -5,6 +5,12 @@ use serde::{Deserialize, Serialize};
 use surrealdb::Error as SurrealDbError;
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct TicketAssingee {
+    pub display_name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct RenderedFields {
     pub description: String,
 }
@@ -21,7 +27,7 @@ pub struct TicketProject {
 }
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TicketStatus {
-    name: String,
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -37,6 +43,7 @@ pub struct TicketIssueType {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TicketFields {
+    pub assignee: Option<TicketAssingee>,
     pub components: Vec<TicketComponent>,
     pub issuetype: TicketIssueType,
     pub priority: TicketPriority,
