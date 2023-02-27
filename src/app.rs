@@ -61,7 +61,8 @@ impl App {
 
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<'_, B>) -> anyhow::Result<()> {
         if let Focus::Projects = self.focus {
-            self.projects.draw(f, matches!(self.focus, Focus::Projects), f.size())?;
+            self.projects
+                .draw(f, matches!(self.focus, Focus::Projects), f.size())?;
 
             // TODO: Handle errors and help
             return Ok(());
@@ -106,7 +107,12 @@ impl App {
             ticket_component,
             self.tickets.selected(),
         )?;
-        self.description.draw(f, matches!(self.focus, Focus::Description), ticket_description, self.tickets.selected())?;
+        self.description.draw(
+            f,
+            matches!(self.focus, Focus::Description),
+            ticket_description,
+            self.tickets.selected(),
+        )?;
 
         Ok(())
     }
@@ -249,7 +255,7 @@ impl App {
                     self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
                 }
-                if key == self.config.key_config.focus_right{
+                if key == self.config.key_config.focus_right {
                     self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
@@ -265,7 +271,7 @@ impl App {
                     self.focus = Focus::Labels;
                     return Ok(EventState::Consumed);
                 }
-                if key == self.config.key_config.focus_right{
+                if key == self.config.key_config.focus_right {
                     self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }

@@ -2,8 +2,8 @@ use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tui::{
     backend::Backend,
-    layout::{Rect, Constraint},
-    widgets::{Clear, ListState, Table, Row, Cell, TableState},
+    layout::{Constraint, Rect},
+    widgets::{Cell, Clear, ListState, Row, Table, TableState},
     Frame,
 };
 
@@ -16,7 +16,7 @@ use crate::{
     },
 };
 
-use super::{commands::CommandInfo, Component, EventState, draw_block_style, draw_highlight_style};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 type SurrealAny = Surreal<Any>;
 
@@ -44,10 +44,26 @@ impl TicketWidget {
             .map(|ticket| {
                 let assignee = match &ticket.fields.assignee {
                     Some(i) => i.display_name.as_str(),
-                    _ => "Unassigned"
+                    _ => "Unassigned",
                 };
-                vec![ticket.key.as_str(), ticket.fields.issuetype.name.as_str(), ticket.fields.status.name.as_str(), assignee]
-            }).collect();
+                let creator = match &ticket.fields.creator {
+                    Some(i) => i.display_name.as_str(),
+                    _ => "",
+                };
+                let reporter = match &ticket.fields.reporter {
+                    Some(i) => i.display_name.as_str(),
+                    _ => "",
+                };
+                vec![
+                    ticket.key.as_str(),
+                    ticket.fields.issuetype.name.as_str(),
+                    ticket.fields.status.name.as_str(),
+                    assignee,
+                    creator,
+                    reporter,
+                ]
+            })
+            .collect();
         let rows = table_items.iter().map(|item| {
             let height = item
                 .iter()
@@ -69,8 +85,7 @@ impl TicketWidget {
                 Constraint::Percentage(20),
                 Constraint::Percentage(20),
                 Constraint::Percentage(20),
-            ]
-        );
+            ]);
 
         f.render_widget(Clear, rect);
         f.render_stateful_widget(table, rect, &mut self.state);

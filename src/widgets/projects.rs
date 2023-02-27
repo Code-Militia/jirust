@@ -9,7 +9,7 @@ use tui::{
 
 use crate::{config::KeyConfig, event::key::Key, jira::projects::Project};
 
-use super::{commands::CommandInfo, Component, EventState, draw_block_style, draw_highlight_style};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 pub struct ProjectsWidget {
     projects: Vec<Project>,
