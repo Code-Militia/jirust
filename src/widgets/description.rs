@@ -67,6 +67,9 @@ impl DescriptionWidget {
     } 
 
     pub fn up(&mut self, lines: u16) {
+        if self.scroll == 0 {
+            return
+        }
         self.scroll -= lines;
         self.scroll %= 100;
     } 
