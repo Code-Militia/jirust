@@ -1,15 +1,19 @@
+use crossterm::event::{self, Event as CEvent};
 use crossterm::terminal::enable_raw_mode;
+use std::io;
+use std::{
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
+};
 use tui::{
     backend::CrosstermBackend,
     layout::Constraint,
     style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, BorderType, Borders, Cell, List, ListItem, ListState, Row, Table},
-    Terminal
+    Terminal,
 };
-use std::{sync::mpsc, time::{Duration, Instant}, thread};
-use crossterm::event::{self, Event as CEvent};
-use std::io;
 
 // enum Event<I> {
 //     Input(I),
