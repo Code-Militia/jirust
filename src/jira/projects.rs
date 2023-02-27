@@ -37,6 +37,7 @@ impl JiraProjects {
             .https_only(true)
             .build()?;
         let response = client.get(projects_url).send().await?.text().await;
+        info!("response from jira -- {:?}", response);
 
         return response;
     }

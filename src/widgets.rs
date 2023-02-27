@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod components;
+pub mod description;
 pub mod error;
 pub mod labels;
 pub mod projects;
@@ -10,9 +11,9 @@ use commands::CommandInfo;
 use async_trait::async_trait;
 use tui::{
     backend::Backend,
-    layout::{Layout, Rect},
+    layout::Rect,
     style::{Color, Style},
-    widgets::{Block, BorderType, Borders, ListItem, List},
+    widgets::{Block, BorderType, Borders},
     Frame,
 };
 

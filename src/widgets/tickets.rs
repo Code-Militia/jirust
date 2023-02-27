@@ -3,9 +3,9 @@ use surrealdb::Surreal;
 use tui::{
     backend::Backend,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, Clear, List, ListItem, ListState},
+    widgets::{Clear, List, ListItem, ListState},
     Frame,
 };
 

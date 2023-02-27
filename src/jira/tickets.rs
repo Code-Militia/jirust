@@ -5,6 +5,11 @@ use serde::{Deserialize, Serialize};
 use surrealdb::Error as SurrealDbError;
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct RenderedFields {
+    pub description: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct TicketComponent {
     pub name: String,
 }
@@ -42,9 +47,11 @@ pub struct TicketFields {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct TicketData {
     pub fields: TicketFields,
     pub key: String,
+    pub rendered_fields: RenderedFields,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -75,7 +82,7 @@ impl JiraTickets {
         let domain = jira_auth.get_domain();
         let headers = jira_auth.get_basic_auth();
         let url = format!(
-            "{}/rest/api/3/search?jql=project%20%3D%20{}",
+            "{}/rest/api/3/search?jql=project%20%3D%20{}&expand=renderedFields",
             domain, project_name
         );
 

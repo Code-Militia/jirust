@@ -1,10 +1,11 @@
 use crate::widgets::components::ComponentsWidget;
+use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
 use crate::widgets::tickets::TicketWidget;
 use crate::{
     config::Config,
     event::key::Key,
-    widgets::{error::ErrorComponent, Component, EventState, StatefulDrawableComponent},
+    widgets::{error::ErrorComponent, Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
 use tui::{
@@ -19,14 +20,16 @@ use tui::{
 // }
 
 pub enum Focus {
+    Components,
+    Description,
+    Labels,
     Projects,
     Tickets,
-    Labels,
-    Components,
 }
 
 pub struct App {
     components: ComponentsWidget,
+    description: DescriptionWidget,
     focus: Focus,
     jira: Jira,
     labels: LabelsWidget,
@@ -45,6 +48,7 @@ impl App {
         Ok(Self {
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
+            description: DescriptionWidget::new(config.key_config.clone()),
             error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,
             jira,
@@ -86,7 +90,7 @@ impl App {
             .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
             .split(main_chunks[1]);
 
-        // let ticket_description = ticket_right_chunks[0];
+        let ticket_description = ticket_right_chunks[0];
         // let ticket_worklog = ticket_right_chunks[1];
 
         self.tickets
@@ -97,13 +101,13 @@ impl App {
             ticket_labels,
             self.tickets.selected(),
         )?;
-        // self.tickets.draw_components(f, ticket_component)?;
         self.components.draw(
             f,
             matches!(self.focus, Focus::Components),
             ticket_component,
             self.tickets.selected(),
         )?;
+        self.description.draw(f, matches!(self.focus, Focus::Description), ticket_description, self.tickets.selected())?;
         // self.tickets.draw_description(f, ticket_description)?;
         // self.tickets.draw_work_log(f, ticket_worklog)?;
 
@@ -172,6 +176,25 @@ impl App {
         // }
 
         match self.focus {
+            Focus::Components => {
+                if self.components.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::Description => {
+                if self.description.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::Labels => {
+                if self.labels.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.focus_below {
+                    self.update_components().await?;
+                }
+            }
             Focus::Projects => {
                 if self.projects.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
@@ -192,20 +215,6 @@ impl App {
                                                  // to update labels widget
                 }
             }
-            Focus::Labels => {
-                if self.labels.event(key)?.is_consumed() {
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.focus_below {
-                    self.update_components().await?;
-                }
-            }
-            Focus::Components => {
-                if self.components.event(key)?.is_consumed() {
-                    return Ok(EventState::Consumed);
-                }
-            }
         }
 
         return Ok(EventState::NotConsumed);
@@ -218,15 +227,19 @@ impl App {
         }
 
         match self.focus {
-            Focus::Projects => {
-                if key == self.config.key_config.enter {
-                    self.focus = Focus::Tickets;
+            Focus::Components => {
+                if key == self.config.key_config.focus_above {
+                    self.focus = Focus::Labels;
+                    return Ok(EventState::Consumed);
+                }
+                if key == self.config.key_config.focus_right {
+                    self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
             }
-            Focus::Tickets => {
-                if key == self.config.key_config.focus_below {
-                    self.focus = Focus::Labels;
+            Focus::Description => {
+                if key == self.config.key_config.focus_left {
+                    self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -239,10 +252,24 @@ impl App {
                     self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
                 }
+                if key == self.config.key_config.focus_right{
+                    self.focus = Focus::Description;
+                    return Ok(EventState::Consumed);
+                }
             }
-            Focus::Components => {
-                if key == self.config.key_config.focus_above {
+            Focus::Projects => {
+                if key == self.config.key_config.enter {
+                    self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::Tickets => {
+                if key == self.config.key_config.focus_below {
                     self.focus = Focus::Labels;
+                    return Ok(EventState::Consumed);
+                }
+                if key == self.config.key_config.focus_right{
+                    self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
             }
