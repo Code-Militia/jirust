@@ -21,58 +21,57 @@ use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Compo
 type SurrealAny = Surreal<Any>;
 
 #[derive(Debug)]
-pub struct TicketWidget {
+pub struct TicketRelation {
     key_config: KeyConfig,
     state: TableState,
-    pub tickets: Vec<TicketData>,
+    // pub tickets: Vec<TicketData>,
 }
 
-impl TicketWidget {
+impl TicketRelation {
     pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
         focused: bool,
         rect: Rect,
+        selected_ticket: Option<&TicketData>,
     ) -> anyhow::Result<()> {
-        let title = "Tickets";
+        f.render_widget(Clear, rect);
+        let ticket = match selected_ticket {
+            None => return Ok(()),
+            Some(ticket_data) => ticket_data,
+        };
 
-        let header_cells = ["Key", "Priority", "Type", "Status", "Assignee", "Creator", "Reporter"];
+        let title = "Ticket Relation";
+        let header_cells = ["Relation", "Key", "Summary", "Priority", "Type", "Status"];
         let headers = Row::new(header_cells);
-        let tickets = &self.tickets;
-        let rows = tickets
+        let rows = ticket.fields.issuelinks
             .iter()
-            .map(|ticket| {
-                let assignee = match &ticket.fields.assignee {
-                    Some(i) => i.display_name.as_str(),
-                    _ => "Unassigned",
-                };
-                let creator = match &ticket.fields.creator {
-                    Some(i) => i.display_name.as_str(),
-                    _ => "",
-                };
-                let reporter = match &ticket.fields.reporter {
-                    Some(i) => i.display_name.as_str(),
-                    _ => "",
-                };
-                let priority = match &ticket.fields.priority{
-                    Some(i) => i.name.as_str(),
-                    _ => "",
+            .map(|link_details| {
+                let link_relation_detail;
+                let link_relation = match (&link_details.outward_issue, &link_details.inward_issue) {
+                    (Some(outward), None) => {
+                        link_relation_detail = &link_details.link_type.outward;
+                        outward
+                    },
+                    (None, Some(inward)) => {
+                        link_relation_detail = &link_details.link_type.inward;
+                        inward
+                    },
+                    _ => unreachable!("If there is a link, this should always return")
                 };
                 let item = [
-                    ticket.key.as_str(),
-                    priority,
-                    ticket.fields.issuetype.name.as_str(),
-                    ticket.fields.status.name.as_str(),
-                    assignee,
-                    creator,
-                    reporter,
+                    link_relation_detail,
+                    link_relation.key.as_str(),
+                    link_relation.fields.summary.as_str(),
+                    link_relation.fields.priority.name.as_str(),
+                    link_relation.fields.issuetype.name.as_str(),
+                    link_relation.fields.status.name.as_str(),
                 ];
                 let height = item
                     .iter()
                     .map(|content| content.chars().filter(|c| *c == '\n').count())
                     .max()
-                    .unwrap_or(0)
-                    + 1;
+                    .unwrap_or(0) +1;
                 let cells = item.iter().map(|c| Cell::from(*c));
                 Row::new(cells).height(height as u16)
             });
@@ -96,7 +95,7 @@ impl TicketWidget {
     }
 }
 
-impl TicketWidget {
+impl TicketRelation {
     pub fn new(key_config: KeyConfig) -> Self {
         let mut components_state = ListState::default();
         let mut labels_state = ListState::default();
@@ -163,7 +162,7 @@ impl TicketWidget {
     }
 }
 
-impl Component for TicketWidget {
+impl Component for TicketRelation {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {

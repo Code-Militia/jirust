@@ -64,7 +64,6 @@ impl App {
             self.projects
                 .draw(f, matches!(self.focus, Focus::Projects), f.size())?;
 
-            // TODO: Handle errors and help
             return Ok(());
         }
 
@@ -76,19 +75,28 @@ impl App {
         let ticket_left_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
+                Constraint::Percentage(45),
                 Constraint::Percentage(40),
-                Constraint::Percentage(30),
-                Constraint::Percentage(30),
+                Constraint::Percentage(15),
             ])
             .split(main_chunks[0]);
 
+        let ticket_links = ticket_left_chunks[1];
+        let ticket_metadata_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(50),
+                Constraint::Percentage(50)
+            ])
+            .split(ticket_left_chunks[1]);
+
         let ticket_list = ticket_left_chunks[0];
-        let ticket_labels = ticket_left_chunks[1];
-        let ticket_component = ticket_left_chunks[2];
+        let ticket_labels = ticket_metadata_chunks[0];
+        let ticket_component = ticket_metadata_chunks[1];
 
         let ticket_right_chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(100)])
+            .constraints([Constraint::Percentage(85), Constraint::Percentage(15)])
             .split(main_chunks[1]);
 
         let ticket_description = ticket_right_chunks[0];

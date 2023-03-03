@@ -5,14 +5,43 @@ use serde::{Deserialize, Serialize};
 use surrealdb::Error as SurrealDbError;
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct LinkFields {
+    pub issuetype: Type,
+    pub priority: Priority,
+    pub status: Status,
+    pub summary: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LinkType {
+    pub inward: String,
+    pub outward: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LinkInwardOutward {
+    pub fields: LinkFields,
+    pub key: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct TicketCreatorReporter {
+pub struct Links {
+    pub inward_issue: Option<LinkInwardOutward>,
+    pub outward_issue: Option<LinkInwardOutward>,
+    #[serde(alias = "type")]
+    pub link_type: LinkType,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CreatorReporter {
     pub display_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct TicketAssingee {
+pub struct Assignee {
     pub display_name: String,
 }
 
@@ -22,49 +51,50 @@ pub struct RenderedFields {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct TicketComponent {
+pub struct Components {
     pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct TicketProject {
+pub struct Project {
     key: String,
     name: String,
 }
 #[derive(Serialize, Deserialize, Debug)]
-pub struct TicketStatus {
+pub struct Status {
     pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct TicketPriority {
+pub struct Priority {
     pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct TicketIssueType {
+pub struct Type {
     pub name: String,
     pub subtask: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct TicketFields {
-    pub assignee: Option<TicketAssingee>,
-    pub components: Vec<TicketComponent>,
-    pub creator: Option<TicketCreatorReporter>,
-    pub issuetype: TicketIssueType,
+pub struct Fields {
+    pub assignee: Option<Assignee>,
+    pub components: Vec<Components>,
+    pub creator: Option<CreatorReporter>,
+    pub issuetype: Type,
+    pub issuelinks: Vec<Links>,
     pub labels: Vec<String>,
-    pub priority: TicketPriority,
-    pub project: TicketProject,
-    pub reporter: Option<TicketCreatorReporter>,
-    pub status: TicketStatus,
+    pub priority: Option<Priority>,
+    pub project: Project,
+    pub reporter: Option<CreatorReporter>,
+    pub status: Status,
     pub summary: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TicketData {
-    pub fields: TicketFields,
+    pub fields: Fields,
     pub key: String,
     pub rendered_fields: RenderedFields,
 }

@@ -1,4 +1,4 @@
-use crate::{event::key::Key, jira::tickets::TicketComponent};
+use crate::{event::key::Key, jira::tickets::Components};
 use tui::{
     backend::Backend,
     layout::Rect,
@@ -101,7 +101,7 @@ impl ComponentsWidget {
         }
     }
 
-    pub async fn update(&mut self, components: &Vec<TicketComponent>) -> anyhow::Result<()> {
+    pub async fn update(&mut self, components: &Vec<Components>) -> anyhow::Result<()> {
         self.components = components
             .iter()
             .map(|component| component.name.clone())
