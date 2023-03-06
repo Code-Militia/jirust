@@ -1,6 +1,7 @@
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
+use crate::widgets::ticket_relation::TicketRelationWidget;
 use crate::widgets::tickets::TicketWidget;
 use crate::{
     config::Config,
@@ -25,6 +26,7 @@ pub enum Focus {
     Labels,
     Projects,
     Tickets,
+    TicketRelation,
 }
 
 pub struct App {
@@ -36,6 +38,7 @@ pub struct App {
     // load_state: LoadState,
     projects: ProjectsWidget,
     tickets: TicketWidget,
+    ticket_relation: TicketRelationWidget,
     pub config: Config,
     pub error: ErrorComponent,
 }
@@ -54,8 +57,9 @@ impl App {
             jira,
             labels: LabelsWidget::new(config.key_config.clone()),
             // load_state: LoadState::Complete,
-            tickets: TicketWidget::new(config.key_config.clone()),
             projects: ProjectsWidget::new(projects, config.key_config.clone()),
+            tickets: TicketWidget::new(config.key_config.clone()),
+            ticket_relation: TicketRelationWidget::new(config.key_config.clone())
         })
     }
 
@@ -64,53 +68,78 @@ impl App {
             self.projects
                 .draw(f, matches!(self.focus, Focus::Projects), f.size())?;
 
-            // TODO: Handle errors and help
             return Ok(());
         }
 
         let main_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(85), Constraint::Percentage(15)])
+            .split(f.size());
+
+        let description_metadata = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
-            .split(f.size());
+            .split(main_chunks[0]);
+
+        let ticket_relation = main_chunks[1];
 
         let ticket_left_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
+                Constraint::Percentage(45),
                 Constraint::Percentage(40),
-                Constraint::Percentage(30),
-                Constraint::Percentage(30),
             ])
-            .split(main_chunks[0]);
+            .split(description_metadata[0]);
+
+        let ticket_metadata_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(50),
+                Constraint::Percentage(50)
+            ])
+            .split(ticket_left_chunks[1]);
 
         let ticket_list = ticket_left_chunks[0];
-        let ticket_labels = ticket_left_chunks[1];
-        let ticket_component = ticket_left_chunks[2];
+        let ticket_labels = ticket_metadata_chunks[0];
+        let ticket_component = ticket_metadata_chunks[1];
 
         let ticket_right_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(100)])
-            .split(main_chunks[1]);
+            .split(description_metadata[1]);
 
+        // let ticket_description = ticket_right_chunks[0];
         let ticket_description = ticket_right_chunks[0];
+
 
         self.tickets
             .draw(f, matches!(self.focus, Focus::Tickets), ticket_list)?;
+
         self.labels.draw(
             f,
             matches!(self.focus, Focus::Labels),
             ticket_labels,
             self.tickets.selected(),
         )?;
+
         self.components.draw(
             f,
             matches!(self.focus, Focus::Components),
             ticket_component,
             self.tickets.selected(),
         )?;
+
         self.description.draw(
             f,
             matches!(self.focus, Focus::Description),
             ticket_description,
+            self.tickets.selected(),
+        )?;
+
+        self.ticket_relation.draw(
+            f,
+            matches!(self.focus, Focus::TicketRelation),
+            ticket_relation,
             self.tickets.selected(),
         )?;
 
@@ -183,6 +212,10 @@ impl App {
                 if self.components.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
+
+                if key == self.config.key_config.focus_below {
+                    self.focus = Focus::TicketRelation
+                }
             }
             Focus::Description => {
                 if self.description.event(key)?.is_consumed() {
@@ -205,6 +238,11 @@ impl App {
 
                 if key == self.config.key_config.enter {
                     self.update_tickets().await?;
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::TicketRelation => {
+                if self.ticket_relation.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
             }
@@ -263,6 +301,12 @@ impl App {
             Focus::Projects => {
                 if key == self.config.key_config.enter {
                     self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::TicketRelation => {
+                if key == self.config.key_config.move_up {
+                    self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
                 }
             }

@@ -1,3 +1,4 @@
+use log::info;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tui::{
@@ -12,7 +13,7 @@ use crate::{
     event::key::Key,
     jira::{
         auth::JiraAuth,
-        tickets::{JiraTickets, TicketData},
+        tickets::{JiraTickets, TicketData, Links},
     },
 };
 
@@ -21,58 +22,58 @@ use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Compo
 type SurrealAny = Surreal<Any>;
 
 #[derive(Debug)]
-pub struct TicketWidget {
+pub struct TicketRelationWidget {
     key_config: KeyConfig,
     state: TableState,
-    pub tickets: Vec<TicketData>,
+    pub ticket_links: Vec<Links>
 }
 
-impl TicketWidget {
+impl TicketRelationWidget {
     pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
         focused: bool,
         rect: Rect,
+        selected_ticket: Option<&TicketData>,
     ) -> anyhow::Result<()> {
-        let title = "Tickets";
+        f.render_widget(Clear, rect);
+        let ticket = match selected_ticket {
+            None => return Ok(()),
+            Some(ticket_data) => ticket_data,
+        };
 
-        let header_cells = ["Key", "Priority", "Type", "Status", "Assignee", "Creator", "Reporter"];
+        let title = "Ticket Relation";
+        let header_cells = ["Relation", "Key", "Summary", "Priority", "Type", "Status"];
         let headers = Row::new(header_cells);
-        let tickets = &self.tickets;
-        let rows = tickets
+        self.ticket_links = ticket.fields.issuelinks.clone();
+        let rows = self.ticket_links
             .iter()
-            .map(|ticket| {
-                let assignee = match &ticket.fields.assignee {
-                    Some(i) => i.display_name.as_str(),
-                    _ => "Unassigned",
-                };
-                let creator = match &ticket.fields.creator {
-                    Some(i) => i.display_name.as_str(),
-                    _ => "",
-                };
-                let reporter = match &ticket.fields.reporter {
-                    Some(i) => i.display_name.as_str(),
-                    _ => "",
-                };
-                let priority = match &ticket.fields.priority{
-                    Some(i) => i.name.as_str(),
-                    _ => "",
+            .map(|link_details| {
+                let link_relation_detail;
+                let link_relation = match (&link_details.outward_issue, &link_details.inward_issue) {
+                    (Some(outward), None) => {
+                        link_relation_detail = &link_details.link_type.outward;
+                        outward
+                    },
+                    (None, Some(inward)) => {
+                        link_relation_detail = &link_details.link_type.inward;
+                        inward
+                    },
+                    _ => unreachable!("If there is a link, this should always return")
                 };
                 let item = [
-                    ticket.key.as_str(),
-                    priority,
-                    ticket.fields.issuetype.name.as_str(),
-                    ticket.fields.status.name.as_str(),
-                    assignee,
-                    creator,
-                    reporter,
+                    link_relation_detail,
+                    link_relation.key.as_str(),
+                    link_relation.fields.summary.as_str(),
+                    link_relation.fields.priority.name.as_str(),
+                    link_relation.fields.issuetype.name.as_str(),
+                    link_relation.fields.status.name.as_str(),
                 ];
                 let height = item
                     .iter()
                     .map(|content| content.chars().filter(|c| *c == '\n').count())
                     .max()
-                    .unwrap_or(0)
-                    + 1;
+                    .unwrap_or(0) +1;
                 let cells = item.iter().map(|c| Cell::from(*c));
                 Row::new(cells).height(height as u16)
             });
@@ -96,18 +97,14 @@ impl TicketWidget {
     }
 }
 
-impl TicketWidget {
+impl TicketRelationWidget {
     pub fn new(key_config: KeyConfig) -> Self {
-        let mut components_state = ListState::default();
-        let mut labels_state = ListState::default();
         let mut state = TableState::default();
-        components_state.select(Some(0));
-        labels_state.select(Some(0));
         state.select(Some(0));
 
         return Self {
             key_config,
-            tickets: vec![],
+            ticket_links: vec![],
             state,
         };
     }
@@ -116,7 +113,10 @@ impl TicketWidget {
         let i = self
             .state
             .selected()
-            .map(|i| (i + line).min(self.tickets.len() - 1));
+            .map(|i| {
+                info!("ticket_links length --- {:?}", self.ticket_links.len());
+                (i + line).min(self.ticket_links.len() - 1)
+            });
 
         self.state.select(i);
     }
@@ -131,39 +131,39 @@ impl TicketWidget {
     }
 
     pub fn go_to_top(&mut self) {
-        if self.tickets.is_empty() {
+        if self.ticket_links.is_empty() {
             return;
         }
         self.state.select(Some(0));
     }
 
     pub fn go_to_bottom(&mut self) {
-        if self.tickets.is_empty() {
+        if self.ticket_links.is_empty() {
             return;
         }
-        self.state.select(Some(self.tickets.len() - 1));
+        self.state.select(Some(self.ticket_links.len() - 1));
     }
 
-    pub fn selected(&self) -> Option<&TicketData> {
+    pub fn selected(&self) -> Option<&Links> {
         match self.state.selected() {
-            Some(i) => self.tickets.get(i),
+            Some(i) => self.ticket_links.get(i),
             None => None,
         }
     }
 
-    pub async fn update(
-        &mut self,
-        db: &SurrealAny,
-        jira_auth: &JiraAuth,
-        project_key: &str,
-        ticket: &JiraTickets,
-    ) -> anyhow::Result<()> {
-        self.tickets = ticket.get_jira_tickets(db, jira_auth, project_key).await?;
-        Ok(())
-    }
+    // pub async fn update(
+    //     &mut self,
+    //     db: &SurrealAny,
+    //     jira_auth: &JiraAuth,
+    //     project_key: &str,
+    //     ticket: &JiraTickets,
+    // ) -> anyhow::Result<()> {
+    //     self.tickets = ticket.get_jira_tickets(db, jira_auth, project_key).await?;
+    //     Ok(())
+    // }
 }
 
-impl Component for TicketWidget {
+impl Component for TicketRelationWidget {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {

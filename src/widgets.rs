@@ -5,6 +5,7 @@ pub mod error;
 pub mod labels;
 pub mod projects;
 pub mod tickets;
+pub mod ticket_relation;
 
 use commands::CommandInfo;
 
