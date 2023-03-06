@@ -1,6 +1,7 @@
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
+use crate::widgets::parent::TicketParentWidget;
 use crate::widgets::ticket_relation::TicketRelationWidget;
 use crate::widgets::tickets::TicketWidget;
 use crate::{
@@ -36,6 +37,7 @@ pub struct App {
     jira: Jira,
     labels: LabelsWidget,
     // load_state: LoadState,
+    parent: TicketParentWidget,
     projects: ProjectsWidget,
     tickets: TicketWidget,
     ticket_relation: TicketRelationWidget,
@@ -57,6 +59,7 @@ impl App {
             jira,
             labels: LabelsWidget::new(config.key_config.clone()),
             // load_state: LoadState::Complete,
+            parent: TicketParentWidget::new(),
             projects: ProjectsWidget::new(projects, config.key_config.clone()),
             tickets: TicketWidget::new(config.key_config.clone()),
             ticket_relation: TicketRelationWidget::new(config.key_config.clone())
@@ -94,21 +97,22 @@ impl App {
         let ticket_metadata_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Percentage(50),
-                Constraint::Percentage(50)
+                Constraint::Percentage(40),
+                Constraint::Percentage(40),
+                Constraint::Percentage(20)
             ])
             .split(ticket_left_chunks[1]);
 
         let ticket_list = ticket_left_chunks[0];
         let ticket_labels = ticket_metadata_chunks[0];
         let ticket_component = ticket_metadata_chunks[1];
+        let ticket_parent = ticket_metadata_chunks[2];
 
         let ticket_right_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(100)])
             .split(description_metadata[1]);
 
-        // let ticket_description = ticket_right_chunks[0];
         let ticket_description = ticket_right_chunks[0];
 
 
@@ -135,6 +139,8 @@ impl App {
             ticket_description,
             self.tickets.selected(),
         )?;
+
+        self.parent.draw(f, false, ticket_parent, self.tickets.selected())?;
 
         self.ticket_relation.draw(
             f,

@@ -19,7 +19,7 @@ pub struct LinkType {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct LinkInwardOutward {
+pub struct LinkInwardOutwardParent {
     pub fields: LinkFields,
     pub key: String,
 }
@@ -27,8 +27,8 @@ pub struct LinkInwardOutward {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Links {
-    pub inward_issue: Option<LinkInwardOutward>,
-    pub outward_issue: Option<LinkInwardOutward>,
+    pub inward_issue: Option<LinkInwardOutwardParent>,
+    pub outward_issue: Option<LinkInwardOutwardParent>,
     #[serde(alias = "type")]
     pub link_type: LinkType,
 }
@@ -84,6 +84,7 @@ pub struct Fields {
     pub issuetype: Type,
     pub issuelinks: Vec<Links>,
     pub labels: Vec<String>,
+    pub parent: Option<LinkInwardOutwardParent>,
     pub priority: Option<Priority>,
     pub project: Project,
     pub reporter: Option<CreatorReporter>,

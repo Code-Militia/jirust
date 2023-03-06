@@ -114,7 +114,6 @@ impl TicketRelationWidget {
             .state
             .selected()
             .map(|i| {
-                info!("ticket_links length --- {:?}", self.ticket_links.len());
                 (i + line).min(self.ticket_links.len() - 1)
             });
 
