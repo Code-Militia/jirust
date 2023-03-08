@@ -2,7 +2,7 @@ use super::auth::JiraAuth;
 use super::SurrealAny;
 use log::info;
 use serde::{Deserialize, Serialize};
-use surrealdb::{opt::PatchOp, Error as SurrealDbError};
+use surrealdb::Error as SurrealDbError;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinkFields {
@@ -122,24 +122,30 @@ pub struct TicketData {
 }
 
 impl TicketData {
-    async fn get_ticket_comment_from_api(
+    async fn save_ticket_comment_from_api(
+        &mut self,
+        db: &SurrealAny,
         jira_auth: &JiraAuth,
-        ticket_key: &str,
-    ) -> Result<String, reqwest::Error> {
+    ) -> anyhow::Result<Comments> {
         let domain = jira_auth.get_domain();
         let headers = jira_auth.get_basic_auth();
         let url = format!(
             "{}/rest/api/3/issue/{}/comment?expand=renderedBody",
-            domain, ticket_key
+            domain, self.key
         );
 
         let client = reqwest::Client::builder()
             .default_headers(headers)
             .https_only(true)
             .build()?;
-        let response = client.get(url).send().await?.text().await;
+        let response = client.get(url).send().await?.text().await?;
 
-        return response;
+        let resp_slice: &str = &response[..];
+        let object: Comments =
+            serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
+        self.fields.comments = Some(object.clone());
+        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(self).await?;
+        return Ok(object);
     }
 
     pub async fn get_comments(
@@ -152,15 +158,8 @@ impl TicketData {
             .await
             .expect("Failed to get TicketData from DB in get_comments");
         if ticket.fields.comments.is_none() {
-            let resp = Self::get_ticket_comment_from_api(&jira_auth, &self.key.to_string())
-                .await
-                .expect("should be response from jira");
-            let resp_slice: &str = &resp[..];
-            let object: Comments =
-                serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
-            self.fields.comments = Some(object.clone());
-            let _db_update: TicketData = db.update(("tickets", &self.key)).merge(self).await?;
-            return Ok(object);
+            let comments = self.save_ticket_comment_from_api(db, jira_auth).await?;
+            return Ok(comments);
         };
 
         Ok(ticket.fields.comments.unwrap())
