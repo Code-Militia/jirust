@@ -122,7 +122,7 @@ pub struct TicketData {
 }
 
 impl TicketData {
-    async fn save_ticket_comment_from_api(
+    async fn save_ticket_comments_from_api(
         &mut self,
         db: &SurrealAny,
         jira_auth: &JiraAuth,
@@ -158,7 +158,7 @@ impl TicketData {
             .await
             .expect("Failed to get TicketData from DB in get_comments");
         if ticket.fields.comments.is_none() {
-            let comments = self.save_ticket_comment_from_api(db, jira_auth).await?;
+            let comments = self.save_ticket_comments_from_api(db, jira_auth).await?;
             return Ok(comments);
         };
 
