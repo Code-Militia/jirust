@@ -1,11 +1,9 @@
-use log::info;
 use surrealdb::engine::any::connect;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 
 pub type SurrealAny = Surreal<Any>;
 
-use self::tickets::TicketData;
 use self::{
     auth::{jira_authentication, JiraAuth},
     projects::JiraProjects,
@@ -18,7 +16,7 @@ pub mod tickets;
 
 pub struct Jira {
     pub auth: JiraAuth,
-    pub db: Surreal<Any>,
+    pub db: SurrealAny,
     pub projects: JiraProjects,
     pub tickets: JiraTickets,
 }

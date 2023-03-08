@@ -13,7 +13,7 @@ use crate::{
     event::key::Key,
     jira::{
         auth::JiraAuth,
-        tickets::{JiraTickets, TicketData, Links},
+        tickets::{JiraTickets, Links, TicketData},
     },
 };
 
@@ -25,7 +25,7 @@ type SurrealAny = Surreal<Any>;
 pub struct TicketRelationWidget {
     key_config: KeyConfig,
     state: TableState,
-    pub ticket_links: Vec<Links>
+    pub ticket_links: Vec<Links>,
 }
 
 impl TicketRelationWidget {
@@ -46,37 +46,36 @@ impl TicketRelationWidget {
         let header_cells = ["Relation", "Key", "Summary", "Priority", "Type", "Status"];
         let headers = Row::new(header_cells);
         self.ticket_links = ticket.fields.issuelinks.clone();
-        let rows = self.ticket_links
-            .iter()
-            .map(|link_details| {
-                let link_relation_detail;
-                let link_relation = match (&link_details.outward_issue, &link_details.inward_issue) {
-                    (Some(outward), None) => {
-                        link_relation_detail = &link_details.link_type.outward;
-                        outward
-                    },
-                    (None, Some(inward)) => {
-                        link_relation_detail = &link_details.link_type.inward;
-                        inward
-                    },
-                    _ => unreachable!("If there is a link, this should always return")
-                };
-                let item = [
-                    link_relation_detail,
-                    link_relation.key.as_str(),
-                    link_relation.fields.summary.as_str(),
-                    link_relation.fields.priority.name.as_str(),
-                    link_relation.fields.issuetype.name.as_str(),
-                    link_relation.fields.status.name.as_str(),
-                ];
-                let height = item
-                    .iter()
-                    .map(|content| content.chars().filter(|c| *c == '\n').count())
-                    .max()
-                    .unwrap_or(0) +1;
-                let cells = item.iter().map(|c| Cell::from(*c));
-                Row::new(cells).height(height as u16)
-            });
+        let rows = self.ticket_links.iter().map(|link_details| {
+            let link_relation_detail;
+            let link_relation = match (&link_details.outward_issue, &link_details.inward_issue) {
+                (Some(outward), None) => {
+                    link_relation_detail = &link_details.link_type.outward;
+                    outward
+                }
+                (None, Some(inward)) => {
+                    link_relation_detail = &link_details.link_type.inward;
+                    inward
+                }
+                _ => unreachable!("If there is a link, this should always return"),
+            };
+            let item = [
+                link_relation_detail,
+                link_relation.key.as_str(),
+                link_relation.fields.summary.as_str(),
+                link_relation.fields.priority.name.as_str(),
+                link_relation.fields.issuetype.name.as_str(),
+                link_relation.fields.status.name.as_str(),
+            ];
+            let height = item
+                .iter()
+                .map(|content| content.chars().filter(|c| *c == '\n').count())
+                .max()
+                .unwrap_or(0)
+                + 1;
+            let cells = item.iter().map(|c| Cell::from(*c));
+            Row::new(cells).height(height as u16)
+        });
         let table = Table::new(rows)
             .header(headers)
             .block(draw_block_style(focused, &title))
@@ -113,9 +112,7 @@ impl TicketRelationWidget {
         let i = self
             .state
             .selected()
-            .map(|i| {
-                (i + line).min(self.ticket_links.len() - 1)
-            });
+            .map(|i| (i + line).min(self.ticket_links.len() - 1));
 
         self.state.select(i);
     }

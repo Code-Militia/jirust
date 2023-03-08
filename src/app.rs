@@ -62,7 +62,7 @@ impl App {
             parent: TicketParentWidget::new(),
             projects: ProjectsWidget::new(projects, config.key_config.clone()),
             tickets: TicketWidget::new(config.key_config.clone()),
-            ticket_relation: TicketRelationWidget::new(config.key_config.clone())
+            ticket_relation: TicketRelationWidget::new(config.key_config.clone()),
         })
     }
 
@@ -88,10 +88,7 @@ impl App {
 
         let ticket_left_chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Percentage(45),
-                Constraint::Percentage(40),
-            ])
+            .constraints([Constraint::Percentage(45), Constraint::Percentage(40)])
             .split(description_metadata[0]);
 
         let ticket_metadata_chunks = Layout::default()
@@ -99,7 +96,7 @@ impl App {
             .constraints([
                 Constraint::Percentage(40),
                 Constraint::Percentage(40),
-                Constraint::Percentage(20)
+                Constraint::Percentage(20),
             ])
             .split(ticket_left_chunks[1]);
 
@@ -114,7 +111,6 @@ impl App {
             .split(description_metadata[1]);
 
         let ticket_description = ticket_right_chunks[0];
-
 
         self.tickets
             .draw(f, matches!(self.focus, Focus::Tickets), ticket_list)?;
@@ -140,7 +136,8 @@ impl App {
             self.tickets.selected(),
         )?;
 
-        self.parent.draw(f, false, ticket_parent, self.tickets.selected())?;
+        self.parent
+            .draw(f, false, ticket_parent, self.tickets.selected())?;
 
         self.ticket_relation.draw(
             f,

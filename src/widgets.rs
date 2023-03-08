@@ -5,8 +5,8 @@ pub mod error;
 pub mod labels;
 pub mod parent;
 pub mod projects;
-pub mod tickets;
 pub mod ticket_relation;
+pub mod tickets;
 
 use commands::CommandInfo;
 

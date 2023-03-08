@@ -2,7 +2,7 @@ use super::auth::JiraAuth;
 use super::SurrealAny;
 use log::info;
 use serde::{Deserialize, Serialize};
-use surrealdb::Error as SurrealDbError;
+use surrealdb::{Error as SurrealDbError, opt::PatchOp};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinkFields {
@@ -141,11 +141,12 @@ impl TicketData {
 
         return response;
     }
+
     pub async fn get_comments(
         &mut self,
         db: &SurrealAny,
         jira_auth: &JiraAuth,
-    ) -> Option<Comments> {
+    ) -> anyhow::Result<Comments> {
         let ticket: TicketData = db
             .select(("tickets", &self.key))
             .await
@@ -158,11 +159,13 @@ impl TicketData {
             let object: Comments =
                 serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
             self.fields.comments = Some(object.clone());
-            //db.update(("tickets", self.key)).patch(object);
-            return Some(object);
+            let _db_update: TicketData = db.update(("tickets", &self.key))
+                .merge(self)
+                .await?;
+            return Ok(object);
         };
 
-        ticket.fields.comments
+        Ok(ticket.fields.comments.unwrap())
     }
 }
 
