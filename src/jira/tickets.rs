@@ -122,7 +122,7 @@ pub struct TicketData {
 }
 
 impl TicketData {
-    async fn save_ticket_comments_from_api(
+    pub async fn save_ticket_comments_from_api(
         &mut self,
         db: &SurrealAny,
         jira_auth: &JiraAuth,
