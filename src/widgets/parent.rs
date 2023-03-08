@@ -40,7 +40,7 @@ impl TicketParentWidget {
 
         let mut rows = Vec::new();
 
-        let title = "Ticket Parent";
+        let title = "Parent";
         let header_cells = ["Key", "Summary", "Priority", "Type", "Status"];
         let headers = Row::new(header_cells);
         let ticket_parent = match &ticket.fields.parent {

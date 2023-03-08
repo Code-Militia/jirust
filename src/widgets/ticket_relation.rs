@@ -42,7 +42,7 @@ impl TicketRelationWidget {
             Some(ticket_data) => ticket_data,
         };
 
-        let title = "Ticket Relation";
+        let title = "Relation";
         let header_cells = ["Relation", "Key", "Summary", "Priority", "Type", "Status"];
         let headers = Row::new(header_cells);
         self.ticket_links = ticket.fields.issuelinks.clone();

@@ -77,8 +77,29 @@ pub struct Type {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FieldAuthor {
+    pub display_name: String,
+    pub active: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CommentBody {
+    pub rendered_body: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Comments {
+    pub body: Vec<CommentBody>,
+    pub update_author: FieldAuthor,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Fields {
     pub assignee: Option<Assignee>,
+    pub comments: Option<Comments>,
     pub components: Vec<Components>,
     pub creator: Option<CreatorReporter>,
     pub issuetype: Type,
@@ -98,6 +119,49 @@ pub struct TicketData {
     pub fields: Fields,
     pub key: String,
     pub rendered_fields: RenderedFields,
+}
+
+impl TicketData {
+    async fn get_ticket_comment_from_api(jira_auth: &JiraAuth, ticket_key: &str) -> Result<String, reqwest::Error> {
+        let domain = jira_auth.get_domain();
+        let headers = jira_auth.get_basic_auth();
+        let url = format!(
+            "{}/rest/api/3/issue/{}/comment?expand=renderedBody",
+            domain, ticket_key
+        );
+
+        let client = reqwest::Client::builder()
+            .default_headers(headers)
+            .https_only(true)
+            .build()?;
+        let response = client.get(url).send().await?.text().await;
+
+        return response;
+    }
+    pub async fn get_comments(
+        &mut self,
+        db: &SurrealAny,
+        jira_auth: &JiraAuth,
+    ) -> anyhow::Result<Comments> {
+        let ticket: TicketData = db.select(("tickets", &self.key)).await?;
+        let comments = match ticket.fields.comments {
+            None => {
+                let resp = Self::get_ticket_comment_from_api(&jira_auth, &self.key.to_string())
+                    .await
+                    .expect("should be response from jira");
+                let resp_slice: &str = &resp[..];
+                let object: Comments =
+                    serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
+                self.fields.comments = Some(object.clone());
+                db.update(("tickets", self.key)).patch(self);
+                return Ok(object)
+
+            }
+            Some(c) => {
+                return Ok(c)
+            }
+        };
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -141,6 +205,7 @@ impl JiraTickets {
         return response;
     }
 
+
     pub async fn save_jira_tickets(
         db: &SurrealAny,
         jira_auth: &JiraAuth,
@@ -170,7 +235,26 @@ impl JiraTickets {
         if tickets.is_empty() {
             return Ok(Self::save_jira_tickets(db, jira_auth, project_key).await?);
         }
-        info!("{tickets:?}");
         Ok(tickets)
+    }
+
+    pub async fn get_jira_comments(&self, db: &SurrealAny, jira_auth: &JiraAuth, ticket_key: &str) -> anyhow::Result<()> {
+        let ticket: TicketData = db.select(("tickets", ticket_key)).await?;
+        let comments = match ticket.fields.comments {
+            None => {
+                let resp = Self::get_ticket_comment_from_api(&jira_auth, &ticket_key.to_string())
+                    .await
+                    .expect("should be response from jira");
+                let resp_slice: &str = &resp[..];
+                let object: Comments =
+                    serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
+                db.update(("tickets", ticket_key)).merge()
+            }
+            Some(i) => {
+                return i
+            }
+        }
+        todo!("Get jira comments from DB"); 
+        todo!("Get jira comments from JIRA API if it doesn't exist on the db"); 
     }
 }
