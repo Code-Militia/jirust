@@ -2,7 +2,7 @@ use super::auth::JiraAuth;
 use super::SurrealAny;
 use log::info;
 use serde::{Deserialize, Serialize};
-use surrealdb::{Error as SurrealDbError, opt::PatchOp};
+use surrealdb::{opt::PatchOp, Error as SurrealDbError};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinkFields {
@@ -159,9 +159,7 @@ impl TicketData {
             let object: Comments =
                 serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
             self.fields.comments = Some(object.clone());
-            let _db_update: TicketData = db.update(("tickets", &self.key))
-                .merge(self)
-                .await?;
+            let _db_update: TicketData = db.update(("tickets", &self.key)).merge(self).await?;
             return Ok(object);
         };
 
