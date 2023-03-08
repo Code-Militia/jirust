@@ -237,24 +237,4 @@ impl JiraTickets {
         }
         Ok(tickets)
     }
-
-    pub async fn get_jira_comments(&self, db: &SurrealAny, jira_auth: &JiraAuth, ticket_key: &str) -> anyhow::Result<()> {
-        let ticket: TicketData = db.select(("tickets", ticket_key)).await?;
-        let comments = match ticket.fields.comments {
-            None => {
-                let resp = Self::get_ticket_comment_from_api(&jira_auth, &ticket_key.to_string())
-                    .await
-                    .expect("should be response from jira");
-                let resp_slice: &str = &resp[..];
-                let object: Comments =
-                    serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
-                db.update(("tickets", ticket_key)).merge()
-            }
-            Some(i) => {
-                return i
-            }
-        }
-        todo!("Get jira comments from DB"); 
-        todo!("Get jira comments from JIRA API if it doesn't exist on the db"); 
-    }
 }
