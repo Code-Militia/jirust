@@ -41,24 +41,19 @@ impl CommentsWidget {
             .split(size);
 
         let title = "Comments";
-        let title_box = Paragraph::new(Span::styled(
+        let title_paragraph = Paragraph::new(Span::styled(
             title,
             Style::default().add_modifier(Modifier::SLOW_BLINK),
         ))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
-        f.render_widget(title_box, chunks[0]);
+        f.render_widget(title_paragraph, chunks[0]);
 
         let mut comment_as_string = String::new();
         match ticket.fields.comments {
             None => {
-                let comment_box = Paragraph::new(Span::styled(
-                    comment_as_string,
-                    Style::default().add_modifier(Modifier::SLOW_BLINK),
-                ))
-                .alignment(Alignment::Center)
-                .wrap(Wrap { trim: true });
-                f.render_widget(comment_box, chunks[1]);
+                let empty_paragraph = Paragraph::new(comment_as_string);
+                f.render_widget(empty_paragraph, chunks[1]);
                 return Ok(());
             }
             Some(c) => c.body.iter().map(|comment| {
@@ -70,13 +65,13 @@ impl CommentsWidget {
             }),
         };
 
-        let comment_box = Paragraph::new(Span::styled(
+        let comment_paragraph = Paragraph::new(Span::styled(
             comment_as_string,
             Style::default().add_modifier(Modifier::SLOW_BLINK),
         ))
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
-        f.render_widget(comment_box, chunks[1]);
+        f.render_widget(comment_paragraph, chunks[1]);
 
         Ok(())
     }
