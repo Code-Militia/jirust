@@ -153,7 +153,7 @@ impl TicketData {
                 let object: Comments =
                     serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
                 self.fields.comments = Some(object.clone());
-                db.update(("tickets", self.key)).patch(self);
+                db.update(("tickets", self.key)).patch(object);
                 return Ok(object)
 
             }
