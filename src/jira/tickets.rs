@@ -122,7 +122,10 @@ pub struct TicketData {
 }
 
 impl TicketData {
-    async fn get_ticket_comment_from_api(jira_auth: &JiraAuth, ticket_key: &str) -> Result<String, reqwest::Error> {
+    async fn get_ticket_comment_from_api(
+        jira_auth: &JiraAuth,
+        ticket_key: &str,
+    ) -> Result<String, reqwest::Error> {
         let domain = jira_auth.get_domain();
         let headers = jira_auth.get_basic_auth();
         let url = format!(
@@ -142,25 +145,24 @@ impl TicketData {
         &mut self,
         db: &SurrealAny,
         jira_auth: &JiraAuth,
-    ) -> anyhow::Result<Comments> {
-        let ticket: TicketData = db.select(("tickets", &self.key)).await?;
-        let comments = match ticket.fields.comments {
-            None => {
-                let resp = Self::get_ticket_comment_from_api(&jira_auth, &self.key.to_string())
-                    .await
-                    .expect("should be response from jira");
-                let resp_slice: &str = &resp[..];
-                let object: Comments =
-                    serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
-                self.fields.comments = Some(object.clone());
-                db.update(("tickets", self.key)).patch(object);
-                return Ok(object)
-
-            }
-            Some(c) => {
-                return Ok(c)
-            }
+    ) -> Option<Comments> {
+        let ticket: TicketData = db
+            .select(("tickets", &self.key))
+            .await
+            .expect("Failed to get TicketData from DB in get_comments");
+        if ticket.fields.comments.is_none() {
+            let resp = Self::get_ticket_comment_from_api(&jira_auth, &self.key.to_string())
+                .await
+                .expect("should be response from jira");
+            let resp_slice: &str = &resp[..];
+            let object: Comments =
+                serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
+            self.fields.comments = Some(object.clone());
+            //db.update(("tickets", self.key)).patch(object);
+            return Some(object);
         };
+
+        ticket.fields.comments
     }
 }
 
@@ -204,7 +206,6 @@ impl JiraTickets {
 
         return response;
     }
-
 
     pub async fn save_jira_tickets(
         db: &SurrealAny,
