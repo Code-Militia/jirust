@@ -2,7 +2,7 @@ use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
 use crate::widgets::parent::TicketParentWidget;
-use crate::widgets::ticket_relation::TicketRelationWidget;
+use crate::widgets::ticket_relation::RelationWidget;
 use crate::widgets::tickets::TicketWidget;
 use crate::{
     config::Config,
@@ -22,6 +22,7 @@ use tui::{
 // }
 
 pub enum Focus {
+    Comments,
     Components,
     Description,
     Labels,
@@ -31,6 +32,7 @@ pub enum Focus {
 }
 
 pub struct App {
+    comments: CommentWidget,
     components: ComponentsWidget,
     description: DescriptionWidget,
     focus: Focus,
@@ -39,8 +41,8 @@ pub struct App {
     // load_state: LoadState,
     parent: TicketParentWidget,
     projects: ProjectsWidget,
+    relation: RelationWidget,
     tickets: TicketWidget,
-    ticket_relation: TicketRelationWidget,
     pub config: Config,
     pub error: ErrorComponent,
 }
@@ -51,6 +53,7 @@ impl App {
         let projects = &jira.projects.values.clone();
 
         Ok(Self {
+            comments: CommentsWidget::new(config.key_config.clone()),
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
             description: DescriptionWidget::new(config.key_config.clone()),
@@ -61,8 +64,8 @@ impl App {
             // load_state: LoadState::Complete,
             parent: TicketParentWidget::new(),
             projects: ProjectsWidget::new(projects, config.key_config.clone()),
+            relation: RelationWidget::new(config.key_config.clone()),
             tickets: TicketWidget::new(config.key_config.clone()),
-            ticket_relation: TicketRelationWidget::new(config.key_config.clone()),
         })
     }
 
@@ -139,12 +142,17 @@ impl App {
         self.parent
             .draw(f, false, ticket_parent, self.tickets.selected())?;
 
-        self.ticket_relation.draw(
+        self.relation.draw(
             f,
             matches!(self.focus, Focus::TicketRelation),
             ticket_relation,
             self.tickets.selected(),
         )?;
+
+        if let Focus::Comments = self.focus {
+            todo!("draw comments widget here");
+            return Ok(());
+        }
 
         Ok(())
     }
@@ -245,7 +253,7 @@ impl App {
                 }
             }
             Focus::TicketRelation => {
-                if self.ticket_relation.event(key)?.is_consumed() {
+                if self.relation.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
             }

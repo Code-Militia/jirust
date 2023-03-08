@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod comments;
 pub mod components;
 pub mod description;
 pub mod error;

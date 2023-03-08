@@ -103,8 +103,17 @@ impl ProjectsWidget {
             .block(draw_block_style(focused, &title))
             .highlight_style(draw_highlight_style());
 
-        f.render_widget(Clear, rect);
-        f.render_stateful_widget(list, rect, &mut self.state);
+        let width = 80;
+        let height = 20;
+        let area = Rect::new(
+            (f.size().width.saturating_sub(width)) / 2,
+            (f.size().height.saturating_sub(height)) / 2,
+            width.min(f.size().width),
+            height.min(f.size().height),
+        );
+
+        f.render_widget(Clear, area);
+        f.render_stateful_widget(list, area, &mut self.state);
 
         Ok(())
     }

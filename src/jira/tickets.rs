@@ -86,12 +86,15 @@ pub struct FieldAuthor {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CommentBody {
+    pub created: String,
     pub rendered_body: String,
+    pub updated: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Comments {
+    pub author: FieldAuthor,
     pub body: Vec<CommentBody>,
     pub update_author: FieldAuthor,
 }
@@ -141,11 +144,11 @@ impl TicketData {
         let response = client.get(url).send().await?.text().await?;
 
         let resp_slice: &str = &response[..];
-        let object: Comments =
-            serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
-        self.fields.comments = Some(object.clone());
-        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(self).await?;
-        return Ok(object);
+        let comments: Comments =
+            serde_json::from_str(resp_slice).expect("unable to convert comments resp to slice");
+        self.fields.comments = Some(comments.clone());
+        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?;
+        return Ok(comments);
     }
 
     pub async fn get_comments(
@@ -157,12 +160,10 @@ impl TicketData {
             .select(("tickets", &self.key))
             .await
             .expect("Failed to get TicketData from DB in get_comments");
-        if ticket.fields.comments.is_none() {
-            let comments = self.save_ticket_comments_from_api(db, jira_auth).await?;
-            return Ok(comments);
-        };
-
-        Ok(ticket.fields.comments.unwrap())
+        match ticket.fields.comments {
+            Some(i) => Ok(i),
+            None => Ok(self.save_ticket_comments_from_api(db, jira_auth).await?),
+        }
     }
 }
 

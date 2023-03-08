@@ -22,13 +22,13 @@ use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Compo
 type SurrealAny = Surreal<Any>;
 
 #[derive(Debug)]
-pub struct TicketRelationWidget {
+pub struct RelationWidget {
     key_config: KeyConfig,
     state: TableState,
     pub ticket_links: Vec<Links>,
 }
 
-impl TicketRelationWidget {
+impl RelationWidget {
     pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
@@ -96,7 +96,7 @@ impl TicketRelationWidget {
     }
 }
 
-impl TicketRelationWidget {
+impl RelationWidget {
     pub fn new(key_config: KeyConfig) -> Self {
         let mut state = TableState::default();
         state.select(Some(0));
@@ -159,7 +159,7 @@ impl TicketRelationWidget {
     // }
 }
 
-impl Component for TicketRelationWidget {
+impl Component for RelationWidget {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
