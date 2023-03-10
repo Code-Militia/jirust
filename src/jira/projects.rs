@@ -1,4 +1,4 @@
-use super::auth::JiraAuth;
+use super::auth::JiraClient;
 use super::SurrealAny;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -18,7 +18,7 @@ pub struct JiraProjects {
 }
 
 impl JiraProjects {
-    pub async fn new(jira_auth: &JiraAuth, db: &SurrealAny) -> anyhow::Result<Self> {
+    pub async fn new(jira_auth: &JiraClient, db: &SurrealAny) -> anyhow::Result<Self> {
         let projects = Self::get_jira_projects(db, jira_auth).await?;
         Ok(Self {
             is_last: Some(true), // TODO: Will need to refactor to handle pagination
@@ -27,7 +27,7 @@ impl JiraProjects {
         })
     }
 
-    async fn get_projects_from_jira_api(jira_auth: &JiraAuth) -> Result<String, reqwest::Error> {
+    async fn get_projects_from_jira_api(jira_auth: &JiraClient) -> Result<String, reqwest::Error> {
         let jira_url = jira_auth.get_domain();
         let jira_api_version = jira_auth.get_api_version();
         let projects_url = format!("{}/rest/api/{}/project/search", jira_url, jira_api_version);
@@ -45,7 +45,7 @@ impl JiraProjects {
     // TODO: handle pagination
     pub async fn save_jira_projects(
         db: &SurrealAny,
-        jira_auth: &JiraAuth,
+        jira_auth: &JiraClient,
     ) -> anyhow::Result<Vec<Project>> {
         let resp = Self::get_projects_from_jira_api(jira_auth).await?;
         let resp_slice: &str = &resp[..];
@@ -63,7 +63,7 @@ impl JiraProjects {
 
     pub async fn get_jira_projects(
         db: &SurrealAny,
-        jira_auth: &JiraAuth,
+        jira_auth: &JiraClient,
     ) -> anyhow::Result<Vec<Project>> {
         let projects: Vec<Project> = db.select("project").await?;
         if projects.is_empty() {

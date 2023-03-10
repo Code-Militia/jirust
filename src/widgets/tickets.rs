@@ -11,7 +11,7 @@ use crate::{
     config::KeyConfig,
     event::key::Key,
     jira::{
-        auth::JiraAuth,
+        auth::JiraClient,
         tickets::{JiraTickets, TicketData},
     },
 };
@@ -154,7 +154,7 @@ impl TicketWidget {
     pub async fn update(
         &mut self,
         db: &SurrealAny,
-        jira_auth: &JiraAuth,
+        jira_auth: &JiraClient,
         project_key: &str,
         ticket: &JiraTickets,
     ) -> anyhow::Result<()> {

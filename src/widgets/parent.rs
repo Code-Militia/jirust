@@ -12,7 +12,7 @@ use crate::{
     config::KeyConfig,
     event::key::Key,
     jira::{
-        auth::JiraAuth,
+        auth::JiraClient,
         tickets::{JiraTickets, LinkInwardOutwardParent, Links, TicketData},
     },
 };

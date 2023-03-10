@@ -1,3 +1,5 @@
+use crate::jira::tickets::CommentBody;
+use crate::widgets::comments::CommentsWidget;
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
@@ -32,7 +34,7 @@ pub enum Focus {
 }
 
 pub struct App {
-    comments: CommentWidget,
+    comments: CommentsWidget,
     components: ComponentsWidget,
     description: DescriptionWidget,
     focus: Focus,
@@ -150,7 +152,12 @@ impl App {
         )?;
 
         if let Focus::Comments = self.focus {
-            todo!("draw comments widget here");
+            self.comments.draw(
+                f,
+                matches!(self.focus, Focus::Projects),
+                f.size(),
+                self.tickets.selected(),
+            )?;
             return Ok(());
         }
 
@@ -174,7 +181,7 @@ impl App {
         self.tickets
             .update(
                 &self.jira.db,
-                &self.jira.auth,
+                &self.jira.client,
                 &project.key,
                 &self.jira.tickets,
             )
@@ -209,6 +216,18 @@ impl App {
         Ok(())
     }
 
+    pub async fn update_comments(&mut self) -> anyhow::Result<()> {
+        match self.tickets.selected() {
+            None => {
+                return Ok(())
+            }
+            Some(t) => {
+                t.get_comments(&self.jira.db, &self.jira.client).await?;
+            }
+        };
+        Ok(())
+    }
+
     pub async fn component_event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if self.error.event(key)?.is_consumed() {
             return Ok(EventState::Consumed);
@@ -219,13 +238,15 @@ impl App {
         // }
 
         match self.focus {
+            Focus::Comments => {
+                if self.comments.event(key)?.is_consumed() {
+                    self.update_comments().await?;
+                    return Ok(EventState::Consumed);
+                }
+            }
             Focus::Components => {
                 if self.components.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.focus_below {
-                    self.focus = Focus::TicketRelation
                 }
             }
             Focus::Description => {
@@ -279,20 +300,38 @@ impl App {
         }
 
         match self.focus {
+            Focus::Comments => {
+                if key == self.config.key_config.exit_popup {
+                    self.focus = Focus::Tickets
+                }
+            }
             Focus::Components => {
                 if key == self.config.key_config.focus_above {
                     self.focus = Focus::Labels;
                     return Ok(EventState::Consumed);
                 }
+
+                if key == self.config.key_config.focus_below {
+                    self.focus = Focus::TicketRelation
+                }
+
                 if key == self.config.key_config.focus_right {
                     self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.focus_comments {
+                    self.focus = Focus::Comments;
                 }
             }
             Focus::Description => {
                 if key == self.config.key_config.focus_left {
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.focus_comments {
+                    self.focus = Focus::Comments;
                 }
             }
             Focus::Labels => {
@@ -308,6 +347,10 @@ impl App {
                     self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
+
+                if key == self.config.key_config.focus_comments {
+                    self.focus = Focus::Comments;
+                }
             }
             Focus::Projects => {
                 if key == self.config.key_config.enter {
@@ -320,6 +363,10 @@ impl App {
                     self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
                 }
+
+                if key == self.config.key_config.focus_comments {
+                    self.focus = Focus::Comments;
+                }
             }
             Focus::Tickets => {
                 if key == self.config.key_config.focus_below {
@@ -329,6 +376,10 @@ impl App {
                 if key == self.config.key_config.focus_right {
                     self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.focus_comments {
+                    self.focus = Focus::Comments;
                 }
             }
         }

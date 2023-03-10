@@ -1,4 +1,4 @@
-use super::auth::JiraAuth;
+use super::auth::JiraClient;
 use super::SurrealAny;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -116,7 +116,7 @@ pub struct Fields {
     pub summary: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TicketData {
     pub fields: Fields,
@@ -128,24 +128,13 @@ impl TicketData {
     pub async fn save_ticket_comments_from_api(
         &mut self,
         db: &SurrealAny,
-        jira_auth: &JiraAuth,
+        jira_client: &JiraClient,
     ) -> anyhow::Result<Comments> {
-        let domain = jira_auth.get_domain();
-        let headers = jira_auth.get_basic_auth();
-        let url = format!(
-            "{}/rest/api/3/issue/{}/comment?expand=renderedBody",
-            domain, self.key
-        );
+        let url = format!("/rest/api/3/issue/{}/comment?expand=renderedBody", self.key);
+        let response = jira_client.get_from_jira_api(&url).await?;
 
-        let client = reqwest::Client::builder()
-            .default_headers(headers)
-            .https_only(true)
-            .build()?;
-        let response = client.get(url).send().await?.text().await?;
-
-        let resp_slice: &str = &response[..];
-        let comments: Comments =
-            serde_json::from_str(resp_slice).expect("unable to convert comments resp to slice");
+        let comments: Comments = serde_json::from_str(response.as_str())
+            .expect("unable to convert comments resp to slice");
         self.fields.comments = Some(comments.clone());
         let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?;
         return Ok(comments);
@@ -154,7 +143,7 @@ impl TicketData {
     pub async fn get_comments(
         &mut self,
         db: &SurrealAny,
-        jira_auth: &JiraAuth,
+        jira_client: &JiraClient,
     ) -> anyhow::Result<Comments> {
         let ticket: TicketData = db
             .select(("tickets", &self.key))
@@ -162,7 +151,7 @@ impl TicketData {
             .expect("Failed to get TicketData from DB in get_comments");
         match ticket.fields.comments {
             Some(i) => Ok(i),
-            None => Ok(self.save_ticket_comments_from_api(db, jira_auth).await?),
+            None => Ok(self.save_ticket_comments_from_api(db, jira_client).await?),
         }
     }
 }
@@ -189,7 +178,7 @@ impl JiraTickets {
     }
 
     async fn get_tickets_from_jira_api(
-        jira_auth: &JiraAuth,
+        jira_auth: &JiraClient,
         project_name: String,
     ) -> Result<String, reqwest::Error> {
         let domain = jira_auth.get_domain();
@@ -210,15 +199,14 @@ impl JiraTickets {
 
     pub async fn save_jira_tickets(
         db: &SurrealAny,
-        jira_auth: &JiraAuth,
+        jira_auth: &JiraClient,
         project_key: &str,
     ) -> Result<Vec<TicketData>, SurrealDbError> {
-        let resp = Self::get_tickets_from_jira_api(&jira_auth, project_key.to_string())
+        let response = Self::get_tickets_from_jira_api(&jira_auth, project_key.to_string())
             .await
             .expect("should be response from jira");
-        let resp_slice: &str = &resp[..];
-        let object: JiraTickets =
-            serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
+        let object: JiraTickets = serde_json::from_str(response.as_str())
+            .expect("unable to convert project resp to slice");
         for ticket in object.issues.iter() {
             let issue_insert: TicketData =
                 db.create(("tickets", &ticket.key)).content(&ticket).await?;
@@ -230,7 +218,7 @@ impl JiraTickets {
     pub async fn get_jira_tickets(
         &self,
         db: &SurrealAny,
-        jira_auth: &JiraAuth,
+        jira_auth: &JiraClient,
         project_key: &str,
     ) -> Result<Vec<TicketData>, SurrealDbError> {
         let tickets: Vec<TicketData> = db.select("tickets").await?;
