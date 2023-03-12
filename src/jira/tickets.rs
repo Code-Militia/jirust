@@ -86,17 +86,16 @@ pub struct FieldAuthor {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CommentBody {
+    pub author: FieldAuthor,
     pub created: String,
     pub rendered_body: String,
     pub updated: String,
+    pub update_author: FieldAuthor,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
 pub struct Comments {
-    pub author: FieldAuthor,
-    pub body: Vec<CommentBody>,
-    pub update_author: FieldAuthor,
+    pub comments: Vec<CommentBody>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -126,7 +125,7 @@ pub struct TicketData {
 
 impl TicketData {
     pub async fn save_ticket_comments_from_api(
-        &mut self,
+        &self,
         db: &SurrealAny,
         jira_client: &JiraClient,
     ) -> anyhow::Result<Comments> {
@@ -135,13 +134,12 @@ impl TicketData {
 
         let comments: Comments = serde_json::from_str(response.as_str())
             .expect("unable to convert comments resp to slice");
-        self.fields.comments = Some(comments.clone());
         let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?;
         return Ok(comments);
     }
 
     pub async fn get_comments(
-        &mut self,
+        &self,
         db: &SurrealAny,
         jira_client: &JiraClient,
     ) -> anyhow::Result<Comments> {
@@ -150,11 +148,21 @@ impl TicketData {
             .await
             .expect("Failed to get TicketData from DB in get_comments");
         match ticket.fields.comments {
-            Some(i) => Ok(i),
-            None => Ok(self.save_ticket_comments_from_api(db, jira_client).await?),
+            None => {
+                info!("in get_comments none block");
+                let c = self.save_ticket_comments_from_api(db, jira_client).await?;
+                info!("get_comments none block response -- {:?}", c);
+                Ok(c)
+            }
+            Some(c) => {
+                info!("in get_comments some block");
+                info!("get_comments some block response -- {:?}", c);
+                Ok(c)
+            }
         }
     }
 }
+
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -227,4 +235,5 @@ impl JiraTickets {
         }
         Ok(tickets)
     }
+
 }

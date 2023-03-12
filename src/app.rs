@@ -1,4 +1,3 @@
-use crate::jira::tickets::CommentBody;
 use crate::widgets::comments::CommentsWidget;
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
@@ -156,7 +155,6 @@ impl App {
                 f,
                 matches!(self.focus, Focus::Projects),
                 f.size(),
-                self.tickets.selected(),
             )?;
             return Ok(());
         }
@@ -169,7 +167,7 @@ impl App {
             return Ok(EventState::Consumed);
         }
 
-        if self.move_focus(key)?.is_consumed() {
+        if self.move_focus(key).await?.is_consumed() {
             return Ok(EventState::Consumed);
         };
 
@@ -217,14 +215,15 @@ impl App {
     }
 
     pub async fn update_comments(&mut self) -> anyhow::Result<()> {
-        match self.tickets.selected() {
+        let comments = match self.tickets.selected() {
             None => {
                 return Ok(())
             }
             Some(t) => {
-                t.get_comments(&self.jira.db, &self.jira.client).await?;
+                t.get_comments(&self.jira.db, &self.jira.client).await?
             }
         };
+        self.comments.comments = Some(comments);
         Ok(())
     }
 
@@ -240,7 +239,6 @@ impl App {
         match self.focus {
             Focus::Comments => {
                 if self.comments.event(key)?.is_consumed() {
-                    self.update_comments().await?;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -258,18 +256,9 @@ impl App {
                 if self.labels.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
-
-                if key == self.config.key_config.focus_below {
-                    self.update_components().await?;
-                }
             }
             Focus::Projects => {
                 if self.projects.event(key)?.is_consumed() {
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.enter {
-                    self.update_tickets().await?;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -282,18 +271,13 @@ impl App {
                 if self.tickets.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
-
-                if key == self.config.key_config.focus_below {
-                    self.update_labels().await?; // Get the current selected ticket and send it
-                                                 // to update labels widget
-                }
             }
         }
 
         return Ok(EventState::NotConsumed);
     }
 
-    fn move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
+    async fn move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.config.key_config.focus_projects {
             self.focus = Focus::Projects;
             return Ok(EventState::Consumed);
@@ -302,7 +286,8 @@ impl App {
         match self.focus {
             Focus::Comments => {
                 if key == self.config.key_config.exit_popup {
-                    self.focus = Focus::Tickets
+                    self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
                 }
             }
             Focus::Components => {
@@ -312,7 +297,8 @@ impl App {
                 }
 
                 if key == self.config.key_config.focus_below {
-                    self.focus = Focus::TicketRelation
+                    self.focus = Focus::TicketRelation;
+                    return Ok(EventState::Consumed);
                 }
 
                 if key == self.config.key_config.focus_right {
@@ -321,7 +307,9 @@ impl App {
                 }
 
                 if key == self.config.key_config.focus_comments {
+                    self.update_comments().await?;
                     self.focus = Focus::Comments;
+                    return Ok(EventState::Consumed);
                 }
             }
             Focus::Description => {
@@ -331,7 +319,9 @@ impl App {
                 }
 
                 if key == self.config.key_config.focus_comments {
+                    self.update_comments().await?;
                     self.focus = Focus::Comments;
+                    return Ok(EventState::Consumed);
                 }
             }
             Focus::Labels => {
@@ -340,6 +330,7 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
                 if key == self.config.key_config.focus_below {
+                    self.update_components().await?;
                     self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
                 }
@@ -349,11 +340,14 @@ impl App {
                 }
 
                 if key == self.config.key_config.focus_comments {
+                    self.update_comments().await?;
                     self.focus = Focus::Comments;
+                    return Ok(EventState::Consumed);
                 }
             }
             Focus::Projects => {
                 if key == self.config.key_config.enter {
+                    self.update_tickets().await?;
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
@@ -365,21 +359,27 @@ impl App {
                 }
 
                 if key == self.config.key_config.focus_comments {
+                    self.update_comments().await?;
                     self.focus = Focus::Comments;
+                    return Ok(EventState::Consumed);
                 }
             }
             Focus::Tickets => {
                 if key == self.config.key_config.focus_below {
+                    self.update_labels().await?; // Get the current selected ticket and send it
+                                                 // to update labels widget
                     self.focus = Focus::Labels;
                     return Ok(EventState::Consumed);
                 }
+
                 if key == self.config.key_config.focus_right {
                     self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
-
                 if key == self.config.key_config.focus_comments {
+                    self.update_comments().await?;
                     self.focus = Focus::Comments;
+                    return Ok(EventState::Consumed);
                 }
             }
         }

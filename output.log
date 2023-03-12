@@ -1,39 +1,21 @@
-warning: unused import: `KeyConfig`
- --> src/app.rs:6:22
+warning: unused import: `crate::jira::tickets::CommentBody`
+ --> src/app.rs:2:5
   |
-6 |     config::{Config, KeyConfig},
-  |                      ^^^^^^^^^
+2 | use crate::jira::tickets::CommentBody;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
   = note: `#[warn(unused_imports)]` on by default
 
-warning: unused import: `surrealdb::Error as SurrealDbError`
- --> src/components/tickets.rs:2:5
-  |
-2 | use surrealdb::Error as SurrealDbError;
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `Clear`
- --> src/components/tickets.rs:9:31
-  |
-9 |     widgets::{Block, Borders, Clear, List, ListItem, ListState},
-  |                               ^^^^^
-
-warning: unused import: `Layout`
- --> src/components.rs:9:44
-  |
-9 | use tui::{backend::Backend, layout::{Rect, Layout}, Frame};
-  |                                            ^^^^^^
-
 warning: unused imports: `Deserialize`, `Serialize`
- --> src/jira/auth.rs:2:13
+ --> src/jira/auth.rs:3:13
   |
-2 | use serde::{Deserialize, Serialize};
+3 | use serde::{Deserialize, Serialize};
   |             ^^^^^^^^^^^  ^^^^^^^^^
 
 warning: unused import: `collections::HashMap`
- --> src/jira/auth.rs:3:11
+ --> src/jira/auth.rs:4:11
   |
-3 | use std::{collections::HashMap, env};
+4 | use std::{collections::HashMap, env};
   |           ^^^^^^^^^^^^^^^^^^^^
 
 warning: unused imports: `Event as CEvent`, `self`
@@ -73,168 +55,119 @@ warning: unused imports: `Terminal`, `backend::CrosstermBackend`
 15 |     Terminal,
    |     ^^^^^^^^
 
-warning: unused imports: `Level`, `debug`, `error`, `info`, `log_enabled`
-  --> src/main.rs:10:11
-   |
-10 | use log::{debug, error, log_enabled, info, Level};
-   |           ^^^^^  ^^^^^  ^^^^^^^^^^^  ^^^^  ^^^^^
+warning: unused imports: `CommentBody`, `SurrealAny`, `auth::JiraClient`
+ --> src/widgets/comments.rs:5:12
+  |
+5 |     jira::{auth::JiraClient, SurrealAny, tickets::{CommentBody, Comments}},
+  |            ^^^^^^^^^^^^^^^^  ^^^^^^^^^^            ^^^^^^^^^^^
 
-warning: unused variable: `f`
-  --> src/components/tickets.rs:59:41
+warning: unused imports: `draw_block_style`, `draw_highlight_style`
+  --> src/widgets/comments.rs:18:13
    |
-59 |     fn draw_metadata<B: Backend>(&self, f: &mut Frame<B>, _rect: Rect) -> anyhow::Result<()> {
-   |                                         ^ help: if this is intentional, prefix it with an underscore: `_f`
+18 | use super::{draw_block_style, draw_highlight_style, EventState};
+   |             ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `log::info`
+ --> src/widgets/parent.rs:1:5
+  |
+1 | use log::info;
+  |     ^^^^^^^^^
+
+warning: unused import: `ListState`
+ --> src/widgets/parent.rs:7:28
+  |
+7 |     widgets::{Cell, Clear, ListState, Row, Table, TableState},
+  |                            ^^^^^^^^^
+
+warning: unused imports: `JiraTickets`, `LinkInwardOutwardParent`, `Links`, `auth::JiraClient`, `config::KeyConfig`, `event::key::Key`
+  --> src/widgets/parent.rs:12:5
+   |
+12 |     config::KeyConfig,
+   |     ^^^^^^^^^^^^^^^^^
+13 |     event::key::Key,
+   |     ^^^^^^^^^^^^^^^
+14 |     jira::{
+15 |         auth::JiraClient,
+   |         ^^^^^^^^^^^^^^^^
+16 |         tickets::{JiraTickets, LinkInwardOutwardParent, Links, TicketData},
+   |                   ^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^
+
+warning: unused imports: `Component`, `EventState`, `commands::CommandInfo`
+  --> src/widgets/parent.rs:20:13
+   |
+20 | use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
+   |             ^^^^^^^^^^^^^^^^^^^^^                                          ^^^^^^^^^  ^^^^^^^^^^
+
+warning: unused import: `log::info`
+ --> src/widgets/ticket_relation.rs:1:5
+  |
+1 | use log::info;
+  |     ^^^^^^^^^
+
+warning: unused import: `ListState`
+ --> src/widgets/ticket_relation.rs:7:28
+  |
+7 |     widgets::{Cell, Clear, ListState, Row, Table, TableState},
+  |                            ^^^^^^^^^
+
+warning: unused imports: `JiraTickets`, `auth::JiraClient`
+  --> src/widgets/ticket_relation.rs:15:9
+   |
+15 |         auth::JiraClient,
+   |         ^^^^^^^^^^^^^^^^
+16 |         tickets::{JiraTickets, Links, TicketData},
+   |                   ^^^^^^^^^^^
+
+warning: unused imports: `Level`, `debug`, `error`, `log_enabled`
+  --> src/main.rs:17:11
+   |
+17 | use log::{debug, error, info, log_enabled, Level};
+   |           ^^^^^  ^^^^^        ^^^^^^^^^^^  ^^^^^
+
+warning: unused imports: `Deserialize`, `Serialize`
+  --> src/main.rs:18:13
+   |
+18 | use serde::{Deserialize, Serialize};
+   |             ^^^^^^^^^^^  ^^^^^^^^^
+
+warning: unused variable: `domain`
+  --> src/jira/auth.rs:46:13
+   |
+46 |         let domain = self.get_domain();
+   |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_domain`
    |
    = note: `#[warn(unused_variables)]` on by default
 
-warning: unused variable: `f`
-  --> src/components/tickets.rs:63:41
+warning: unused variable: `rect`
+  --> src/widgets/projects.rs:91:9
    |
-63 |     fn draw_work_log<B: Backend>(&self, f: &mut Frame<B>, _rect: Rect) -> anyhow::Result<()> {
-   |                                         ^ help: if this is intentional, prefix it with an underscore: `_f`
-
-warning: unused variable: `f`
-  --> src/components/tickets.rs:67:44
-   |
-67 |     fn draw_description<B: Backend>(&self, f: &mut Frame<B>, _rect: Rect) -> anyhow::Result<()> {
-   |                                            ^ help: if this is intentional, prefix it with an underscore: `_f`
+91 |         rect: Rect,
+   |         ^^^^ help: if this is intentional, prefix it with an underscore: `_rect`
 
 warning: unused variable: `err`
-  --> src/main.rs:38:24
+  --> src/main.rs:57:24
    |
-38 |             if let Err(err) = app.draw(f) {
+57 |             if let Err(err) = app.draw(f) {
    |                        ^^^ help: if this is intentional, prefix it with an underscore: `_err`
 
-warning: variable does not need to be mutable
-  --> src/components/tickets.rs:76:13
-   |
-76 |         let mut state = ListState::default();
-   |             ----^^^^^
-   |             |
-   |             help: remove this `mut`
-   |
-   = note: `#[warn(unused_mut)]` on by default
-
-warning: static `CMD_GROUP_GENERAL` is never used
- --> src/components/commands.rs:3:8
-  |
-3 | static CMD_GROUP_GENERAL: &str = "-- General --";
-  |        ^^^^^^^^^^^^^^^^^
-  |
-  = note: `#[warn(dead_code)]` on by default
-
-warning: static `CMD_GROUP_TABLE` is never used
- --> src/components/commands.rs:4:8
-  |
-4 | static CMD_GROUP_TABLE: &str = "-- Table --";
-  |        ^^^^^^^^^^^^^^^
-
-warning: static `CMD_GROUP_DATABASES` is never used
- --> src/components/commands.rs:5:8
-  |
-5 | static CMD_GROUP_DATABASES: &str = "-- Databases --";
-  |        ^^^^^^^^^^^^^^^^^^^
-
-warning: static `CMD_GROUP_PROPERTIES` is never used
- --> src/components/commands.rs:6:8
-  |
-6 | static CMD_GROUP_PROPERTIES: &str = "-- Properties --";
-  |        ^^^^^^^^^^^^^^^^^^^^
-
-warning: function `scroll` is never used
-  --> src/components/commands.rs:35:8
-   |
-35 | pub fn scroll(key: &KeyConfig) -> CommandText {
-   |        ^^^^^^
-
-warning: function `scroll_up_down_multiple_lines` is never used
-  --> src/components/commands.rs:45:8
-   |
-45 | pub fn scroll_up_down_multiple_lines(key: &KeyConfig) -> CommandText {
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `scroll_to_top_bottom` is never used
-  --> src/components/commands.rs:55:8
-   |
-55 | pub fn scroll_to_top_bottom(key: &KeyConfig) -> CommandText {
-   |        ^^^^^^^^^^^^^^^^^^^^
-
-warning: function `expand_collapse` is never used
-  --> src/components/commands.rs:65:8
-   |
-65 | pub fn expand_collapse(key: &KeyConfig) -> CommandText {
-   |        ^^^^^^^^^^^^^^^
-
-warning: function `filter` is never used
-  --> src/components/commands.rs:72:8
-   |
-72 | pub fn filter(key: &KeyConfig) -> CommandText {
-   |        ^^^^^^
-
-warning: function `move_focus` is never used
-  --> src/components/commands.rs:76:8
-   |
-76 | pub fn move_focus(key: &KeyConfig) -> CommandText {
-   |        ^^^^^^^^^^
-
-warning: function `extend_selection_by_one_cell` is never used
-  --> src/components/commands.rs:86:8
-   |
-86 | pub fn extend_selection_by_one_cell(key: &KeyConfig) -> CommandText {
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `extend_or_shorten_widget_width` is never used
-  --> src/components/commands.rs:99:8
-   |
-99 | pub fn extend_or_shorten_widget_width(key: &KeyConfig) -> CommandText {
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: function `help` is never used
-   --> src/components/commands.rs:169:8
-    |
-169 | pub fn help(key_config: &KeyConfig) -> CommandText {
-    |        ^^^^
-
-warning: function `exit_pop_up` is never used
-   --> src/components/commands.rs:176:8
-    |
-176 | pub fn exit_pop_up(key_config: &KeyConfig) -> CommandText {
-    |        ^^^^^^^^^^^
-
-warning: associated function `new` is never used
-  --> src/components/commands.rs:16:18
-   |
-16 |     pub const fn new(name: String, group: &'static str) -> Self {
-   |                  ^^^
-
-warning: associated function `new` is never used
-  --> src/components/commands.rs:30:18
-   |
-30 |     pub const fn new(text: CommandText) -> Self {
-   |                  ^^^
-
-warning: associated function `selected_ticket` is never used
-   --> src/components/tickets.rs:129:12
-    |
-129 |     pub fn selected_ticket(&self) -> Option<&TicketData> {
-    |            ^^^^^^^^^^^^^^^
-
 warning: associated function `set_domain` is never used
-  --> src/jira/auth.rs:12:12
+  --> src/jira/auth.rs:14:12
    |
-12 |     pub fn set_domain(&mut self, url: String) {
+14 |     pub fn set_domain(&mut self, url: String) {
    |            ^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
 
 warning: associated function `set_api_version` is never used
-  --> src/jira/auth.rs:16:12
+  --> src/jira/auth.rs:18:12
    |
-16 |     pub fn set_api_version(&mut self, api_version: String) {
+18 |     pub fn set_api_version(&mut self, api_version: String) {
    |            ^^^^^^^^^^^^^^^
 
 warning: associated function `set_api_key` is never used
-  --> src/jira/auth.rs:20:12
+  --> src/jira/auth.rs:22:12
    |
-20 |     pub fn set_api_key(&mut self, jira_api_key: String) {
+22 |     pub fn set_api_key(&mut self, jira_api_key: String) {
    |            ^^^^^^^^^^^
 
 warning: function `render_home` is never used
@@ -255,6 +188,148 @@ warning: function `render_projects` is never used
 8 | pub fn render_projects<'a>(
   |        ^^^^^^^^^^^^^^^
 
-warning: `jirust` (bin "jirust") generated 40 warnings
-    Finished dev [unoptimized + debuginfo] target(s) in 0.20s
+warning: static `CMD_GROUP_GENERAL` is never used
+ --> src/widgets/commands.rs:3:8
+  |
+3 | static CMD_GROUP_GENERAL: &str = "-- General --";
+  |        ^^^^^^^^^^^^^^^^^
+
+warning: static `CMD_GROUP_TABLE` is never used
+ --> src/widgets/commands.rs:4:8
+  |
+4 | static CMD_GROUP_TABLE: &str = "-- Table --";
+  |        ^^^^^^^^^^^^^^^
+
+warning: static `CMD_GROUP_DATABASES` is never used
+ --> src/widgets/commands.rs:5:8
+  |
+5 | static CMD_GROUP_DATABASES: &str = "-- Databases --";
+  |        ^^^^^^^^^^^^^^^^^^^
+
+warning: static `CMD_GROUP_PROPERTIES` is never used
+ --> src/widgets/commands.rs:6:8
+  |
+6 | static CMD_GROUP_PROPERTIES: &str = "-- Properties --";
+  |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `scroll` is never used
+  --> src/widgets/commands.rs:35:8
+   |
+35 | pub fn scroll(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^
+
+warning: function `scroll_up_down_multiple_lines` is never used
+  --> src/widgets/commands.rs:45:8
+   |
+45 | pub fn scroll_up_down_multiple_lines(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `scroll_to_top_bottom` is never used
+  --> src/widgets/commands.rs:55:8
+   |
+55 | pub fn scroll_to_top_bottom(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `expand_collapse` is never used
+  --> src/widgets/commands.rs:65:8
+   |
+65 | pub fn expand_collapse(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^^^^^^
+
+warning: function `filter` is never used
+  --> src/widgets/commands.rs:72:8
+   |
+72 | pub fn filter(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^
+
+warning: function `move_focus` is never used
+  --> src/widgets/commands.rs:76:8
+   |
+76 | pub fn move_focus(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^
+
+warning: function `extend_selection_by_one_cell` is never used
+  --> src/widgets/commands.rs:86:8
+   |
+86 | pub fn extend_selection_by_one_cell(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `extend_or_shorten_widget_width` is never used
+  --> src/widgets/commands.rs:99:8
+   |
+99 | pub fn extend_or_shorten_widget_width(key: &KeyConfig) -> CommandText {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `help` is never used
+   --> src/widgets/commands.rs:169:8
+    |
+169 | pub fn help(key_config: &KeyConfig) -> CommandText {
+    |        ^^^^
+
+warning: function `exit_pop_up` is never used
+   --> src/widgets/commands.rs:176:8
+    |
+176 | pub fn exit_pop_up(key_config: &KeyConfig) -> CommandText {
+    |        ^^^^^^^^^^^
+
+warning: associated function `new` is never used
+  --> src/widgets/commands.rs:16:18
+   |
+16 |     pub const fn new(name: String, group: &'static str) -> Self {
+   |                  ^^^
+
+warning: associated function `new` is never used
+  --> src/widgets/commands.rs:30:18
+   |
+30 |     pub const fn new(text: CommandText) -> Self {
+   |                  ^^^
+
+warning: associated function `update` is never used
+   --> src/widgets/comments.rs:105:18
+    |
+105 |     pub async fn update(
+    |                  ^^^^^^
+
+warning: associated function `selected` is never used
+  --> src/widgets/components.rs:97:12
+   |
+97 |     pub fn selected(&self) -> Option<&String> {
+   |            ^^^^^^^^
+
+warning: field `description` is never read
+  --> src/widgets/description.rs:16:5
+   |
+15 | pub struct DescriptionWidget {
+   |            ----------------- field in this struct
+16 |     description: String,
+   |     ^^^^^^^^^^^
+   |
+   = note: `DescriptionWidget` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: associated function `selected` is never used
+  --> src/widgets/labels.rs:97:12
+   |
+97 |     pub fn selected(&self) -> Option<&String> {
+   |            ^^^^^^^^
+
+warning: type alias `SurrealAny` is never used
+  --> src/widgets/parent.rs:22:6
+   |
+22 | type SurrealAny = Surreal<Any>;
+   |      ^^^^^^^^^^
+
+warning: type alias `SurrealAny` is never used
+  --> src/widgets/ticket_relation.rs:22:6
+   |
+22 | type SurrealAny = Surreal<Any>;
+   |      ^^^^^^^^^^
+
+warning: associated function `selected` is never used
+   --> src/widgets/ticket_relation.rs:143:12
+    |
+143 |     pub fn selected(&self) -> Option<&Links> {
+    |            ^^^^^^^^
+
+warning: `jirust` (bin "jirust") generated 51 warnings
+    Finished dev [unoptimized + debuginfo] target(s) in 0.15s
      Running `target/debug/jirust`
