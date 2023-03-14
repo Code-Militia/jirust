@@ -1,12 +1,11 @@
-use crate::{
-    event::key::Key,
-    jira::tickets::Comments,
-};
+use crate::{event::key::Key, jira::tickets::{Comments, CommentBody}};
 use html2md::parse_html;
 use tui::{
     backend::Backend,
-    layout::{Constraint, Rect},
-    widgets::{Clear, Cell, Table, TableState, Row},
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::Style,
+    text::Span,
+    widgets::{Cell, Clear, Paragraph, Row, Table, TableState, Wrap},
     Frame,
 };
 
@@ -30,41 +29,62 @@ impl CommentsWidget {
     ) -> anyhow::Result<()> {
         let title = "Comments";
 
-        let header_cells = ["Author", "Updated Author", "Comment"];
+        let header_cells = ["Author", "Updated Author", "Created by", "Updated by"];
         let headers = Row::new(header_cells);
         let rows = match &self.comments {
             None => return Ok(()),
-            Some(c) => {
-                c.comments.iter().map(|f| {
-                    let item = [
-                        f.author.display_name.as_str(),
-                        f.update_author.display_name.as_str(),
-                        f.rendered_body.as_str()
-                    ];
-                    let height = item
-                        .iter()
-                        .map(|content| content.chars().filter(|c| *c == '\n').count())
-                        .max()
-                        .unwrap_or(0)
-                        + 1;
-                    let cells = item.iter().map(|c| Cell::from(*c));
-                    Row::new(cells).height(height as u16)
-                })
-            }
+            Some(c) => c.comments.iter().map(|comment_body| {
+                let item = [
+                    comment_body.author.display_name.as_str(),
+                    comment_body.update_author.display_name.as_str(),
+                    comment_body.created.as_str(),
+                    comment_body.updated.as_str(),
+                ];
+                let height = item
+                    .iter()
+                    .map(|content| content.chars().filter(|c| *c == '\n').count())
+                    .max()
+                    .unwrap_or(0)
+                    + 1;
+                let cells = item.iter().map(|c| Cell::from(*c));
+                Row::new(cells).height(height as u16)
+            }),
         };
         let table = Table::new(rows)
             .header(headers)
             .block(draw_block_style(focused, &title))
             .highlight_style(draw_highlight_style())
             .widths(&[
-                Constraint::Percentage(34),
-                Constraint::Percentage(33),
-                Constraint::Percentage(33),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
+                Constraint::Percentage(25),
             ]);
 
         f.render_widget(Clear, rect);
         f.render_stateful_widget(table, rect, &mut self.state);
 
+        Ok(())
+    }
+
+    pub fn draw_comment_body<B: Backend>(&mut self, f: &mut Frame<B>) -> anyhow::Result<()> {
+        let comment = match self.selected() {
+            None => return Ok(()),
+            Some(c) => c,
+        };
+
+        let size = f.size();
+        let chunks = Layout::default()
+            .constraints([Constraint::Percentage(100)].as_ref())
+            .split(size);
+
+        let text = &comment.rendered_body;
+        let paragraph = Paragraph::new(Span::styled(text, Style::default()))
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
+
+        f.render_widget(Clear, size);
+        f.render_widget(paragraph, chunks[0]);
         Ok(())
     }
 }
@@ -76,14 +96,66 @@ impl CommentsWidget {
         return Self {
             comments: None,
             key_config,
-            state
+            state,
         };
     }
 
-    pub async fn update(
-        &mut self,
-        comments: Comments
-    ) -> anyhow::Result<()> {
+    pub fn next(&mut self, line: usize) {
+        let comments = match &self.comments {
+            None => return,
+            Some(c) => c,
+        };
+        let i = self
+            .state
+            .selected()
+            .map(|i| (i + line).min(comments.comments.len() - 1));
+
+        self.state.select(i);
+    }
+
+    pub fn previous(&mut self, line: usize) {
+        let i = self
+            .state
+            .selected()
+            .map(|i| if i <= line { 0 } else { i - line });
+
+        self.state.select(i);
+    }
+
+    pub fn go_to_top(&mut self) {
+        let comments = match &self.comments {
+            None => return,
+            Some(c) => c,
+        };
+        if comments.comments.is_empty() {
+            return;
+        }
+        self.state.select(Some(0));
+    }
+
+    pub fn go_to_bottom(&mut self) {
+        let comments = match &self.comments {
+            None => return,
+            Some(c) => c,
+        };
+        if comments.comments.is_empty() {
+            return;
+        }
+        self.state.select(Some(comments.comments.len() - 1));
+    }
+
+    pub fn selected(&self) -> Option<&CommentBody> {
+        let comments = match &self.comments {
+            None => return None,
+            Some(c) => c,
+        };
+        match self.state.selected() {
+            Some(i) => comments.comments.get(i),
+            None => None,
+        }
+    }
+
+    pub async fn update(&mut self, comments: Comments) -> anyhow::Result<()> {
         self.comments = Some(comments);
         Ok(())
     }
@@ -91,6 +163,25 @@ impl CommentsWidget {
 
 impl CommentsWidget {
     pub fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if key == self.key_config.scroll_down {
+            self.next(1);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_up {
+            self.previous(1);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_down_multiple_lines {
+            self.next(10);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_up_multiple_lines {
+            self.previous(10);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_to_bottom {
+            self.go_to_bottom();
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_to_top {
+            self.go_to_top();
+            return Ok(EventState::Consumed);
+        }
         return Ok(EventState::NotConsumed);
     }
 }
