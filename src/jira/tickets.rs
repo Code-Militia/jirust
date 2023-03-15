@@ -95,7 +95,7 @@ pub struct CommentBody {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Comments {
-    pub comments: Vec<CommentBody>
+    pub comments: Vec<CommentBody>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -162,7 +162,6 @@ impl TicketData {
         }
     }
 }
-
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -235,5 +234,4 @@ impl JiraTickets {
         }
         Ok(tickets)
     }
-
 }

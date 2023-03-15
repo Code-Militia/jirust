@@ -1,4 +1,4 @@
-use crate::widgets::comments::CommentsWidget;
+use crate::widgets::comments::{CommentsWidget, CommentContents};
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
@@ -24,6 +24,7 @@ use tui::{
 
 pub enum Focus {
     Comments,
+    CommentContents,
     Components,
     Description,
     Labels,
@@ -34,6 +35,7 @@ pub enum Focus {
 
 pub struct App {
     comments: CommentsWidget,
+    comment_contents: CommentContents,
     components: ComponentsWidget,
     description: DescriptionWidget,
     focus: Focus,
@@ -55,6 +57,7 @@ impl App {
 
         Ok(Self {
             comments: CommentsWidget::new(config.key_config.clone()),
+            comment_contents: CommentContents::new(config.key_config.clone()),
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
             description: DescriptionWidget::new(config.key_config.clone()),
@@ -151,11 +154,13 @@ impl App {
         )?;
 
         if let Focus::Comments = self.focus {
-            self.comments.draw(
-                f,
-                matches!(self.focus, Focus::Projects),
-                f.size(),
-            )?;
+            self.comments
+                .draw(f, matches!(self.focus, Focus::Projects), f.size())?;
+            return Ok(());
+        }
+
+        if let Focus::CommentContents = self.focus {
+            self.comment_contents.draw(f, self.comments.selected(), matches!(self.focus, Focus::CommentContents))?;
             return Ok(());
         }
 
@@ -216,12 +221,8 @@ impl App {
 
     pub async fn update_comments(&mut self) -> anyhow::Result<()> {
         let comments = match self.tickets.selected() {
-            None => {
-                return Ok(())
-            }
-            Some(t) => {
-                t.get_comments(&self.jira.db, &self.jira.client).await?
-            }
+            None => return Ok(()),
+            Some(t) => t.get_comments(&self.jira.db, &self.jira.client).await?,
         };
         self.comments.comments = Some(comments);
         Ok(())
@@ -239,6 +240,11 @@ impl App {
         match self.focus {
             Focus::Comments => {
                 if self.comments.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::CommentContents => {
+                if self.comment_contents.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
             }
@@ -287,6 +293,17 @@ impl App {
             Focus::Comments => {
                 if key == self.config.key_config.exit_popup {
                     self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.enter {
+                    self.focus = Focus::CommentContents;
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::CommentContents => {
+                if key == self.config.key_config.exit_popup {
+                    self.focus = Focus::Comments;
                     return Ok(EventState::Consumed);
                 }
             }
