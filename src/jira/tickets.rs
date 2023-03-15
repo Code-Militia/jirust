@@ -215,9 +215,8 @@ impl JiraTickets {
         let object: JiraTickets = serde_json::from_str(response.as_str())
             .expect("unable to convert project resp to slice");
         for ticket in object.issues.iter() {
-            let issue_insert: TicketData =
+            let _: TicketData =
                 db.create(("tickets", &ticket.key)).content(&ticket).await?;
-            info!("Creating ticket inside db -- {issue_insert:?}");
         }
         Ok(object.issues)
     }
@@ -232,7 +231,6 @@ impl JiraTickets {
             SELECT * FROM tickets WHERE fields.project.key = $project_key
             "#;
         let mut query = db.query(sql).bind(("project_key", format!("{}", project_key))).await?;
-        info!("query data from get_jira_tickets -- {:?}", query);
         let tickets: Vec<TicketData> = query.take(0)?;
         if tickets.is_empty() {
             return Ok(Self::save_jira_tickets(db, jira_auth, project_key).await?);
