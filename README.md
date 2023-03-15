@@ -2,6 +2,9 @@
 A terminal UI for jira written in rust.
 
 An application with developers and engineers in mind.  It is solely focused on creating and updating tickets.
+![jirust](https://user-images.githubusercontent.com/7011993/225179809-b4683ea5-93e5-4c4c-abf5-e6534df0f5a3.gif)
+
+
 
 TODO:
 - [X] UI to generate a list of all projects
