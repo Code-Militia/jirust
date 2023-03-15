@@ -12,8 +12,8 @@ use crate::{
     config::KeyConfig,
     event::key::Key,
     jira::{
-        auth::JiraAuth,
-        tickets::{JiraTickets, TicketData, Links, LinkInwardOutwardParent},
+        auth::JiraClient,
+        tickets::{JiraTickets, LinkInwardOutwardParent, Links, TicketData},
     },
 };
 
@@ -40,7 +40,7 @@ impl TicketParentWidget {
 
         let mut rows = Vec::new();
 
-        let title = "Ticket Parent";
+        let title = "Parent";
         let header_cells = ["Key", "Summary", "Priority", "Type", "Status"];
         let headers = Row::new(header_cells);
         let ticket_parent = match &ticket.fields.parent {
@@ -60,8 +60,8 @@ impl TicketParentWidget {
                     ]);
 
                 f.render_widget(table, rect);
-                return Ok(())
-            },
+                return Ok(());
+            }
             Some(i) => i,
             // _ => unreachable!("If there is a link it should be present")
         };
@@ -76,7 +76,8 @@ impl TicketParentWidget {
             .iter()
             .map(|content| content.chars().filter(|c| *c == '\n').count())
             .max()
-            .unwrap_or(0) +1;
+            .unwrap_or(0)
+            + 1;
         let cells = item.iter().map(|c| Cell::from(*c));
         // let rows = Row::new(cells).height(height as u16);
         rows.push(Row::new(cells).height(height as u16));

@@ -31,6 +31,7 @@ pub struct KeyConfig {
     pub focus_right: Key,
     pub focus_left: Key,
     pub focus_above: Key,
+    pub focus_comments: Key,
     pub focus_below: Key,
     pub focus_projects: Key,
     pub open_help: Key,
@@ -64,6 +65,7 @@ impl Default for KeyConfig {
             focus_right: Key::Right,
             focus_left: Key::Left,
             focus_above: Key::Up,
+            focus_comments: Key::Char('c'),
             focus_below: Key::Down,
             focus_projects: Key::Char('p'),
             open_help: Key::Char('?'),
@@ -85,41 +87,13 @@ impl Default for KeyConfig {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            // conn: vec![Connection {
-            //     r#type: DatabaseType::MySql,
-            //     name: None,
-            //     user: Some("root".to_string()),
-            //     host: Some("localhost".to_string()),
-            //     port: Some(3306),
-            //     path: None,
-            //     password: None,
-            //     database: None,
-            // }],
             key_config: KeyConfig::default(),
-            // log_level: LogLevel::default(),
         }
     }
 }
 
 impl Config {
-    // pub fn new(config: &CliConfig) -> anyhow::Result<Self> {
     pub fn new() -> anyhow::Result<Self> {
-        /* let config_path = if let Some(config_path) = &config.config_path {
-            config_path.clone()
-        } else {
-            get_app_config_path()?.join("config.toml")
-        };
-        if let Ok(file) = File::open(config_path) {
-            let mut buf_reader = BufReader::new(file);
-            let mut contents = String::new();
-            buf_reader.read_to_string(&mut contents)?;
-
-            let config: Result<Config, toml::de::Error> = toml::from_str(&contents);
-            match config {
-                Ok(config) => return Ok(config),
-                Err(e) => panic!("fail to parse config file: {}", e),
-            }
-        } */
         Ok(Config::default())
     }
 }

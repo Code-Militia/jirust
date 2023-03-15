@@ -11,7 +11,7 @@ use crate::{
     config::KeyConfig,
     event::key::Key,
     jira::{
-        auth::JiraAuth,
+        auth::JiraClient,
         tickets::{JiraTickets, TicketData},
     },
 };
@@ -36,46 +36,46 @@ impl TicketWidget {
     ) -> anyhow::Result<()> {
         let title = "Tickets";
 
-        let header_cells = ["Key", "Priority", "Type", "Status", "Assignee", "Creator", "Reporter"];
+        let header_cells = [
+            "Key", "Priority", "Type", "Status", "Assignee", "Creator", "Reporter",
+        ];
         let headers = Row::new(header_cells);
         let tickets = &self.tickets;
-        let rows = tickets
-            .iter()
-            .map(|ticket| {
-                let assignee = match &ticket.fields.assignee {
-                    Some(i) => i.display_name.as_str(),
-                    _ => "Unassigned",
-                };
-                let creator = match &ticket.fields.creator {
-                    Some(i) => i.display_name.as_str(),
-                    _ => "",
-                };
-                let reporter = match &ticket.fields.reporter {
-                    Some(i) => i.display_name.as_str(),
-                    _ => "",
-                };
-                let priority = match &ticket.fields.priority{
-                    Some(i) => i.name.as_str(),
-                    _ => "",
-                };
-                let item = [
-                    ticket.key.as_str(),
-                    priority,
-                    ticket.fields.issuetype.name.as_str(),
-                    ticket.fields.status.name.as_str(),
-                    assignee,
-                    creator,
-                    reporter,
-                ];
-                let height = item
-                    .iter()
-                    .map(|content| content.chars().filter(|c| *c == '\n').count())
-                    .max()
-                    .unwrap_or(0)
-                    + 1;
-                let cells = item.iter().map(|c| Cell::from(*c));
-                Row::new(cells).height(height as u16)
-            });
+        let rows = tickets.iter().map(|ticket| {
+            let assignee = match &ticket.fields.assignee {
+                Some(i) => i.display_name.as_str(),
+                _ => "Unassigned",
+            };
+            let creator = match &ticket.fields.creator {
+                Some(i) => i.display_name.as_str(),
+                _ => "",
+            };
+            let reporter = match &ticket.fields.reporter {
+                Some(i) => i.display_name.as_str(),
+                _ => "",
+            };
+            let priority = match &ticket.fields.priority {
+                Some(i) => i.name.as_str(),
+                _ => "",
+            };
+            let item = [
+                ticket.key.as_str(),
+                priority,
+                ticket.fields.issuetype.name.as_str(),
+                ticket.fields.status.name.as_str(),
+                assignee,
+                creator,
+                reporter,
+            ];
+            let height = item
+                .iter()
+                .map(|content| content.chars().filter(|c| *c == '\n').count())
+                .max()
+                .unwrap_or(0)
+                + 1;
+            let cells = item.iter().map(|c| Cell::from(*c));
+            Row::new(cells).height(height as u16)
+        });
         let table = Table::new(rows)
             .header(headers)
             .block(draw_block_style(focused, &title))
@@ -154,7 +154,7 @@ impl TicketWidget {
     pub async fn update(
         &mut self,
         db: &SurrealAny,
-        jira_auth: &JiraAuth,
+        jira_auth: &JiraClient,
         project_key: &str,
         ticket: &JiraTickets,
     ) -> anyhow::Result<()> {

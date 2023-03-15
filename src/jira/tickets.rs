@@ -1,4 +1,4 @@
-use super::auth::JiraAuth;
+use super::auth::JiraClient;
 use super::SurrealAny;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -77,8 +77,31 @@ pub struct Type {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct FieldAuthor {
+    pub display_name: String,
+    pub active: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CommentBody {
+    pub author: FieldAuthor,
+    pub created: String,
+    pub rendered_body: String,
+    pub updated: String,
+    pub update_author: FieldAuthor,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Comments {
+    pub comments: Vec<CommentBody>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Fields {
     pub assignee: Option<Assignee>,
+    pub comments: Option<Comments>,
     pub components: Vec<Components>,
     pub creator: Option<CreatorReporter>,
     pub issuetype: Type,
@@ -92,12 +115,52 @@ pub struct Fields {
     pub summary: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct TicketData {
     pub fields: Fields,
     pub key: String,
     pub rendered_fields: RenderedFields,
+}
+
+impl TicketData {
+    pub async fn save_ticket_comments_from_api(
+        &self,
+        db: &SurrealAny,
+        jira_client: &JiraClient,
+    ) -> anyhow::Result<Comments> {
+        let url = format!("/rest/api/3/issue/{}/comment?expand=renderedBody", self.key);
+        let response = jira_client.get_from_jira_api(&url).await?;
+
+        let comments: Comments = serde_json::from_str(response.as_str())
+            .expect("unable to convert comments resp to slice");
+        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?;
+        return Ok(comments);
+    }
+
+    pub async fn get_comments(
+        &self,
+        db: &SurrealAny,
+        jira_client: &JiraClient,
+    ) -> anyhow::Result<Comments> {
+        let ticket: TicketData = db
+            .select(("tickets", &self.key))
+            .await
+            .expect("Failed to get TicketData from DB in get_comments");
+        match ticket.fields.comments {
+            None => {
+                info!("in get_comments none block");
+                let c = self.save_ticket_comments_from_api(db, jira_client).await?;
+                info!("get_comments none block response -- {:?}", c);
+                Ok(c)
+            }
+            Some(c) => {
+                info!("in get_comments some block");
+                info!("get_comments some block response -- {:?}", c);
+                Ok(c)
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -122,7 +185,7 @@ impl JiraTickets {
     }
 
     async fn get_tickets_from_jira_api(
-        jira_auth: &JiraAuth,
+        jira_auth: &JiraClient,
         project_name: String,
     ) -> Result<String, reqwest::Error> {
         let domain = jira_auth.get_domain();
@@ -143,15 +206,14 @@ impl JiraTickets {
 
     pub async fn save_jira_tickets(
         db: &SurrealAny,
-        jira_auth: &JiraAuth,
+        jira_auth: &JiraClient,
         project_key: &str,
     ) -> Result<Vec<TicketData>, SurrealDbError> {
-        let resp = Self::get_tickets_from_jira_api(&jira_auth, project_key.to_string())
+        let response = Self::get_tickets_from_jira_api(&jira_auth, project_key.to_string())
             .await
             .expect("should be response from jira");
-        let resp_slice: &str = &resp[..];
-        let object: JiraTickets =
-            serde_json::from_str(resp_slice).expect("unable to convert project resp to slice");
+        let object: JiraTickets = serde_json::from_str(response.as_str())
+            .expect("unable to convert project resp to slice");
         for ticket in object.issues.iter() {
             let issue_insert: TicketData =
                 db.create(("tickets", &ticket.key)).content(&ticket).await?;
@@ -163,14 +225,13 @@ impl JiraTickets {
     pub async fn get_jira_tickets(
         &self,
         db: &SurrealAny,
-        jira_auth: &JiraAuth,
+        jira_auth: &JiraClient,
         project_key: &str,
     ) -> Result<Vec<TicketData>, SurrealDbError> {
         let tickets: Vec<TicketData> = db.select("tickets").await?;
         if tickets.is_empty() {
             return Ok(Self::save_jira_tickets(db, jira_auth, project_key).await?);
         }
-        info!("{tickets:?}");
         Ok(tickets)
     }
 }

@@ -1,13 +1,11 @@
-use log::info;
 use surrealdb::engine::any::connect;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 
 pub type SurrealAny = Surreal<Any>;
 
-use self::tickets::TicketData;
 use self::{
-    auth::{jira_authentication, JiraAuth},
+    auth::{jira_authentication, JiraClient},
     projects::JiraProjects,
     tickets::JiraTickets,
 };
@@ -17,8 +15,8 @@ pub mod projects;
 pub mod tickets;
 
 pub struct Jira {
-    pub auth: JiraAuth,
-    pub db: Surreal<Any>,
+    pub client: JiraClient,
+    pub db: SurrealAny,
     pub projects: JiraProjects,
     pub tickets: JiraTickets,
 }
@@ -32,7 +30,7 @@ impl Jira {
         let tickets: JiraTickets = JiraTickets::new().await?;
 
         Ok(Self {
-            auth,
+            client: auth,
             db,
             projects,
             tickets,

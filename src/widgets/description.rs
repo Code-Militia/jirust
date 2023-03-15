@@ -1,6 +1,5 @@
 use crate::event::key::Key;
 use html2md::parse_html;
-use log::info;
 use tui::{
     backend::Backend,
     layout::{Alignment, Rect},
