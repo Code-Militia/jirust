@@ -1,3 +1,4 @@
+use log::info;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
 use tui::{

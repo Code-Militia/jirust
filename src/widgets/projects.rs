@@ -1,3 +1,4 @@
+use log::info;
 use tui::{
     backend::Backend,
     layout::Rect,
@@ -43,6 +44,8 @@ impl ProjectsWidget {
             None => None,
         };
 
+        info!("selecting project next -- {:?}", i);
+
         self.state.select(i);
     }
 
@@ -57,6 +60,8 @@ impl ProjectsWidget {
             }
             None => None,
         };
+
+        info!("selecting project previous -- {:?}", i);
 
         self.state.select(i);
     }
@@ -77,7 +82,10 @@ impl ProjectsWidget {
 
     pub fn selected_project(&self) -> Option<&Project> {
         match self.state.selected() {
-            Some(i) => self.projects.get(i),
+            Some(i) => {
+                info!("selected project -- {:?}", i);
+                self.projects.get(i)
+            },
             None => None,
         }
     }

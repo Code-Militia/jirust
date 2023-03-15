@@ -228,7 +228,12 @@ impl JiraTickets {
         jira_auth: &JiraClient,
         project_key: &str,
     ) -> Result<Vec<TicketData>, SurrealDbError> {
-        let tickets: Vec<TicketData> = db.select("tickets").await?;
+        let sql = r#"
+            SELECT * FROM tickets WHERE fields.project.key = $project_key
+            "#;
+        let mut query = db.query(sql).bind(("project_key", format!("{}", project_key))).await?;
+        info!("query data from get_jira_tickets -- {:?}", query);
+        let tickets: Vec<TicketData> = query.take(0)?;
         if tickets.is_empty() {
             return Ok(Self::save_jira_tickets(db, jira_auth, project_key).await?);
         }
