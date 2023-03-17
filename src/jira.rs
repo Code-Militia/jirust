@@ -26,7 +26,8 @@ impl Jira {
         let auth = jira_authentication();
         let db = connect("mem://").await?;
         db.use_ns("noc").use_db("database").await?;
-        let projects: JiraProjects = JiraProjects::new(&auth, &db).await?;
+        let mut projects: JiraProjects = JiraProjects::new().await?;
+        projects.get_jira_projects(&db, false, &auth).await?;
         let tickets: JiraTickets = JiraTickets::new().await?;
 
         Ok(Self {

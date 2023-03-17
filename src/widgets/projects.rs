@@ -78,9 +78,7 @@ impl ProjectsWidget {
 
     pub fn selected_project(&self) -> Option<&Project> {
         match self.state.selected() {
-            Some(i) => {
-                self.projects.get(i)
-            },
+            Some(i) => self.projects.get(i),
             None => None,
         }
     }

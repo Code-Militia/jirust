@@ -24,7 +24,12 @@ pub struct CommentContents {
     scroll: u16,
 }
 impl CommentContents {
-    pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, comment: Option<&CommentBody>, focused: bool) -> anyhow::Result<()> {
+    pub fn draw<B: Backend>(
+        &mut self,
+        f: &mut Frame<B>,
+        comment: Option<&CommentBody>,
+        focused: bool,
+    ) -> anyhow::Result<()> {
         let comment = match comment {
             None => return Ok(()),
             Some(ticket_data) => ticket_data,
@@ -146,7 +151,6 @@ impl CommentsWidget {
     }
 }
 
-
 impl CommentsWidget {
     pub fn new(key_config: KeyConfig) -> Self {
         let mut state = TableState::default();
@@ -164,7 +168,7 @@ impl CommentsWidget {
             Some(c) => c,
         };
         if comments.comments.len() == 0 {
-            return
+            return;
         }
         let i = self
             .state

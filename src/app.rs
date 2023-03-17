@@ -1,4 +1,4 @@
-use crate::widgets::comments::{CommentsWidget, CommentContents};
+use crate::widgets::comments::{CommentContents, CommentsWidget};
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
@@ -160,7 +160,11 @@ impl App {
         }
 
         if let Focus::CommentContents = self.focus {
-            self.comment_contents.draw(f, self.comments.selected(), matches!(self.focus, Focus::CommentContents))?;
+            self.comment_contents.draw(
+                f,
+                self.comments.selected(),
+                matches!(self.focus, Focus::CommentContents),
+            )?;
             return Ok(());
         }
 
