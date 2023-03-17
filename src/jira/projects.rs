@@ -34,48 +34,17 @@ impl JiraProjects {
 
     async fn get_projects_from_jira_api(
         &self,
-        get_next_page: bool,
         jira_auth: &JiraClient,
+        url: String,
     ) -> Result<String, reqwest::Error> {
-        let jira_url = jira_auth.get_domain();
-        let jira_api_version = jira_auth.get_api_version();
-        let mut projects_url = format!("{}/rest/api/{}/project/search", jira_url, jira_api_version);
-        if get_next_page && !&self.is_last {
-            projects_url = match &self.next_page {
-                None => projects_url,
-                Some(i) => i.to_string(),
-            }
-        }
         let headers = jira_auth.get_basic_auth();
         let client = reqwest::Client::builder()
             .default_headers(headers)
             .https_only(true)
             .build()?;
-        let response = client.get(projects_url).send().await?.text().await;
+        let response = client.get(url).send().await?.text().await;
 
         return response;
-    }
-
-    // TODO: handle pagination
-    async fn save_jira_projects(
-        &mut self,
-        db: &SurrealAny,
-        get_next_page: bool,
-        jira_auth: &JiraClient,
-    ) -> anyhow::Result<Vec<Project>> {
-        let resp = self
-            .get_projects_from_jira_api(get_next_page, jira_auth)
-            .await?;
-        let resp_slice: &str = &resp[..];
-        *self = serde_json::from_str(resp_slice).expect("projects deserialized");
-        for project in self.values.iter() {
-            let project_insert: Project = db
-                .create(("project", &project.key))
-                .content(project)
-                .await?;
-            info!("{project_insert:?}");
-        }
-        Ok(self.values.clone())
     }
 
     pub async fn get_jira_projects(
@@ -85,11 +54,29 @@ impl JiraProjects {
         jira_auth: &JiraClient,
     ) -> anyhow::Result<Vec<Project>> {
         let projects: Vec<Project> = db.select("project").await?;
+        let jira_url = jira_auth.get_domain();
+        let jira_api_version = jira_auth.get_api_version();
         if projects.is_empty() {
-            return Ok(self
-                .save_jira_projects(db, get_next_page, jira_auth)
-                .await?);
+            let url = format!("{}/rest/api/{}/project/search", jira_url, jira_api_version);
+            let resp = self.get_projects_from_jira_api(jira_auth, url).await?;
+            *self = serde_json::from_str(resp.as_str()).expect("projects deserialized");
+            let values = self.values.clone();
+            let _projects_insert: JiraProjects = db
+                .create("project")
+                .content(self).await.expect("projects added to db");
+            return Ok(values)
         }
+
+        match &self.next_page {
+            None => {},
+            Some(url) if get_next_page && !self.is_last => {
+                let resp = self.get_projects_from_jira_api(jira_auth, url.to_string()).await?;
+                *self = serde_json::from_str(resp.as_str()).expect("projects deserialized");
+                return Ok(self.values.clone())
+            },
+            _ => {return Ok(self.values.clone())},
+        }
+
         info!("{projects:?}");
         Ok(projects)
     }
