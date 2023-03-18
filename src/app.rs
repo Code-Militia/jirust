@@ -183,6 +183,16 @@ impl App {
         Ok(EventState::NotConsumed)
     }
 
+    pub async fn next_project_page(&mut self) -> anyhow::Result<()> {
+        self.jira.projects.get_jira_projects(&self.jira.db, true, &self.jira.client).await?;
+        Ok(())
+    }
+
+    pub async fn update_projects(&mut self) -> anyhow::Result<()> {
+        self.projects.update(&self.jira.projects);
+        Ok(())
+    }
+
     pub async fn update_tickets(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected_project().unwrap();
         self.tickets
@@ -370,6 +380,13 @@ impl App {
                 if key == self.config.key_config.enter {
                     self.update_tickets().await?;
                     self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.next_page {
+                    self.next_project_page().await?;
+                    self.update_projects().await?;
+                    self.focus = Focus::Projects;
                     return Ok(EventState::Consumed);
                 }
             }

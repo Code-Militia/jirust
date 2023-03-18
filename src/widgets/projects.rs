@@ -8,7 +8,7 @@ use tui::{
     Frame,
 };
 
-use crate::{config::KeyConfig, event::key::Key, jira::projects::Project};
+use crate::{config::KeyConfig, event::key::Key, jira::projects::{Project, JiraProjects}};
 
 use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
@@ -81,6 +81,10 @@ impl ProjectsWidget {
             Some(i) => self.projects.get(i),
             None => None,
         }
+    }
+
+    pub fn update(&mut self, jira_projects: &JiraProjects) {
+        self.projects = jira_projects.values.clone()
     }
 }
 
