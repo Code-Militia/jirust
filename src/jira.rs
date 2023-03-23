@@ -1,4 +1,6 @@
 use log::info;
+use serde::Deserialize;
+use serde::Serialize;
 use surrealdb::engine::any::connect;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
@@ -22,6 +24,8 @@ pub struct Jira {
     pub client: JiraClient,
     pub db: SurrealAny,
     pub projects: JiraProjects,
+    pub project_start_at: u32,
+    pub project_max_results: u32,
     pub tickets: JiraTickets,
 }
 
@@ -37,18 +41,38 @@ impl Jira {
             client: auth,
             db,
             projects,
+            project_start_at: 0,
+            project_max_results: 1,
             tickets,
         })
     }
 
-    pub async fn get_jira_projects(&mut self, get_next_page: bool) -> anyhow::Result<&Vec<Project>> {
+    pub async fn get_jira_projects(&mut self, get_next_page: bool, get_previous_page: bool) -> anyhow::Result<&Vec<Project>> {
         // TODO: Need a way to get previous page
         // TODO: This always gets it from the API.  This needs to try to get from DB first
+        if get_next_page {
+            self.project_start_at += 1;
+            let mut query = self.db.query(format!("SELECT * FROM project LIMIT {} START {}", self.project_max_results, self.project_start_at)).await.expect("projects selected");
+            let projects: Vec<Project> = query.take(0)?;
+            if !projects.is_empty() {
+                return Ok(projects.as_ref())
+            }
+        }
         match &self.projects.next_page {
             None => {},
-            Some(url) if get_next_page && !&self.projects.is_last => {
-                let resp = self.projects.get_projects_from_jira_api(&self.client, url.to_string()).await?;
+            Some(next_page_url) if get_next_page => {
+                let resp = self.projects.get_projects_from_jira_api(&self.client, next_page_url.to_string()).await?;
                 self.projects = serde_json::from_str(resp.as_str()).expect("projects deserialized");
+                for project in &self.projects.values {
+                    let db = self.db.clone();
+                    let prj = project.clone();
+                    spawn(async move {
+                        let _projects_insert: Project = db
+                            .create(("projects", &prj.key))
+                            .content(prj)
+                            .await.expect("projects inserted into db");
+                    });
+                }
                 return Ok(&self.projects.values)
             },
             &Some(_) => {
@@ -70,7 +94,7 @@ impl Jira {
                 let prj = project.clone();
                 spawn(async move {
                     let _projects_insert: Project = db
-                        .create("project")
+                        .create(("project", &prj.key))
                         .content(prj)
                         .await.expect("projects inserted into db");
                 });
@@ -104,7 +128,15 @@ impl Jira {
             let object: JiraTickets = serde_json::from_str(resp.as_str())
                 .expect("unable to convert project resp to slice");
             for ticket in object.issues.iter() {
-                let _: TicketData = self.db.create(("tickets", &ticket.key)).content(&ticket).await?;
+                let db = self.db.clone();
+                let tkt= ticket.clone();
+                spawn(async move {
+                    let _ticket_insert: TicketData = db
+                        .create(("tickets", &tkt.key))
+                        .content(tkt)
+                        .await.expect("Ticket inserted to db");
+                    // TODO: Update projects record to add a link to ticket records created here
+                });
             }
 
             return Ok(object.issues);

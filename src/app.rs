@@ -53,7 +53,7 @@ pub struct App {
 impl App {
     pub async fn new(config: Config) -> anyhow::Result<App> {
         let mut jira = Jira::new().await?;
-        let projects = &jira.get_jira_projects(false).await?.clone();
+        let projects = &jira.get_jira_projects(false, false).await?.clone();
 
         Ok(Self {
             comments: CommentsWidget::new(config.key_config.clone()),
@@ -184,7 +184,7 @@ impl App {
     }
 
     pub async fn next_project_page(&mut self) -> anyhow::Result<()> {
-        self.jira.get_jira_projects(true).await?;
+        self.jira.get_jira_projects(true, false).await?;
         Ok(())
     }
 
