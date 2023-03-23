@@ -1,6 +1,4 @@
 use super::auth::JiraClient;
-use super::SurrealAny;
-use log::info;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -52,8 +52,8 @@ pub struct App {
 
 impl App {
     pub async fn new(config: Config) -> anyhow::Result<App> {
-        let jira = Jira::new().await?;
-        let projects = &jira.projects.values.clone();
+        let mut jira = Jira::new().await?;
+        let projects = &jira.get_jira_projects(false).await?.clone();
 
         Ok(Self {
             comments: CommentsWidget::new(config.key_config.clone()),
@@ -184,7 +184,7 @@ impl App {
     }
 
     pub async fn next_project_page(&mut self) -> anyhow::Result<()> {
-        self.jira.projects.get_jira_projects(&self.jira.db, true, &self.jira.client).await?;
+        self.jira.get_jira_projects(true).await?;
         Ok(())
     }
 
@@ -200,7 +200,7 @@ impl App {
                 &self.jira.db,
                 &self.jira.client,
                 &project.key,
-                &self.jira.tickets,
+                &self.jira.get_jira_tickets(&project.key).await?,
             )
             .await?;
         self.focus = Focus::Tickets;

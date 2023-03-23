@@ -119,10 +119,7 @@ pub struct Fields {
 pub struct TicketData {
     pub fields: Fields,
     pub key: String,
-    pub max_results: u32,
     pub rendered_fields: RenderedFields,
-    pub start_at: u32,
-    pub total: u32,
 }
 
 impl TicketData {
@@ -189,7 +186,6 @@ impl JiraTickets {
     pub async fn get_tickets_from_jira_api(
         &self,
         jira_auth: &JiraClient,
-        project_name: &str,
         url: &str,
     ) -> Result<String, reqwest::Error> {
         let headers = jira_auth.get_basic_auth();

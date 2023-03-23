@@ -2,6 +2,7 @@ use log::info;
 use surrealdb::engine::any::connect;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
+use tokio::spawn;
 
 pub type SurrealAny = Surreal<Any>;
 
@@ -29,8 +30,7 @@ impl Jira {
         let auth = jira_authentication();
         let db = connect("mem://").await?;
         db.use_ns("noc").use_db("database").await?;
-        let mut projects: JiraProjects = JiraProjects::new().await?;
-        projects.get_jira_projects(&db, false, &auth).await?;
+        let projects: JiraProjects = JiraProjects::new().await?;
         let tickets: JiraTickets = JiraTickets::new().await?;
 
         Ok(Self {
@@ -41,7 +41,7 @@ impl Jira {
         })
     }
 
-    pub async fn get_jira_projects(&mut self, get_next_page: bool) -> anyhow::Result<Vec<Project>> {
+    pub async fn get_jira_projects(&mut self, get_next_page: bool) -> anyhow::Result<&Vec<Project>> {
         // TODO: Need a way to get previous page
         // TODO: This always gets it from the API.  This needs to try to get from DB first
         match &self.projects.next_page {
@@ -49,7 +49,7 @@ impl Jira {
             Some(url) if get_next_page && !&self.projects.is_last => {
                 let resp = self.projects.get_projects_from_jira_api(&self.client, url.to_string()).await?;
                 self.projects = serde_json::from_str(resp.as_str()).expect("projects deserialized");
-                return Ok(self.projects.values.clone())
+                return Ok(&self.projects.values)
             },
             &Some(_) => {
                 info!("we're in this block");
@@ -65,18 +65,20 @@ impl Jira {
             let url = format!("{}/rest/api/{}/project/search?maxResults=1&startAt=0", jira_url, jira_api_version);
             let resp = self.projects.get_projects_from_jira_api(&self.client, url).await?;
             self.projects = serde_json::from_str(resp.as_str()).expect("projects deserialized");
-            let values = &self.projects.values;
+            for project in &self.projects.values {
+                let db = self.db.clone();
+                let prj = project.clone();
+                spawn(async move {
+                    let _projects_insert: Project = db
+                        .create("project")
+                        .content(prj)
+                        .await.expect("projects inserted into db");
+                });
+            }
 
-            // If the database is ever going to be something other than embedded
-            // it's best if we move the create method to another thread.
-            let _projects_insert: JiraProjects = self.db
-                .create("project")
-                .content(values)
-                .await.expect("projects inserted into db");
-
-            return Ok(values.to_vec())
+            return Ok(&self.projects.values)
         }
-        Ok(self.projects.values.clone())
+        Ok(&self.projects.values)
     }
 
     pub async fn get_jira_tickets(
@@ -98,7 +100,7 @@ impl Jira {
                 "{}/rest/api/3/search?jql=project%20%3D%20{}&expand=renderedFields",
                 domain, project_key
             );
-            let resp = self.tickets.get_tickets_from_jira_api(&self.client, project_key, &url).await?;
+            let resp = self.tickets.get_tickets_from_jira_api(&self.client, &url).await?;
             let object: JiraTickets = serde_json::from_str(resp.as_str())
                 .expect("unable to convert project resp to slice");
             for ticket in object.issues.iter() {

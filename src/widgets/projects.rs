@@ -1,4 +1,3 @@
-use log::info;
 use tui::{
     backend::Backend,
     layout::Rect,
