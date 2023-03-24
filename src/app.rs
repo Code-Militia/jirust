@@ -188,6 +188,11 @@ impl App {
         Ok(())
     }
 
+    pub async fn previous_page_project_page(&mut self) -> anyhow::Result<()> {
+        self.jira.get_jira_projects(false, true).await?;
+        Ok(())
+    }
+
     pub async fn update_projects(&mut self) -> anyhow::Result<()> {
         self.projects.update(&self.jira.projects);
         Ok(())
@@ -385,6 +390,13 @@ impl App {
 
                 if key == self.config.key_config.next_page {
                     self.next_project_page().await?;
+                    self.update_projects().await?;
+                    self.focus = Focus::Projects;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.previous_page {
+                    self.previous_page_project_page().await?;
                     self.update_projects().await?;
                     self.focus = Focus::Projects;
                     return Ok(EventState::Consumed);

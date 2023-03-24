@@ -1,6 +1,4 @@
 use log::info;
-use serde::Deserialize;
-use serde::Serialize;
 use surrealdb::engine::any::connect;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
@@ -47,20 +45,32 @@ impl Jira {
         })
     }
 
-    pub async fn get_jira_projects(&mut self, get_next_page: bool, get_previous_page: bool) -> anyhow::Result<&Vec<Project>> {
+    pub async fn get_jira_projects(&mut self, get_next_page: bool, get_previous_page: bool) -> anyhow::Result<Vec<Project>> {
         // TODO: Need a way to get previous page
         // TODO: This always gets it from the API.  This needs to try to get from DB first
+        if get_previous_page && self.project_start_at >= 1 {
+            self.project_start_at -= 1;
+        }
+
         if get_next_page {
             self.project_start_at += 1;
-            let mut query = self.db.query(format!("SELECT * FROM project LIMIT {} START {}", self.project_max_results, self.project_start_at)).await.expect("projects selected");
+            info!("Next page project_start_at value -- {:?}", self.project_start_at);
+            let mut query = self.db.query(format!("SELECT * FROM projects LIMIT {} START {}", self.project_max_results, self.project_start_at)).await.expect("projects selected");
             let projects: Vec<Project> = query.take(0)?;
+            info!("Next page projects - {:?}", projects);
             if !projects.is_empty() {
-                return Ok(projects.as_ref())
+                self.projects.values = projects;
+                return Ok(self.projects.values.clone());
             }
+            self.project_start_at -= 1;
         }
+
+        info!("project_start_at value -- {:?}", self.project_start_at);
+
         match &self.projects.next_page {
             None => {},
             Some(next_page_url) if get_next_page => {
+                self.project_start_at += 1;
                 let resp = self.projects.get_projects_from_jira_api(&self.client, next_page_url.to_string()).await?;
                 self.projects = serde_json::from_str(resp.as_str()).expect("projects deserialized");
                 for project in &self.projects.values {
@@ -73,19 +83,22 @@ impl Jira {
                             .await.expect("projects inserted into db");
                     });
                 }
-                return Ok(&self.projects.values)
+                return Ok(self.projects.values.clone())
             },
-            &Some(_) => {
-                info!("we're in this block");
-                todo!("need to handle cases for wildcards")
+            Some(_) => {
+                // info!("value of wildcard {:?}", x);
+                // info!("we're in this block");
+                // todo!("need to handle cases for wildcards")
             }
         }
 
-        let projects: Vec<Project> = self.db.select("project").await?;
+        let mut query = self.db.query(format!("SELECT * FROM projects LIMIT {} START {}", self.project_max_results, self.project_start_at)).await.expect("projects selected");
+        let projects: Vec<Project> = query.take(0)?;
+        info!("projects result - {:?}", projects);
 
-        let jira_url = self.client.get_domain();
-        let jira_api_version = self.client.get_api_version();
         if projects.is_empty() {
+            let jira_url = self.client.get_domain();
+            let jira_api_version = self.client.get_api_version();
             let url = format!("{}/rest/api/{}/project/search?maxResults=1&startAt=0", jira_url, jira_api_version);
             let resp = self.projects.get_projects_from_jira_api(&self.client, url).await?;
             self.projects = serde_json::from_str(resp.as_str()).expect("projects deserialized");
@@ -94,15 +107,16 @@ impl Jira {
                 let prj = project.clone();
                 spawn(async move {
                     let _projects_insert: Project = db
-                        .create(("project", &prj.key))
+                        .create(("projects", &prj.key))
                         .content(prj)
                         .await.expect("projects inserted into db");
                 });
             }
 
-            return Ok(&self.projects.values)
+            return Ok(self.projects.values.clone())
         }
-        Ok(&self.projects.values)
+        self.projects.values = projects;
+        Ok(self.projects.values.clone())
     }
 
     pub async fn get_jira_tickets(
