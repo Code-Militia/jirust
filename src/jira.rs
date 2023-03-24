@@ -46,18 +46,12 @@ impl Jira {
     }
 
     pub async fn get_jira_projects(&mut self, get_next_page: bool, get_previous_page: bool) -> anyhow::Result<Vec<Project>> {
-        // TODO: Need a way to get previous page
-        // TODO: This always gets it from the API.  This needs to try to get from DB first
-        if get_previous_page && self.project_start_at >= 1 {
-            self.project_start_at -= 1;
-        }
 
+        // Search for next project in db
         if get_next_page {
             self.project_start_at += 1;
-            info!("Next page project_start_at value -- {:?}", self.project_start_at);
             let mut query = self.db.query(format!("SELECT * FROM projects LIMIT {} START {}", self.project_max_results, self.project_start_at)).await.expect("projects selected");
             let projects: Vec<Project> = query.take(0)?;
-            info!("Next page projects - {:?}", projects);
             if !projects.is_empty() {
                 self.projects.values = projects;
                 return Ok(self.projects.values.clone());
@@ -65,8 +59,7 @@ impl Jira {
             self.project_start_at -= 1;
         }
 
-        info!("project_start_at value -- {:?}", self.project_start_at);
-
+        // Search for next project in Jira API
         match &self.projects.next_page {
             None => {},
             Some(next_page_url) if get_next_page => {
@@ -92,10 +85,15 @@ impl Jira {
             }
         }
 
+        // Previous project request from database
+        if get_previous_page && self.project_start_at >= 1 {
+            self.project_start_at -= 1;
+        }
+
         let mut query = self.db.query(format!("SELECT * FROM projects LIMIT {} START {}", self.project_max_results, self.project_start_at)).await.expect("projects selected");
         let projects: Vec<Project> = query.take(0)?;
-        info!("projects result - {:?}", projects);
 
+        // Get initiall projects request
         if projects.is_empty() {
             let jira_url = self.client.get_domain();
             let jira_api_version = self.client.get_api_version();
