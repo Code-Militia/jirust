@@ -40,7 +40,7 @@ impl Jira {
             db,
             projects,
             project_start_at: 0,
-            project_max_results: 1,
+            project_max_results: 2,
             tickets,
         })
     }
@@ -49,21 +49,21 @@ impl Jira {
 
         // Search for next project in db
         if get_next_page {
-            self.project_start_at += 1;
+            self.project_start_at += self.project_max_results;
             let mut query = self.db.query(format!("SELECT * FROM projects LIMIT {} START {}", self.project_max_results, self.project_start_at)).await.expect("projects selected");
             let projects: Vec<Project> = query.take(0)?;
             if !projects.is_empty() {
                 self.projects.values = projects;
                 return Ok(self.projects.values.clone());
             }
-            self.project_start_at -= 1;
+            self.project_start_at -= self.project_max_results;
         }
 
         // Search for next project in Jira API
         match &self.projects.next_page {
             None => {},
             Some(next_page_url) if get_next_page => {
-                self.project_start_at += 1;
+                self.project_start_at += self.project_max_results;
                 let resp = self.projects.get_projects_from_jira_api(&self.client, next_page_url.to_string()).await?;
                 self.projects = serde_json::from_str(resp.as_str()).expect("projects deserialized");
                 for project in &self.projects.values {
@@ -87,7 +87,7 @@ impl Jira {
 
         // Previous project request from database
         if get_previous_page && self.project_start_at >= 1 {
-            self.project_start_at -= 1;
+            self.project_start_at -= self.project_max_results;
         }
 
         let mut query = self.db.query(format!("SELECT * FROM projects LIMIT {} START {}", self.project_max_results, self.project_start_at)).await.expect("projects selected");
@@ -97,7 +97,7 @@ impl Jira {
         if projects.is_empty() {
             let jira_url = self.client.get_domain();
             let jira_api_version = self.client.get_api_version();
-            let url = format!("{}/rest/api/{}/project/search?maxResults=1&startAt=0", jira_url, jira_api_version);
+            let url = format!("{}/rest/api/{}/project/search?maxResults={}&startAt=0", jira_url, jira_api_version, self.project_max_results);
             let resp = self.projects.get_projects_from_jira_api(&self.client, url).await?;
             self.projects = serde_json::from_str(resp.as_str()).expect("projects deserialized");
             for project in &self.projects.values {
