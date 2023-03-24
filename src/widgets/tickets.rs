@@ -157,9 +157,9 @@ impl TicketWidget {
         db: &SurrealAny,
         jira_auth: &JiraClient,
         project_key: &str,
-        ticket: &JiraTickets,
+        tickets: &Vec<TicketData>,
     ) -> anyhow::Result<()> {
-        self.tickets = ticket.get_jira_tickets(db, jira_auth, project_key).await?;
+        self.tickets = tickets.to_vec();
         Ok(())
     }
 }

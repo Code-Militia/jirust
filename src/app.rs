@@ -1,4 +1,4 @@
-use crate::widgets::comments::{CommentsWidget, CommentContents};
+use crate::widgets::comments::{CommentContents, CommentsWidget};
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
@@ -52,8 +52,8 @@ pub struct App {
 
 impl App {
     pub async fn new(config: Config) -> anyhow::Result<App> {
-        let jira = Jira::new().await?;
-        let projects = &jira.projects.values.clone();
+        let mut jira = Jira::new().await?;
+        let projects = &jira.get_jira_projects(false, false).await?.clone();
 
         Ok(Self {
             comments: CommentsWidget::new(config.key_config.clone()),
@@ -160,7 +160,11 @@ impl App {
         }
 
         if let Focus::CommentContents = self.focus {
-            self.comment_contents.draw(f, self.comments.selected(), matches!(self.focus, Focus::CommentContents))?;
+            self.comment_contents.draw(
+                f,
+                self.comments.selected(),
+                matches!(self.focus, Focus::CommentContents),
+            )?;
             return Ok(());
         }
 
@@ -179,6 +183,21 @@ impl App {
         Ok(EventState::NotConsumed)
     }
 
+    pub async fn next_project_page(&mut self) -> anyhow::Result<()> {
+        self.jira.get_jira_projects(true, false).await?;
+        Ok(())
+    }
+
+    pub async fn previous_page_project_page(&mut self) -> anyhow::Result<()> {
+        self.jira.get_jira_projects(false, true).await?;
+        Ok(())
+    }
+
+    pub async fn update_projects(&mut self) -> anyhow::Result<()> {
+        self.projects.update(&self.jira.projects);
+        Ok(())
+    }
+
     pub async fn update_tickets(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected_project().unwrap();
         self.tickets
@@ -186,7 +205,7 @@ impl App {
                 &self.jira.db,
                 &self.jira.client,
                 &project.key,
-                &self.jira.tickets,
+                &self.jira.get_jira_tickets(&project.key).await?,
             )
             .await?;
         self.focus = Focus::Tickets;
@@ -366,6 +385,20 @@ impl App {
                 if key == self.config.key_config.enter {
                     self.update_tickets().await?;
                     self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.next_page {
+                    self.next_project_page().await?;
+                    self.update_projects().await?;
+                    self.focus = Focus::Projects;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.previous_page {
+                    self.previous_page_project_page().await?;
+                    self.update_projects().await?;
+                    self.focus = Focus::Projects;
                     return Ok(EventState::Consumed);
                 }
             }

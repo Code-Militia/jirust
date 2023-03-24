@@ -2,7 +2,6 @@ use super::auth::JiraClient;
 use super::SurrealAny;
 use log::info;
 use serde::{Deserialize, Serialize};
-use surrealdb::Error as SurrealDbError;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinkFields {
@@ -163,13 +162,13 @@ impl TicketData {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct JiraTickets {
-    start_at: Option<i32>,
-    max_results: Option<i32>,
-    total: Option<i32>,
-    issues: Vec<TicketData>,
+    pub start_at: Option<i32>,
+    pub max_results: Option<i32>,
+    pub total: Option<i32>,
+    pub issues: Vec<TicketData>,
 }
 
 // TODO: handle pagination
@@ -184,17 +183,12 @@ impl JiraTickets {
         })
     }
 
-    async fn get_tickets_from_jira_api(
+    pub async fn get_tickets_from_jira_api(
+        &self,
         jira_auth: &JiraClient,
-        project_name: String,
+        url: &str,
     ) -> Result<String, reqwest::Error> {
-        let domain = jira_auth.get_domain();
         let headers = jira_auth.get_basic_auth();
-        let url = format!(
-            "{}/rest/api/3/search?jql=project%20%3D%20{}&expand=renderedFields",
-            domain, project_name
-        );
-
         let client = reqwest::Client::builder()
             .default_headers(headers)
             .https_only(true)
@@ -202,39 +196,5 @@ impl JiraTickets {
         let response = client.get(url).send().await?.text().await;
 
         return response;
-    }
-
-    pub async fn save_jira_tickets(
-        db: &SurrealAny,
-        jira_auth: &JiraClient,
-        project_key: &str,
-    ) -> Result<Vec<TicketData>, SurrealDbError> {
-        let response = Self::get_tickets_from_jira_api(&jira_auth, project_key.to_string())
-            .await
-            .expect("should be response from jira");
-        let object: JiraTickets = serde_json::from_str(response.as_str())
-            .expect("unable to convert project resp to slice");
-        for ticket in object.issues.iter() {
-            let _: TicketData =
-                db.create(("tickets", &ticket.key)).content(&ticket).await?;
-        }
-        Ok(object.issues)
-    }
-
-    pub async fn get_jira_tickets(
-        &self,
-        db: &SurrealAny,
-        jira_auth: &JiraClient,
-        project_key: &str,
-    ) -> Result<Vec<TicketData>, SurrealDbError> {
-        let sql = r#"
-            SELECT * FROM tickets WHERE fields.project.key = $project_key
-            "#;
-        let mut query = db.query(sql).bind(("project_key", format!("{}", project_key))).await?;
-        let tickets: Vec<TicketData> = query.take(0)?;
-        if tickets.is_empty() {
-            return Ok(Self::save_jira_tickets(db, jira_auth, project_key).await?);
-        }
-        Ok(tickets)
     }
 }
