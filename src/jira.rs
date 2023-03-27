@@ -24,6 +24,8 @@ pub struct Jira {
     pub projects: JiraProjects,
     pub project_start_at: u32,
     pub project_max_results: u32,
+    pub tickets_start_at: u32,
+    pub tickets_max_results: u32,
     pub tickets: JiraTickets,
 }
 
@@ -41,6 +43,8 @@ impl Jira {
             projects,
             project_start_at: 0,
             project_max_results: 2,
+            tickets_start_at: 0,
+            tickets_max_results: 2,
             tickets,
         })
     }
@@ -118,28 +122,66 @@ impl Jira {
     }
 
     pub async fn get_jira_tickets(
-        &self,
+        &mut self,
         project_key: &str,
+        get_next_page: bool,
+        get_previous_page: bool
     ) -> anyhow::Result<Vec<TicketData>> {
-        let sql = r#"
-            SELECT * FROM tickets WHERE fields.project.key = $project_key
-            "#;
-        let mut query = self.db
-            .query(sql)
-            .bind(("project_key", format!("{}", project_key)))
-            .await?;
+        // Search for next ticket page in db
+        if get_next_page {
+            self.tickets_start_at += self.tickets_max_results;
+            let mut query = self.db.query(format!("SELECT * FROM tickets LIMIT {} START {}", self.tickets_max_results, self.tickets_start_at)).await?;
+            let tickets: Vec<TicketData> = query.take(0)?;
+            if !tickets.is_empty() {
+                self.tickets.issues = tickets;
+                return Ok(self.tickets.issues.clone());
+            }
+            self.tickets_start_at -= self.tickets_max_results;
+
+            if (self.tickets_start_at + self.tickets_max_results) < self.tickets.total {
+                let jira_url = self.client.get_domain();
+                let next_page_url = format!(
+                    "{}/rest/api/3/search?maxResults={}&startAt={}&jql=project%20%3D%20{}&expand=renderedFields",
+                     jira_url, self.tickets_max_results, (self.tickets_start_at + self.tickets_max_results), project_key
+                );
+                let resp = self.tickets.get_tickets_from_jira_api(&self.client, next_page_url.as_str()).await?;
+                self.tickets = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
+                info!("tickets in next page -- {:?}", self.tickets.issues);
+                for ticket in &self.tickets.issues {
+                    let db = self.db.clone();
+                    let tkt = ticket.clone();
+                    spawn(async move {
+                        let _tickets_insert: TicketData = db
+                            .create(("tickets", &tkt.key))
+                            .content(tkt)
+                            .await.expect("tickets inserted into db");
+                    });
+                }
+                return Ok(self.tickets.issues.clone())
+
+            }
+        }
+
+        // Previous project request from database
+        if get_previous_page && self.tickets_start_at >= 1 {
+            self.tickets_start_at -= self.tickets_max_results;
+        }
+
+        let mut query = self.db.query(format!("SELECT * from tickets WHERE fields.project.key = {} LIMIT {} START {}", project_key, self.tickets_max_results, self.tickets_start_at)).await?;
         let tickets: Vec<TicketData> = query.take(0)?;
+        info!("tickets resp-- {:?}", query);
+        info!("tickets -- {:?}", tickets);
         if tickets.is_empty() {
 
-            let domain = self.client.get_domain();
+            let jira_url = self.client.get_domain();
             let url = format!(
-                "{}/rest/api/3/search?jql=project%20%3D%20{}&expand=renderedFields",
-                domain, project_key
+                "{}/rest/api/3/search?maxResults={}&startAt=0&jql=project%20%3D%20{}&expand=renderedFields",
+                jira_url, self.tickets_max_results, project_key
             );
             let resp = self.tickets.get_tickets_from_jira_api(&self.client, &url).await?;
-            let object: JiraTickets = serde_json::from_str(resp.as_str())
+            self.tickets = serde_json::from_str(resp.as_str())
                 .expect("unable to convert project resp to slice");
-            for ticket in object.issues.iter() {
+            for ticket in &self.tickets.issues {
                 let db = self.db.clone();
                 let tkt= ticket.clone();
                 spawn(async move {
@@ -151,8 +193,9 @@ impl Jira {
                 });
             }
 
-            return Ok(object.issues);
+            return Ok(self.tickets.issues.clone());
         }
-        Ok(tickets)
+        self.tickets.issues = tickets;
+        Ok(self.tickets.issues.clone())
     }
 }

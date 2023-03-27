@@ -188,7 +188,7 @@ impl App {
         Ok(())
     }
 
-    pub async fn previous_page_project_page(&mut self) -> anyhow::Result<()> {
+    pub async fn previous_project_page(&mut self) -> anyhow::Result<()> {
         self.jira.get_jira_projects(false, true).await?;
         Ok(())
     }
@@ -198,17 +198,45 @@ impl App {
         Ok(())
     }
 
-    pub async fn update_tickets(&mut self) -> anyhow::Result<()> {
+    pub async fn next_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected_project().unwrap();
+        self.jira.get_jira_tickets(&project.key, true, false).await?;
         self.tickets
             .update(
-                &self.jira.db,
-                &self.jira.client,
-                &project.key,
-                &self.jira.get_jira_tickets(&project.key).await?,
+                &self.jira.tickets.issues
             )
             .await?;
-        self.focus = Focus::Tickets;
+        Ok(())
+    }
+
+    pub async fn previous_ticket_page(&mut self) -> anyhow::Result<()> {
+        let project = self.projects.selected_project().unwrap();
+        self.jira.get_jira_tickets(&project.key, false, true).await?;
+        self.tickets
+            .update(
+                &self.jira.tickets.issues
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub async fn get_first_ticket_set(&mut self) -> anyhow::Result<()> {
+        let project = self.projects.selected_project().unwrap();
+        self.jira.get_jira_tickets(&project.key, false, true).await?;
+        self.tickets
+            .update(
+                &self.jira.tickets.issues
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub async fn update_tickets(&mut self) -> anyhow::Result<()> {
+        self.tickets
+            .update(
+                &self.jira.tickets.issues
+            )
+            .await?;
         Ok(())
     }
 
@@ -383,7 +411,7 @@ impl App {
             }
             Focus::Projects => {
                 if key == self.config.key_config.enter {
-                    self.update_tickets().await?;
+                    self.get_first_ticket_set().await?;
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
@@ -396,7 +424,7 @@ impl App {
                 }
 
                 if key == self.config.key_config.previous_page {
-                    self.previous_page_project_page().await?;
+                    self.previous_project_page().await?;
                     self.update_projects().await?;
                     self.focus = Focus::Projects;
                     return Ok(EventState::Consumed);
@@ -429,6 +457,20 @@ impl App {
                 if key == self.config.key_config.focus_comments {
                     self.update_comments().await?;
                     self.focus = Focus::Comments;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.next_page {
+                    self.next_ticket_page().await?;
+                    self.update_tickets().await?;
+                    self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.previous_page {
+                    self.previous_ticket_page().await?;
+                    self.update_tickets().await?;
+                    self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
             }

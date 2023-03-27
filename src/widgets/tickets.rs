@@ -154,9 +154,6 @@ impl TicketWidget {
 
     pub async fn update(
         &mut self,
-        db: &SurrealAny,
-        jira_auth: &JiraClient,
-        project_key: &str,
         tickets: &Vec<TicketData>,
     ) -> anyhow::Result<()> {
         self.tickets = tickets.to_vec();
