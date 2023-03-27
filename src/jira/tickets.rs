@@ -165,9 +165,9 @@ impl TicketData {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct JiraTickets {
-    pub start_at: Option<i32>,
-    pub max_results: Option<i32>,
-    pub total: Option<i32>,
+    pub start_at: Option<u32>,
+    pub max_results: Option<u32>,
+    pub total: u32,
     pub issues: Vec<TicketData>,
 }
 
@@ -178,7 +178,7 @@ impl JiraTickets {
         Ok(Self {
             start_at: None,
             max_results: None,
-            total: None,
+            total: 0,
             issues,
         })
     }
