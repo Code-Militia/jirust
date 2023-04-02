@@ -1,9 +1,7 @@
-use log::info;
 use serde::Deserialize;
 use serde::Serialize;
 use surrealdb::engine::any::connect;
 use surrealdb::engine::any::Any;
-use surrealdb::opt::PatchOp;
 use surrealdb::Surreal;
 use tokio::spawn;
 
@@ -141,58 +139,67 @@ impl Jira {
         Ok(self.projects.values.clone())
     }
 
-    pub async fn get_jira_tickets(
+    async fn get_and_record_tickets(&mut self, url: &str) -> anyhow::Result<Vec<TicketData>> {
+        let resp = self
+            .tickets
+            .get_tickets_from_jira_api(&self.client, url)
+            .await?;
+        self.tickets = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
+        for ticket in &self.tickets.issues {
+            let db = self.db.clone();
+            let tkt = ticket.clone();
+            spawn(async move {
+                let _tickets_insert: TicketData = db
+                    .create(("tickets", &tkt.key))
+                    .content(tkt)
+                    .await
+                    .expect("tickets inserted into db");
+            });
+        }
+        return Ok(self.tickets.issues.clone());
+    }
+
+    pub async fn get_next_ticket_page(
         &mut self,
-        project_key: String,
-        get_next_page: bool,
-        get_previous_page: bool,
+        project_key: &str,
     ) -> anyhow::Result<Vec<TicketData>> {
-        // Search for next ticket page in db
-        if get_next_page {
+        self.tickets_start_at += self.tickets_max_results;
+        let sql = format!(
+            "SELECT * FROM tickets WHERE fields.project.key = '{}' LIMIT {} START {}",
+            project_key, self.tickets_max_results, self.tickets_start_at
+        );
+        let mut query = self.db.query(sql).await?;
+        let tickets: Vec<TicketData> = query.take(0)?;
+        if !tickets.is_empty() {
+            self.tickets.issues = tickets;
+            return Ok(self.tickets.issues.clone());
+        }
+        self.tickets_start_at -= self.tickets_max_results;
+
+        if (self.tickets_start_at + self.tickets_max_results) < self.tickets.total {
             self.tickets_start_at += self.tickets_max_results;
-            let sql = format!(
-                "SELECT * FROM tickets WHERE fields.project.key = '{}' LIMIT {} START {}",
-                project_key, self.tickets_max_results, self.tickets_start_at
-            );
-            let mut query = self.db.query(sql).await?;
-            let tickets: Vec<TicketData> = query.take(0)?;
-            if !tickets.is_empty() {
-                self.tickets.issues = tickets;
-                return Ok(self.tickets.issues.clone());
-            }
-            self.tickets_start_at -= self.tickets_max_results;
-
-            if (self.tickets_start_at + self.tickets_max_results) < self.tickets.total {
-                self.tickets_start_at += self.tickets_max_results;
-                let jira_url = self.client.get_domain();
-                let next_page_url = format!(
+            let jira_url = self.client.get_domain();
+            let next_page_url = format!(
                     "{}/rest/api/3/search?maxResults={}&startAt={}&jql=project%20%3D%20{}&expand=renderedFields",
-                     jira_url, self.tickets_max_results, (self.tickets_start_at + self.tickets_max_results), project_key
+                    jira_url, self.tickets_max_results, (self.tickets_start_at + self.tickets_max_results), project_key
                 );
-                let resp = self
-                    .tickets
-                    .get_tickets_from_jira_api(&self.client, next_page_url.as_str())
-                    .await?;
-                self.tickets = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
-                for ticket in &self.tickets.issues {
-                    let db = self.db.clone();
-                    let tkt = ticket.clone();
-                    spawn(async move {
-                        let _tickets_insert: TicketData = db
-                            .create(("tickets", &tkt.key))
-                            .content(tkt)
-                            .await
-                            .expect("tickets inserted into db");
-                    });
-                }
-                return Ok(self.tickets.issues.clone());
-            }
+            return self.get_and_record_tickets(&next_page_url).await;
         }
+        return Ok(self.tickets.issues.clone());
+    }
 
-        // Previous project request from database
-        if get_previous_page && self.tickets_start_at >= 1 {
-            self.tickets_start_at -= self.tickets_max_results;
-        }
+    pub async fn get_previous_tickets_page(
+        &mut self,
+        project_key: &str,
+    ) -> anyhow::Result<Vec<TicketData>> {
+        self.tickets_start_at = self
+            .tickets_start_at
+            .checked_sub(self.tickets_max_results)
+            .unwrap_or(0);
+        return self.get_jira_tickets(project_key).await;
+    }
+
+    pub async fn get_jira_tickets(&mut self, project_key: &str) -> anyhow::Result<Vec<TicketData>> {
         let sql = format!(
             "SELECT * FROM tickets WHERE fields.project.key = '{}' LIMIT {} START {}",
             project_key, self.tickets_max_results, self.tickets_start_at
@@ -205,25 +212,7 @@ impl Jira {
                 "{}/rest/api/3/search?maxResults={}&startAt=0&jql=project%20%3D%20{}&expand=renderedFields",
                 jira_url, self.tickets_max_results, project_key
             );
-            let resp = self
-                .tickets
-                .get_tickets_from_jira_api(&self.client, &url)
-                .await?;
-            self.tickets = serde_json::from_str(resp.as_str())
-                .expect("unable to convert project resp to slice");
-            for ticket in &self.tickets.issues {
-                let db = self.db.clone();
-                let tkt = ticket.clone();
-                spawn(async move {
-                    let _ticket_insert: TicketData = db
-                        .create(("tickets", &tkt.key))
-                        .content(&tkt)
-                        .await
-                        .expect("Ticket inserted to db");
-                });
-            }
-
-            return Ok(self.tickets.issues.clone());
+            return self.get_and_record_tickets(&url).await;
         }
         self.tickets.issues = tickets;
         Ok(self.tickets.issues.clone())

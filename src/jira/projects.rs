@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Project {
     pub key: String,
-    pub tickets: Option<Vec<TicketData>>
+    pub tickets: Option<Vec<TicketData>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]

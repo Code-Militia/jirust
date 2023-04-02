@@ -96,7 +96,7 @@ impl ProjectsWidget {
         &mut self,
         f: &mut Frame<B>,
         focused: bool,
-        rect: Rect,
+        _rect: Rect,
         // _focused: bool,
     ) -> anyhow::Result<()> {
         let title = "Projects";
