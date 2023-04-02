@@ -7,7 +7,11 @@ use tui::{
     Frame,
 };
 
-use crate::{config::KeyConfig, event::key::Key, jira::projects::{Project, JiraProjects}};
+use crate::{
+    config::KeyConfig,
+    event::key::Key,
+    jira::projects::{JiraProjects, Project},
+};
 
 use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
