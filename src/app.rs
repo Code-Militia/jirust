@@ -200,27 +200,21 @@ impl App {
 
     pub async fn next_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected_project().unwrap();
-        self.jira
-            .get_jira_tickets(project.key.clone(), true, false)
-            .await?;
+        self.jira.get_next_ticket_page(&project.key).await?;
         self.tickets.update(&self.jira.tickets.issues).await?;
         Ok(())
     }
 
     pub async fn previous_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected_project().unwrap();
-        self.jira
-            .get_jira_tickets(project.key.clone(), false, true)
-            .await?;
+        self.jira.get_previous_tickets_page(&project.key).await?;
         self.tickets.update(&self.jira.tickets.issues).await?;
         Ok(())
     }
 
     pub async fn get_first_ticket_set(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected_project().unwrap();
-        self.jira
-            .get_jira_tickets(project.key.clone(), false, true)
-            .await?;
+        self.jira.get_jira_tickets(&project.key).await?;
         self.tickets.update(&self.jira.tickets.issues).await?;
         Ok(())
     }
