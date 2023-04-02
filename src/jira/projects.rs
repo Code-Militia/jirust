@@ -1,10 +1,10 @@
-use super::auth::JiraClient;
+use super::{auth::JiraClient, tickets::TicketData};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Project {
     pub key: String,
-    pub name: String,
+    pub tickets: Option<Vec<TicketData>>
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -43,5 +43,22 @@ impl JiraProjects {
         let response = client.get(url).send().await?.text().await;
 
         return response;
+    }
+
+    pub async fn get_projects_next_page(
+        &self,
+        jira_auth: &JiraClient,
+    ) -> anyhow::Result<JiraProjects> {
+        match &self.next_page {
+            // TODO: Refactor to return an error
+            None => return Ok(self.clone()),
+            Some(next_page_url) => {
+                let resp = self
+                    .get_projects_from_jira_api(jira_auth, next_page_url.to_string())
+                    .await?;
+                let object: JiraProjects = serde_json::from_str(resp.as_str())?;
+                Ok(object)
+            }
+        }
     }
 }

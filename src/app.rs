@@ -53,7 +53,7 @@ pub struct App {
 impl App {
     pub async fn new(config: Config) -> anyhow::Result<App> {
         let mut jira = Jira::new().await?;
-        let projects = &jira.get_jira_projects(false, false).await?.clone();
+        let projects = &jira.get_jira_projects().await?.clone();
 
         Ok(Self {
             comments: CommentsWidget::new(config.key_config.clone()),
@@ -184,12 +184,12 @@ impl App {
     }
 
     pub async fn next_project_page(&mut self) -> anyhow::Result<()> {
-        self.jira.get_jira_projects(true, false).await?;
+        self.jira.get_next_project_page().await?;
         Ok(())
     }
 
     pub async fn previous_project_page(&mut self) -> anyhow::Result<()> {
-        self.jira.get_jira_projects(false, true).await?;
+        self.jira.get_projects_previous_page().await?;
         Ok(())
     }
 
@@ -200,43 +200,33 @@ impl App {
 
     pub async fn next_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected_project().unwrap();
-        self.jira.get_jira_tickets(&project.key, true, false).await?;
-        self.tickets
-            .update(
-                &self.jira.tickets.issues
-            )
+        self.jira
+            .get_jira_tickets(project.key.clone(), true, false)
             .await?;
+        self.tickets.update(&self.jira.tickets.issues).await?;
         Ok(())
     }
 
     pub async fn previous_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected_project().unwrap();
-        self.jira.get_jira_tickets(&project.key, false, true).await?;
-        self.tickets
-            .update(
-                &self.jira.tickets.issues
-            )
+        self.jira
+            .get_jira_tickets(project.key.clone(), false, true)
             .await?;
+        self.tickets.update(&self.jira.tickets.issues).await?;
         Ok(())
     }
 
     pub async fn get_first_ticket_set(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected_project().unwrap();
-        self.jira.get_jira_tickets(&project.key, false, true).await?;
-        self.tickets
-            .update(
-                &self.jira.tickets.issues
-            )
+        self.jira
+            .get_jira_tickets(project.key.clone(), false, true)
             .await?;
+        self.tickets.update(&self.jira.tickets.issues).await?;
         Ok(())
     }
 
     pub async fn update_tickets(&mut self) -> anyhow::Result<()> {
-        self.tickets
-            .update(
-                &self.jira.tickets.issues
-            )
-            .await?;
+        self.tickets.update(&self.jira.tickets.issues).await?;
         Ok(())
     }
 

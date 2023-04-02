@@ -152,10 +152,7 @@ impl TicketWidget {
         }
     }
 
-    pub async fn update(
-        &mut self,
-        tickets: &Vec<TicketData>,
-    ) -> anyhow::Result<()> {
+    pub async fn update(&mut self, tickets: &Vec<TicketData>) -> anyhow::Result<()> {
         self.tickets = tickets.to_vec();
         Ok(())
     }

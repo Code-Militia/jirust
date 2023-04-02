@@ -20,7 +20,7 @@ futures = "0.3.26"
 
 tokio = { version = "1.12.0", features = ["full"] }
 serde-aux = "4.1.2"
-surrealdb = { version = "1.0.0-beta.8", features = ["kv-mem"] }
+surrealdb = { version = "1.0.0-beta.9", features = ["kv-mem"] }
 log = "0.4.17"
 fern = "0.6.1"
 chrono = "0.4.23"
@@ -34,4 +34,4 @@ html2md = "0.2.14"
 # rusqlite = "0.28.0"
 
 [patch.crates-io]
-surrealdb = { git = "https://github.com/surrealdb/surrealdb.git", rev = "3f0afd9d72dd041ce638817fe8857b5a7adc5117"}
+surrealdb = { git = "https://github.com/surrealdb/surrealdb.git", rev = "c3773b2e5759e119cb5406c8d15cd8f8065f4761"}
