@@ -3,7 +3,6 @@ use crate::{
     jira::tickets::{CommentBody, Comments},
 };
 use html2md::parse_html;
-use log::info;
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Layout, Rect},
@@ -19,7 +18,6 @@ use super::{draw_block_style, draw_highlight_style, EventState};
 
 #[derive(Debug)]
 pub struct CommentContents {
-    content: String,
     key_config: KeyConfig,
     scroll: u16,
 }
@@ -55,7 +53,6 @@ impl CommentContents {
 impl CommentContents {
     pub fn new(key_config: KeyConfig) -> Self {
         return Self {
-            content: String::new(),
             key_config,
             scroll: 0,
         };

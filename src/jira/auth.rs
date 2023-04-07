@@ -1,5 +1,6 @@
+use log::info;
 use base64::{engine::general_purpose, Engine as _};
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
+use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE, ACCEPT};
 use serde::{Deserialize, Serialize};
 use std::env;
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -29,7 +30,8 @@ impl JiraClient {
         let mut jira_token_header = HeaderValue::from_str(&jira_basic_auth_str).unwrap();
         jira_token_header.set_sensitive(true);
         let mut headers = HeaderMap::new();
-        headers.insert(CONTENT_TYPE, header_content_type);
+        headers.insert(CONTENT_TYPE, header_content_type.clone());
+        headers.insert(ACCEPT, header_content_type.clone());
         headers.insert(AUTHORIZATION, jira_token_header);
 
         return headers;
@@ -42,8 +44,24 @@ impl JiraClient {
         return &self.jira_api_version;
     }
 
+    pub async fn post_to_jira_api(&self, api_url: &str, data: String) -> anyhow::Result<String> {
+        let headers = self.get_basic_auth();
+        let api_url = format!("{}/{}", self.get_domain(), api_url);
+        let client = reqwest::Client::builder()
+            .default_headers(headers)
+            .https_only(true)
+            .build()?;
+        let response = client
+            .post(api_url)
+            .body(data)
+            .send()
+            .await?
+            .text()
+            .await?;
+        Ok(response)
+    }
+
     pub async fn get_from_jira_api(&self, api_url: &str) -> anyhow::Result<String> {
-        let domain = self.get_domain();
         let headers = self.get_basic_auth();
         let api_url = format!("{}/{}", self.get_domain(), api_url);
 

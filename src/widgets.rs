@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod comments;
+pub mod comments_popup;
 pub mod components;
 pub mod description;
 pub mod error;

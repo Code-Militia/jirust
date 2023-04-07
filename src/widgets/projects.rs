@@ -37,13 +37,8 @@ impl ProjectsWidget {
 
     pub fn next_project(&mut self, line: usize) {
         let i = match self.state.selected() {
-            Some(i) => {
-                if i + line >= self.projects.len() {
-                    Some(self.projects.len() - 1)
-                } else {
-                    Some(i + line)
-                }
-            }
+            Some(i) if i + line >= self.projects.len() => Some(self.projects.len() - 1),
+            Some(i) => Some(i + line),
             None => None,
         };
 
@@ -52,13 +47,8 @@ impl ProjectsWidget {
 
     pub fn previous_project(&mut self, line: usize) {
         let i = match self.state.selected() {
-            Some(i) => {
-                if i <= line {
-                    Some(0)
-                } else {
-                    Some(i - line)
-                }
-            }
+            Some(i) if i <= line => Some(0),
+            Some(i) => Some(i - line),
             None => None,
         };
 
