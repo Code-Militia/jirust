@@ -175,7 +175,7 @@ pub fn help(key_config: &KeyConfig) -> CommandText {
 
 pub fn exit_pop_up(key_config: &KeyConfig) -> CommandText {
     CommandText::new(
-        format!("Exit pop up [{}]", key_config.exit_popup),
+        format!("Exit pop up [{}]", key_config.esc),
         CMD_GROUP_GENERAL,
     )
 }

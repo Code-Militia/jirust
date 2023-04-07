@@ -1,5 +1,6 @@
 use super::auth::JiraClient;
 use super::SurrealAny;
+use htmltoadf::convert_html_str_to_adf_str;
 use log::info;
 use serde::{Deserialize, Serialize};
 
@@ -131,8 +132,8 @@ impl TicketData {
         let url = format!("/rest/api/3/issue/{}/comment?expand=renderedBody", self.key);
         let response = jira_client.get_from_jira_api(&url).await?;
 
-        let comments: Comments = serde_json::from_str(response.as_str())
-            .expect("unable to convert comments resp to slice");
+        let comments: Comments =
+            serde_json::from_str(response.as_str()).expect("unable to deserialize comments");
         let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?;
         return Ok(comments);
     }
@@ -147,18 +148,36 @@ impl TicketData {
             .await
             .expect("Failed to get TicketData from DB in get_comments");
         match ticket.fields.comments {
-            None => {
-                info!("in get_comments none block");
-                let c = self.save_ticket_comments_from_api(db, jira_client).await?;
-                info!("get_comments none block response -- {:?}", c);
-                Ok(c)
-            }
+            None => Ok(self.save_ticket_comments_from_api(db, jira_client).await?),
             Some(c) => {
                 info!("in get_comments some block");
                 info!("get_comments some block response -- {:?}", c);
                 Ok(c)
             }
         }
+    }
+
+    pub async fn add_comment(
+        &self,
+        db: &SurrealAny,
+        ticket_key: &str,
+        comment: &str,
+        jira_client: &JiraClient,
+    ) -> anyhow::Result<CommentBody> {
+        let url = format!("/rest/api/3/issue/{}/comment?expand=renderedBody", ticket_key);
+        let html = markdown::to_html(comment);
+        let adf = convert_html_str_to_adf_str(html);
+        let adf = format!("{{ \"body\": {} }}", adf);
+        let response = jira_client
+            .post_to_jira_api(&url, adf)
+            .await
+            .expect("unable to save comment");
+        info!("comment response {:?}", response);
+        let comments: CommentBody =
+            serde_json::from_str(response.as_str()).expect("unable to deserialize comments");
+
+        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?;
+        Ok(comments)
     }
 }
 

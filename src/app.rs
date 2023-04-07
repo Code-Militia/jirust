@@ -1,4 +1,5 @@
 use crate::widgets::comments::{CommentContents, CommentsWidget};
+use crate::widgets::comments_popup::CommentsPopup;
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
@@ -23,8 +24,9 @@ use tui::{
 // }
 
 pub enum Focus {
-    Comments,
-    CommentContents,
+    CommentsList,
+    CommentView,
+    CommentsAdd,
     Components,
     Description,
     Labels,
@@ -36,6 +38,7 @@ pub enum Focus {
 pub struct App {
     comments: CommentsWidget,
     comment_contents: CommentContents,
+    comments_popup: CommentsPopup,
     components: ComponentsWidget,
     description: DescriptionWidget,
     focus: Focus,
@@ -58,6 +61,7 @@ impl App {
         Ok(Self {
             comments: CommentsWidget::new(config.key_config.clone()),
             comment_contents: CommentContents::new(config.key_config.clone()),
+            comments_popup: CommentsPopup::new(),
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
             description: DescriptionWidget::new(config.key_config.clone()),
@@ -78,6 +82,11 @@ impl App {
             self.projects
                 .draw(f, matches!(self.focus, Focus::Projects), f.size())?;
 
+            return Ok(());
+        }
+
+        if let Focus::CommentsAdd = self.focus {
+            self.comments_popup.draw(f, self.tickets.selected())?;
             return Ok(());
         }
 
@@ -153,17 +162,17 @@ impl App {
             self.tickets.selected(),
         )?;
 
-        if let Focus::Comments = self.focus {
+        if let Focus::CommentsList = self.focus {
             self.comments
                 .draw(f, matches!(self.focus, Focus::Projects), f.size())?;
             return Ok(());
         }
 
-        if let Focus::CommentContents = self.focus {
+        if let Focus::CommentView = self.focus {
             self.comment_contents.draw(
                 f,
                 self.comments.selected(),
-                matches!(self.focus, Focus::CommentContents),
+                matches!(self.focus, Focus::CommentView),
             )?;
             return Ok(());
         }
@@ -250,12 +259,28 @@ impl App {
         Ok(())
     }
 
-    pub async fn update_comments(&mut self) -> anyhow::Result<()> {
+    pub async fn update_comments_view(&mut self) -> anyhow::Result<()> {
         let comments = match self.tickets.selected() {
             None => return Ok(()),
             Some(t) => t.get_comments(&self.jira.db, &self.jira.client).await?,
         };
         self.comments.comments = Some(comments);
+        Ok(())
+    }
+
+    pub async fn add_jira_comment(&mut self) -> anyhow::Result<()> {
+        let comment = &self.comments_popup.messages;
+        let ticket = match self.tickets.selected() {
+            None => return Ok(()),
+            Some(t) => t,
+        };
+        if comment.len() > 0 && self.comments_popup.push_comment {
+            let comment = comment.join(" \n ");
+            ticket.add_comment(&self.jira.db, &ticket.key, &comment, &self.jira.client).await?;
+            self.comments_popup.messages.clear();
+            self.comments_popup.push_comment = false;
+            return Ok(())
+        };
         Ok(())
     }
 
@@ -269,13 +294,19 @@ impl App {
         // }
 
         match self.focus {
-            Focus::Comments => {
+            Focus::CommentsList => {
                 if self.comments.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
             }
-            Focus::CommentContents => {
+            Focus::CommentView => {
                 if self.comment_contents.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::CommentsAdd => {
+                if self.comments_popup.event(key)?.is_consumed() {
+                    self.add_jira_comment().await?;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -321,20 +352,26 @@ impl App {
         }
 
         match self.focus {
-            Focus::Comments => {
-                if key == self.config.key_config.exit_popup {
+            Focus::CommentsList => {
+                if key == self.config.key_config.esc {
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
 
                 if key == self.config.key_config.enter {
-                    self.focus = Focus::CommentContents;
+                    self.focus = Focus::CommentView;
                     return Ok(EventState::Consumed);
                 }
             }
-            Focus::CommentContents => {
-                if key == self.config.key_config.exit_popup {
-                    self.focus = Focus::Comments;
+            Focus::CommentView => {
+                if key == self.config.key_config.esc {
+                    self.focus = Focus::CommentsList;
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::CommentsAdd => {
+                if key == self.config.key_config.quit {
+                    self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -355,8 +392,8 @@ impl App {
                 }
 
                 if key == self.config.key_config.focus_comments {
-                    self.update_comments().await?;
-                    self.focus = Focus::Comments;
+                    self.update_comments_view().await?;
+                    self.focus = Focus::CommentsList;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -367,8 +404,8 @@ impl App {
                 }
 
                 if key == self.config.key_config.focus_comments {
-                    self.update_comments().await?;
-                    self.focus = Focus::Comments;
+                    self.update_comments_view().await?;
+                    self.focus = Focus::CommentsList;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -388,8 +425,8 @@ impl App {
                 }
 
                 if key == self.config.key_config.focus_comments {
-                    self.update_comments().await?;
-                    self.focus = Focus::Comments;
+                    self.update_comments_view().await?;
+                    self.focus = Focus::CommentsList;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -421,8 +458,8 @@ impl App {
                 }
 
                 if key == self.config.key_config.focus_comments {
-                    self.update_comments().await?;
-                    self.focus = Focus::Comments;
+                    self.update_comments_view().await?;
+                    self.focus = Focus::CommentsList;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -438,9 +475,15 @@ impl App {
                     self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
+
                 if key == self.config.key_config.focus_comments {
-                    self.update_comments().await?;
-                    self.focus = Focus::Comments;
+                    self.update_comments_view().await?;
+                    self.focus = Focus::CommentsList;
+                    return Ok(EventState::Consumed);
+                }
+                
+                if key == self.config.key_config.focus_add_comments {
+                    self.focus = Focus::CommentsAdd;
                     return Ok(EventState::Consumed);
                 }
 

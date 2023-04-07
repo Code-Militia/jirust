@@ -1,25 +1,17 @@
-use log::info;
-use surrealdb::engine::any::Any;
-use surrealdb::Surreal;
 use tui::{
     backend::Backend,
     layout::{Constraint, Rect},
-    widgets::{Cell, Clear, ListState, Row, Table, TableState},
+    widgets::{Cell, Clear, Row, Table, TableState},
     Frame,
 };
 
 use crate::{
     config::KeyConfig,
     event::key::Key,
-    jira::{
-        auth::JiraClient,
-        tickets::{JiraTickets, Links, TicketData},
-    },
+    jira::tickets::{Links, TicketData},
 };
 
 use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
-
-type SurrealAny = Surreal<Any>;
 
 #[derive(Debug)]
 pub struct RelationWidget {
