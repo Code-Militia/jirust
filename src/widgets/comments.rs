@@ -94,13 +94,13 @@ impl CommentContents {
 }
 
 #[derive(Debug)]
-pub struct CommentsWidget {
+pub struct CommentsList {
     pub comments: Option<Comments>,
     state: TableState,
     key_config: KeyConfig,
 }
 
-impl CommentsWidget {
+impl CommentsList {
     pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
@@ -148,7 +148,7 @@ impl CommentsWidget {
     }
 }
 
-impl CommentsWidget {
+impl CommentsList {
     pub fn new(key_config: KeyConfig) -> Self {
         let mut state = TableState::default();
         state.select(Some(0));
@@ -223,7 +223,7 @@ impl CommentsWidget {
     }
 }
 
-impl CommentsWidget {
+impl CommentsList {
     pub fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
             self.next(1);

@@ -1,6 +1,6 @@
 pub mod commands;
 pub mod comments;
-pub mod comments_popup;
+pub mod comments_add;
 pub mod components;
 pub mod description;
 pub mod error;
@@ -8,6 +8,7 @@ pub mod labels;
 pub mod parent;
 pub mod projects;
 pub mod ticket_relation;
+pub mod ticket_transition;
 pub mod tickets;
 
 use commands::CommandInfo;

@@ -1,10 +1,12 @@
-use crate::widgets::comments::{CommentContents, CommentsWidget};
-use crate::widgets::comments_popup::CommentsPopup;
+use crate::jira::tickets::{PostTicketTransition, TicketTransition};
+use crate::widgets::comments::{CommentContents, CommentsList};
+use crate::widgets::comments_add::CommentAdd;
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
 use crate::widgets::parent::TicketParentWidget;
 use crate::widgets::ticket_relation::RelationWidget;
+use crate::widgets::ticket_transition::TransitionWidget;
 use crate::widgets::tickets::TicketWidget;
 use crate::{
     config::Config,
@@ -33,12 +35,13 @@ pub enum Focus {
     Projects,
     Tickets,
     TicketRelation,
+    TicketTransition,
 }
 
 pub struct App {
-    comments: CommentsWidget,
+    comments_list: CommentsList,
     comment_contents: CommentContents,
-    comments_popup: CommentsPopup,
+    comment_add: CommentAdd,
     components: ComponentsWidget,
     description: DescriptionWidget,
     focus: Focus,
@@ -49,6 +52,7 @@ pub struct App {
     projects: ProjectsWidget,
     relation: RelationWidget,
     tickets: TicketWidget,
+    ticket_transition: TransitionWidget,
     pub config: Config,
     pub error: ErrorComponent,
 }
@@ -59,9 +63,9 @@ impl App {
         let projects = &jira.get_jira_projects().await?.clone();
 
         Ok(Self {
-            comments: CommentsWidget::new(config.key_config.clone()),
+            comments_list: CommentsList::new(config.key_config.clone()),
             comment_contents: CommentContents::new(config.key_config.clone()),
-            comments_popup: CommentsPopup::new(),
+            comment_add: CommentAdd::new(),
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
             description: DescriptionWidget::new(config.key_config.clone()),
@@ -74,6 +78,7 @@ impl App {
             projects: ProjectsWidget::new(projects, config.key_config.clone()),
             relation: RelationWidget::new(config.key_config.clone()),
             tickets: TicketWidget::new(config.key_config.clone()),
+            ticket_transition: TransitionWidget::new(Vec::new(), config.key_config.clone()),
         })
     }
 
@@ -85,8 +90,20 @@ impl App {
             return Ok(());
         }
 
+        if let Focus::TicketTransition = self.focus {
+            self.ticket_transition.draw(
+                f,
+                matches!(self.focus, Focus::TicketTransition),
+                f.size(),
+            )?;
+        }
+
         if let Focus::CommentsAdd = self.focus {
-            self.comments_popup.draw(f, self.tickets.selected())?;
+            self.comment_add.draw(f, self.tickets.selected())?;
+            return Ok(());
+        }
+
+        if let Focus::TicketTransition = self.focus {
             return Ok(());
         }
 
@@ -163,7 +180,7 @@ impl App {
         )?;
 
         if let Focus::CommentsList = self.focus {
-            self.comments
+            self.comments_list
                 .draw(f, matches!(self.focus, Focus::Projects), f.size())?;
             return Ok(());
         }
@@ -171,7 +188,7 @@ impl App {
         if let Focus::CommentView = self.focus {
             self.comment_contents.draw(
                 f,
-                self.comments.selected(),
+                self.comments_list.selected(),
                 matches!(self.focus, Focus::CommentView),
             )?;
             return Ok(());
@@ -221,14 +238,16 @@ impl App {
         Ok(())
     }
 
-    pub async fn get_first_ticket_set(&mut self) -> anyhow::Result<()> {
-        let project = self.projects.selected_project().unwrap();
-        self.jira.get_jira_tickets(&project.key).await?;
-        self.tickets.update(&self.jira.tickets.issues).await?;
-        Ok(())
-    }
+    // pub async fn get_first_ticket_set(&mut self) -> anyhow::Result<()> {
+    //     let project = self.projects.selected_project().unwrap();
+    //     self.jira.get_jira_tickets(&project.key).await?;
+    //     self.tickets.update(&self.jira.tickets.issues).await?;
+    //     Ok(())
+    // }
 
     pub async fn update_tickets(&mut self) -> anyhow::Result<()> {
+        let project = self.projects.selected_project().unwrap();
+        self.jira.get_jira_tickets(&project.key).await?;
         self.tickets.update(&self.jira.tickets.issues).await?;
         Ok(())
     }
@@ -264,23 +283,57 @@ impl App {
             None => return Ok(()),
             Some(t) => t.get_comments(&self.jira.db, &self.jira.client).await?,
         };
-        self.comments.comments = Some(comments);
+        self.comments_list.comments = Some(comments);
         Ok(())
     }
 
     pub async fn add_jira_comment(&mut self) -> anyhow::Result<()> {
-        let comment = &self.comments_popup.messages;
+        let comment = &self.comment_add.messages;
         let ticket = match self.tickets.selected() {
             None => return Ok(()),
             Some(t) => t,
         };
-        if comment.len() > 0 && self.comments_popup.push_comment {
+        if comment.len() > 0 && self.comment_add.push_comment {
             let comment = comment.join(" \n ");
-            ticket.add_comment(&self.jira.db, &ticket.key, &comment, &self.jira.client).await?;
-            self.comments_popup.messages.clear();
-            self.comments_popup.push_comment = false;
-            return Ok(())
+            ticket
+                .add_comment(&self.jira.db, &comment, &self.jira.client)
+                .await?;
+            self.comment_add.messages.clear();
+            self.comment_add.push_comment = false;
+            return Ok(());
         };
+        Ok(())
+    }
+
+    pub async fn update_ticket_transitions(&mut self) -> anyhow::Result<()> {
+        let ticket = match self.tickets.selected() {
+            None => return Ok(()),
+            Some(t) => t,
+        };
+
+        let transitions = ticket.get_transitions(&self.jira.client).await?;
+        Ok(self.ticket_transition.update(&transitions))
+    }
+
+    pub async fn move_ticket(&mut self) -> anyhow::Result<()> {
+        if self.ticket_transition.push_transition {
+            let ticket = match self.tickets.selected() {
+                None => return Ok(()),
+                Some(t) => t,
+            };
+            let transition = self.ticket_transition.selected_transition().unwrap();
+            let data = PostTicketTransition {
+                transition: TicketTransition {
+                    id: transition.id.clone(),
+                    name: transition.name.clone(),
+                },
+            };
+            ticket.transition(data, &self.jira.client).await?;
+            self.focus = Focus::Tickets;
+            self.ticket_transition.push_transition = false;
+            let project = self.projects.selected_project().unwrap();
+            self.jira.get_and_record_tickets(&project.key).await?;
+        }
         Ok(())
     }
 
@@ -295,7 +348,7 @@ impl App {
 
         match self.focus {
             Focus::CommentsList => {
-                if self.comments.event(key)?.is_consumed() {
+                if self.comments_list.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
             }
@@ -305,7 +358,7 @@ impl App {
                 }
             }
             Focus::CommentsAdd => {
-                if self.comments_popup.event(key)?.is_consumed() {
+                if self.comment_add.event(key)?.is_consumed() {
                     self.add_jira_comment().await?;
                     return Ok(EventState::Consumed);
                 }
@@ -337,6 +390,13 @@ impl App {
             }
             Focus::Tickets => {
                 if self.tickets.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::TicketTransition => {
+                if self.ticket_transition.event(key)?.is_consumed() {
+                    self.move_ticket().await?;
+                    self.update_tickets().await?;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -432,7 +492,7 @@ impl App {
             }
             Focus::Projects => {
                 if key == self.config.key_config.enter {
-                    self.get_first_ticket_set().await?;
+                    self.update_tickets().await?;
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
@@ -481,7 +541,7 @@ impl App {
                     self.focus = Focus::CommentsList;
                     return Ok(EventState::Consumed);
                 }
-                
+
                 if key == self.config.key_config.focus_add_comments {
                     self.focus = Focus::CommentsAdd;
                     return Ok(EventState::Consumed);
@@ -497,6 +557,18 @@ impl App {
                 if key == self.config.key_config.previous_page {
                     self.previous_ticket_page().await?;
                     self.update_tickets().await?;
+                    self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.ticket_status {
+                    self.update_ticket_transitions().await?;
+                    self.focus = Focus::TicketTransition;
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::TicketTransition => {
+                if key == self.config.key_config.esc {
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
