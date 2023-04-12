@@ -1,6 +1,6 @@
-use log::info;
 use base64::{engine::general_purpose, Engine as _};
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE, ACCEPT};
+use log::info;
+use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use std::env;
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -51,13 +51,7 @@ impl JiraClient {
             .default_headers(headers)
             .https_only(true)
             .build()?;
-        let response = client
-            .post(api_url)
-            .body(data)
-            .send()
-            .await?
-            .text()
-            .await?;
+        let response = client.post(api_url).body(data).send().await?.text().await?;
         Ok(response)
     }
 

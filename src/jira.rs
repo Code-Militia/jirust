@@ -1,3 +1,4 @@
+use log::info;
 use serde::Deserialize;
 use serde::Serialize;
 use surrealdb::engine::any::connect;
@@ -38,7 +39,7 @@ pub struct Jira {
 }
 
 impl Jira {
-    pub async fn new() -> anyhow::Result<Jira> {
+    pub async fn new() -> anyhow::Result<Jira, anyhow::Error> {
         let auth = jira_authentication();
         let db = connect("mem://").await?;
         db.use_ns("noc").use_db("database").await?;
@@ -57,7 +58,7 @@ impl Jira {
         })
     }
 
-    pub async fn get_next_project_page(&mut self) -> anyhow::Result<&Vec<Project>> {
+    pub async fn get_next_project_page(&mut self) -> anyhow::Result<&Vec<Project>, anyhow::Error> {
         self.project_start_at += self.project_max_results;
         let mut query = self
             .db
@@ -90,14 +91,16 @@ impl Jira {
         Ok(&self.projects.values)
     }
 
-    pub async fn get_projects_previous_page(&mut self) -> anyhow::Result<Vec<Project>> {
+    pub async fn get_projects_previous_page(
+        &mut self,
+    ) -> anyhow::Result<Vec<Project>, anyhow::Error> {
         if self.project_start_at >= 1 {
             self.project_start_at -= self.project_max_results;
         }
-        self.get_jira_projects().await
+        Ok(self.get_jira_projects().await?)
     }
 
-    pub async fn get_jira_projects(&mut self) -> anyhow::Result<Vec<Project>> {
+    pub async fn get_jira_projects(&mut self) -> anyhow::Result<Vec<Project>, anyhow::Error> {
         let mut query = self
             .db
             .query(format!(
@@ -139,10 +142,18 @@ impl Jira {
         Ok(self.projects.values.clone())
     }
 
-    async fn get_and_record_tickets(&mut self, url: &str) -> anyhow::Result<Vec<TicketData>> {
+    pub async fn get_and_record_tickets(
+        &mut self,
+        project_key: &str,
+    ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
+        let jira_url = self.client.get_domain();
+        let url = format!(
+            "{}/rest/api/3/search?maxResults={}&startAt=0&jql=project%20%3D%20{}&expand=renderedFields",
+            jira_url, self.tickets_max_results, project_key
+        );
         let resp = self
             .tickets
-            .get_tickets_from_jira_api(&self.client, url)
+            .get_tickets_from_jira_api(&self.client, &url)
             .await?;
         self.tickets = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
         for ticket in &self.tickets.issues {
@@ -150,19 +161,19 @@ impl Jira {
             let tkt = ticket.clone();
             spawn(async move {
                 let _tickets_insert: TicketData = db
-                    .create(("tickets", &tkt.key))
+                    .update(("tickets", &tkt.key))
                     .content(tkt)
                     .await
                     .expect("tickets inserted into db");
             });
         }
-        return Ok(self.tickets.issues.clone());
+        Ok(self.tickets.issues.clone())
     }
 
     pub async fn get_next_ticket_page(
         &mut self,
         project_key: &str,
-    ) -> anyhow::Result<Vec<TicketData>> {
+    ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         self.tickets_start_at += self.tickets_max_results;
         let sql = format!(
             "SELECT * FROM tickets WHERE fields.project.key = '{}' LIMIT {} START {}",
@@ -183,23 +194,26 @@ impl Jira {
                     "{}/rest/api/3/search?maxResults={}&startAt={}&jql=project%20%3D%20{}&expand=renderedFields",
                     jira_url, self.tickets_max_results, (self.tickets_start_at + self.tickets_max_results), project_key
                 );
-            return self.get_and_record_tickets(&next_page_url).await;
+            return Ok(self.get_and_record_tickets(&next_page_url).await?);
         }
-        return Ok(self.tickets.issues.clone());
+        Ok(self.tickets.issues.clone())
     }
 
     pub async fn get_previous_tickets_page(
         &mut self,
         project_key: &str,
-    ) -> anyhow::Result<Vec<TicketData>> {
+    ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         self.tickets_start_at = self
             .tickets_start_at
             .checked_sub(self.tickets_max_results)
             .unwrap_or(0);
-        return self.get_jira_tickets(project_key).await;
+        Ok(self.get_jira_tickets(project_key).await?)
     }
 
-    pub async fn get_jira_tickets(&mut self, project_key: &str) -> anyhow::Result<Vec<TicketData>> {
+    pub async fn get_jira_tickets(
+        &mut self,
+        project_key: &str,
+    ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         let sql = format!(
             "SELECT * FROM tickets WHERE fields.project.key = '{}' LIMIT {} START {}",
             project_key, self.tickets_max_results, self.tickets_start_at
@@ -207,14 +221,9 @@ impl Jira {
         let mut query = self.db.query(sql).await.ok().unwrap();
         let tickets: Vec<TicketData> = query.take(0)?;
         if tickets.is_empty() {
-            let jira_url = self.client.get_domain();
-            let url = format!(
-                "{}/rest/api/3/search?maxResults={}&startAt=0&jql=project%20%3D%20{}&expand=renderedFields",
-                jira_url, self.tickets_max_results, project_key
-            );
-            return self.get_and_record_tickets(&url).await;
+            self.get_and_record_tickets(project_key).await?;
+            return Ok(self.tickets.issues.clone());
         }
-        self.tickets.issues = tickets;
         Ok(self.tickets.issues.clone())
     }
 }

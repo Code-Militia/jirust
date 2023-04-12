@@ -90,9 +90,8 @@ impl ProjectsWidget {
         // _focused: bool,
     ) -> anyhow::Result<()> {
         let title = "Projects";
-        let prjs = &self.projects;
         let mut list_items: Vec<ListItem> = Vec::new();
-        for p in prjs {
+        for p in &self.projects {
             list_items
                 .push(ListItem::new(vec![Spans::from(Span::raw(&p.key))]).style(Style::default()))
         }

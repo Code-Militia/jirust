@@ -4,7 +4,7 @@ use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, Paragraph, List, ListItem, Wrap},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
     Frame,
 };
 
@@ -18,7 +18,7 @@ enum InputMode {
 }
 
 // CommentPopup holds the state of the application
-pub struct CommentsPopup {
+pub struct CommentAdd {
     /// Current value of the input box
     input: String,
     /// Current input mode
@@ -28,7 +28,7 @@ pub struct CommentsPopup {
     pub push_comment: bool,
 }
 
-impl CommentsPopup {
+impl CommentAdd {
     pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
@@ -112,7 +112,7 @@ impl CommentsPopup {
                 let content = vec![Spans::from(Span::raw(format!("{}: {}", i, m)))];
                 ListItem::new(content)
             })
-        .collect();
+            .collect();
         let messages =
             List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
         f.render_widget(messages, chunks[2]);
@@ -120,13 +120,13 @@ impl CommentsPopup {
     }
 }
 
-impl CommentsPopup {
+impl CommentAdd {
     pub fn new() -> Self {
         return Self {
             input: String::new(),
             input_mode: InputMode::Normal,
             messages: Vec::new(),
-            push_comment: false
+            push_comment: false,
         };
     }
 
@@ -155,23 +155,23 @@ impl CommentsPopup {
             InputMode::Editing => match key {
                 Key::Char(c) => {
                     self.input.push(c);
-                    return Ok(EventState::Consumed)
-                },
+                    return Ok(EventState::Consumed);
+                }
                 Key::Backspace => {
                     self.input.pop();
-                    return Ok(EventState::Consumed)
-                },
+                    return Ok(EventState::Consumed);
+                }
                 Key::Esc => {
                     self.normal_mode();
-                    return Ok(EventState::Consumed)
-                },
+                    return Ok(EventState::Consumed);
+                }
                 Key::Enter => {
                     self.messages.push(self.input.clone());
                     self.input.clear();
-                    return Ok(EventState::Consumed)
+                    return Ok(EventState::Consumed);
                 }
                 _ => {}
-            }
+            },
         }
         return Ok(EventState::NotConsumed);
     }
