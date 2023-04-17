@@ -10,7 +10,7 @@ use tui::{
 
 use crate::{event::key::Key, jira::tickets::TicketData};
 
-use super::{commands::CommandInfo, EventState, InputMode};
+use super::{EventState, InputMode};
 
 pub struct SearchTicketsWidget {
     input: String,
@@ -20,11 +20,11 @@ pub struct SearchTicketsWidget {
 
 impl SearchTicketsWidget {
     pub fn new() -> Self {
-        return Self {
+        Self {
             input: String::new(),
             input_mode: InputMode::Normal,
             tickets: Vec::new(),
-        };
+        }
     }
 
     pub fn normal_mode(&mut self) {
@@ -131,15 +131,15 @@ impl SearchTicketsWidget {
 }
 
 impl SearchTicketsWidget {
-    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn normal_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
         match key {
             Key::Char('e') => {
                 self.input_mode = InputMode::Editing;
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
-            _ => return Ok(EventState::NotConsumed),
+            _ => Ok(EventState::NotConsumed)
         }
     }
 
@@ -147,24 +147,24 @@ impl SearchTicketsWidget {
         match key {
             Key::Char(c) => {
                 self.input.push(c);
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
             Key::Backspace => {
                 self.input.pop();
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
             Key::Esc => {
                 self.normal_mode();
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
-            _ => return Ok(EventState::NotConsumed),
+            _ => Ok(EventState::NotConsumed),
         }
     }
 
     pub fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         match self.input_mode {
-            InputMode::Normal => return self.normal_mode_key_event(key),
-            InputMode::Editing => return self.edit_mode_key_event(key),
+            InputMode::Normal => self.normal_mode_key_event(key),
+            InputMode::Editing => self.edit_mode_key_event(key),
         }
     }
 }

@@ -107,12 +107,12 @@ impl CommentAdd {
 
 impl CommentAdd {
     pub fn new() -> Self {
-        return Self {
+        Self {
             input: String::new(),
             input_mode: InputMode::Normal,
             messages: Vec::new(),
             push_comment: false,
-        };
+        }
     }
 
     pub fn edit_mode(&mut self) {
@@ -127,13 +127,13 @@ impl CommentAdd {
         match key {
             Key::Char('e') => {
                 self.edit_mode();
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
             Key::Char('P') => {
                 self.push_comment = true;
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
-            _ => return Ok(EventState::NotConsumed),
+            _ => Ok(EventState::NotConsumed)
         }
     }
 
@@ -141,29 +141,29 @@ impl CommentAdd {
         match key {
             Key::Char(c) => {
                 self.input.push(c);
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
             Key::Backspace => {
                 self.input.pop();
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
             Key::Esc => {
                 self.normal_mode();
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
             Key::Enter => {
                 self.messages.push(self.input.clone());
                 self.input.clear();
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
-            _ => return Ok(EventState::NotConsumed),
+            _ => Ok(EventState::NotConsumed)
         }
     }
 
     pub fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         match self.input_mode {
-            InputMode::Normal => return self.normal_mode_key_event(key),
-            InputMode::Editing => return self.edit_mode_key_event(key),
+            InputMode::Normal => self.normal_mode_key_event(key),
+            InputMode::Editing => self.edit_mode_key_event(key),
         }
     }
 }

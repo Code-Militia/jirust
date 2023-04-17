@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use super::auth::JiraClient;
 use super::SurrealAny;
 use htmltoadf::convert_html_str_to_adf_str;
@@ -156,7 +154,7 @@ impl TicketData {
         let comments: Comments =
             serde_json::from_str(response.as_str()).expect("unable to deserialize comments");
         let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?;
-        return Ok(comments);
+        Ok(comments)
     }
 
     pub async fn get_comments(
@@ -253,8 +251,6 @@ impl JiraTickets {
             .default_headers(headers)
             .https_only(true)
             .build()?;
-        let response = client.get(url).send().await?.text().await;
-
-        return response;
+        client.get(url).send().await?.text().await
     }
 }

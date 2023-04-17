@@ -96,7 +96,7 @@ impl Jira {
         if self.project_start_at >= 1 {
             self.project_start_at -= self.project_max_results;
         }
-        Ok(self.get_jira_projects().await?)
+        self.get_jira_projects().await
     }
 
     pub async fn get_jira_projects(&mut self) -> anyhow::Result<Vec<Project>, anyhow::Error> {
@@ -193,7 +193,7 @@ impl Jira {
                     "{}/rest/api/3/search?maxResults={}&startAt={}&jql=project%20%3D%20{}&expand=renderedFields",
                     jira_url, self.tickets_max_results, (self.tickets_start_at + self.tickets_max_results), project_key
                 );
-            return Ok(self.get_and_record_tickets(&next_page_url).await?);
+            return self.get_and_record_tickets(&next_page_url).await;
         }
         Ok(self.tickets.issues.clone())
     }
@@ -202,11 +202,12 @@ impl Jira {
         &mut self,
         project_key: &str,
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
-        self.tickets_start_at = self
-            .tickets_start_at
-            .checked_sub(self.tickets_max_results)
-            .unwrap_or(0);
-        Ok(self.get_jira_tickets(project_key).await?)
+        self.tickets_start_at = self.tickets_start_at.saturating_sub(self.tickets_max_results);
+        // self.tickets_start_at = self
+        //     .tickets_start_at
+        //     .checked_sub(self.tickets_max_results)
+        //     .unwrap_or(0);
+        self.get_jira_tickets(project_key).await
     }
 
     pub async fn get_jira_tickets(

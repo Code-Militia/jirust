@@ -1,9 +1,9 @@
-pub mod commands;
+// pub mod commands;
 pub mod comments;
 pub mod comments_add;
 pub mod components;
 pub mod description;
-pub mod error;
+// pub mod error;
 pub mod labels;
 pub mod parent;
 pub mod projects;
@@ -13,7 +13,7 @@ pub mod ticket_relation;
 pub mod ticket_transition;
 pub mod tickets;
 
-use commands::CommandInfo;
+// use commands::CommandInfo;
 
 use async_trait::async_trait;
 use tui::{
@@ -86,7 +86,7 @@ pub trait MovableComponent {
 /// base component trait
 #[async_trait]
 pub trait Component {
-    fn commands(&self, out: &mut Vec<CommandInfo>);
+    // fn commands(&self, out: &mut Vec<CommandInfo>);
 
     fn event(&mut self, key: crate::event::key::Key) -> anyhow::Result<EventState>;
 

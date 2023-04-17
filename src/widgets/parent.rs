@@ -1,25 +1,13 @@
-use log::info;
-use surrealdb::engine::any::Any;
-use surrealdb::Surreal;
 use tui::{
     backend::Backend,
     layout::{Constraint, Rect},
-    widgets::{Cell, Clear, ListState, Row, Table, TableState},
+    widgets::{Cell, Clear, Row, Table, TableState},
     Frame,
 };
 
-use crate::{
-    config::KeyConfig,
-    event::key::Key,
-    jira::{
-        auth::JiraClient,
-        tickets::{JiraTickets, LinkInwardOutwardParent, Links, TicketData},
-    },
-};
+use crate::jira::tickets::TicketData;
 
-use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
-
-type SurrealAny = Surreal<Any>;
+use super::{draw_block_style, draw_highlight_style};
 
 #[derive(Debug)]
 pub struct TicketParentWidget {}
@@ -48,7 +36,7 @@ impl TicketParentWidget {
             None => {
                 let table = Table::new(rows)
                     .header(headers)
-                    .block(draw_block_style(focused, &title))
+                    .block(draw_block_style(focused, title))
                     .highlight_style(draw_highlight_style())
                     .widths(&[
                         Constraint::Percentage(15),
@@ -83,7 +71,7 @@ impl TicketParentWidget {
         rows.push(Row::new(cells).height(height as u16));
         let table = Table::new(rows)
             .header(headers)
-            .block(draw_block_style(focused, &title))
+            .block(draw_block_style(focused, title))
             .highlight_style(draw_highlight_style())
             .widths(&[
                 Constraint::Percentage(15),
@@ -106,6 +94,6 @@ impl TicketParentWidget {
         let mut state = TableState::default();
         state.select(Some(0));
 
-        return Self {};
+        Self {}
     }
 }

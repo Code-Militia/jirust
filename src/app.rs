@@ -14,7 +14,7 @@ use crate::widgets::InputMode;
 use crate::{
     config::Config,
     event::key::Key,
-    widgets::{error::ErrorComponent, Component, EventState},
+    widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
 use tui::{
@@ -61,13 +61,13 @@ pub struct App {
     tickets: TicketWidget,
     ticket_transition: TransitionWidget,
     pub config: Config,
-    pub error: ErrorComponent,
+    // pub error: ErrorComponent,
 }
 
 impl App {
     pub async fn new(config: Config) -> anyhow::Result<App> {
         let mut jira = Jira::new().await?;
-        let projects = &jira.get_jira_projects().await?.clone();
+        let projects = &jira.get_jira_projects().await?;
 
         Ok(Self {
             comments_list: CommentsList::new(config.key_config.clone()),
@@ -76,7 +76,7 @@ impl App {
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
             description: DescriptionWidget::new(config.key_config.clone()),
-            error: ErrorComponent::new(config.key_config.clone()),
+            // error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,
             jira,
             labels: LabelsWidget::new(config.key_config.clone()),
@@ -310,7 +310,7 @@ impl App {
             None => return Ok(()),
             Some(t) => t,
         };
-        if comment.len() > 0 && self.comment_add.push_comment {
+        if comment.is_empty() && self.comment_add.push_comment {
             let comment = comment.join(" \n ");
             ticket
                 .add_comment(&self.jira.db, &comment, &self.jira.client)
@@ -329,7 +329,8 @@ impl App {
         };
 
         let transitions = ticket.get_transitions(&self.jira.client).await?;
-        Ok(self.ticket_transition.update(&transitions))
+        self.ticket_transition.update(&transitions);
+        Ok(())
     }
 
     pub async fn move_ticket(&mut self) -> anyhow::Result<()> {
@@ -355,9 +356,9 @@ impl App {
     }
 
     pub async fn component_event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        if self.error.event(key)?.is_consumed() {
-            return Ok(EventState::Consumed);
-        }
+        // if self.error.event(key)?.is_consumed() {
+        //     return Ok(EventState::Consumed);
+        // }
 
         // if !matches!(self.focus, Focus::Projects) && self.help.event(key)?.is_consumed() {
         //     return Ok(EventState::Consumed);
@@ -429,7 +430,7 @@ impl App {
             }
         }
 
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 
     async fn move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
@@ -626,6 +627,6 @@ impl App {
                 }
             }
         }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }

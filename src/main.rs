@@ -7,7 +7,6 @@ mod widgets;
 // mod log;
 
 use crate::event::event::Event;
-use anyhow;
 use app::App;
 use crossterm::{
     cursor,
@@ -75,8 +74,10 @@ async fn main() -> anyhow::Result<()> {
                         break;
                     }
                 }
-                Err(err) => app.error.set(err.to_string())?,
-            },
+                // Err(err) => app.error.set(err.to_string())?,
+                Err(_err) =>  {
+
+                }           },
             Event::Tick => (),
         }
     }

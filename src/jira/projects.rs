@@ -40,9 +40,7 @@ impl JiraProjects {
             .default_headers(headers)
             .https_only(true)
             .build()?;
-        let response = client.get(url).send().await?.text().await;
-
-        return response;
+        client.get(url).send().await?.text().await
     }
 
     pub async fn get_projects_next_page(
@@ -51,7 +49,7 @@ impl JiraProjects {
     ) -> anyhow::Result<JiraProjects> {
         match &self.next_page {
             // TODO: Refactor to return an error
-            None => return Ok(self.clone()),
+            None => Ok(self.clone()),
             Some(next_page_url) => {
                 let resp = self
                     .get_projects_from_jira_api(jira_auth, next_page_url.to_string())

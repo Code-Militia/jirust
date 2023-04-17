@@ -13,7 +13,7 @@ use crate::{
     jira::projects::{JiraProjects, Project},
 };
 
-use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
+use super::{draw_block_style, draw_highlight_style, Component, EventState};
 
 pub struct ProjectsWidget {
     projects: Vec<Project>,
@@ -28,11 +28,11 @@ impl ProjectsWidget {
             state.select(Some(0));
         }
 
-        return Self {
+        Self {
             state,
             projects: projects.to_vec(),
             key_config,
-        };
+        }
     }
 
     pub fn next_project(&mut self, line: usize) {
@@ -97,7 +97,7 @@ impl ProjectsWidget {
         }
 
         let list = List::new(list_items)
-            .block(draw_block_style(focused, &title))
+            .block(draw_block_style(focused, title))
             .highlight_style(draw_highlight_style());
 
         let width = 80;
@@ -117,7 +117,7 @@ impl ProjectsWidget {
 }
 
 impl Component for ProjectsWidget {
-    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
@@ -139,6 +139,6 @@ impl Component for ProjectsWidget {
             self.go_to_top();
             return Ok(EventState::Consumed);
         }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }

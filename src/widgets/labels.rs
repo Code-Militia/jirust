@@ -41,7 +41,7 @@ impl LabelsWidget {
             .collect();
 
         let labels_list = List::new(list_items)
-            .block(draw_block_style(focused, &title))
+            .block(draw_block_style(focused, title))
             .highlight_style(draw_highlight_style());
 
         f.render_stateful_widget(labels_list, rect, &mut self.state);
@@ -55,11 +55,11 @@ impl LabelsWidget {
         let mut state = ListState::default();
         state.select(Some(0));
 
-        return Self {
+        Self {
             key_config,
             labels: vec![],
             state,
-        };
+        }
     }
 
     pub fn next(&mut self, line: usize) {
@@ -104,7 +104,7 @@ impl LabelsWidget {
         }
     }
 
-    pub async fn update(&mut self, labels: &Vec<String>) -> anyhow::Result<()> {
+    pub async fn update(&mut self, labels: &[String]) -> anyhow::Result<()> {
         self.labels = labels.to_vec();
         Ok(())
     }
@@ -131,6 +131,6 @@ impl LabelsWidget {
             self.go_to_top();
             return Ok(EventState::Consumed);
         }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }
