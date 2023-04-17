@@ -1,29 +1,40 @@
-use crate::event::key::Key;
+use simsearch::SimSearch;
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
+    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
     Frame,
 };
 
-use super::{EventState, InputMode};
+use crate::{event::key::Key, jira::tickets::TicketData};
 
-// CommentPopup holds the state of the application
-pub struct CommentAdd {
-    /// Current value of the input box
+use super::{commands::CommandInfo, EventState, InputMode};
+
+pub struct SearchTicketsWidget {
     input: String,
-    /// Current input mode
-    input_mode: InputMode,
-    /// History of recorded messages
-    pub messages: Vec<String>,
-    pub push_comment: bool,
+    tickets: Vec<String>,
+    pub input_mode: InputMode,
 }
 
-impl CommentAdd {
+impl SearchTicketsWidget {
+    pub fn new() -> Self {
+        return Self {
+            input: String::new(),
+            input_mode: InputMode::Normal,
+            tickets: Vec::new(),
+        };
+    }
+
+    pub fn normal_mode(&mut self) {
+        self.input_mode = InputMode::Normal
+    }
+}
+
+impl SearchTicketsWidget {
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>) -> anyhow::Result<()> {
-        let chunk_constraints = [
+        let chunk_constrains = [
             Constraint::Length(1),
             Constraint::Length(5),
             Constraint::Min(1),
@@ -32,9 +43,11 @@ impl CommentAdd {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
-            .constraints(chunk_constraints)
+            .constraints(chunk_constrains)
             .split(f.size());
-        let input_title = "Add comments";
+        f.render_widget(Clear, chunks[2]);
+
+        let input_title = "Search";
 
         let normal_mode_style = (
             vec![
@@ -51,8 +64,6 @@ impl CommentAdd {
                 Span::raw("Press "),
                 Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" to stop editing, "),
-                Span::styled("Enter", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw(" to record the message"),
             ],
             Style::default(),
         );
@@ -60,6 +71,7 @@ impl CommentAdd {
             InputMode::Normal => normal_mode_style,
             InputMode::Editing => edit_mode_style,
         };
+
         let mut text = Text::from(Spans::from(msg));
         text.patch_style(style);
         let help_message = Paragraph::new(text);
@@ -81,6 +93,7 @@ impl CommentAdd {
             // Move one line down, from the border to the input line
             chunks[1].y + 1,
         );
+
         match self.input_mode {
             InputMode::Normal =>
                 // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
@@ -89,48 +102,41 @@ impl CommentAdd {
             InputMode::Editing => f.set_cursor(cursor_end_of_text.0, cursor_end_of_text.1),
         }
 
-        let messages: Vec<ListItem> = self
-            .messages
-            .iter()
-            .enumerate()
-            .map(|(i, m)| {
-                let content = vec![Spans::from(Span::raw(format!("{}: {}", i, m)))];
-                ListItem::new(content)
+        let mut engine: SimSearch<usize> = SimSearch::new();
+
+        for (index, ticket) in self.tickets.iter().enumerate() {
+            engine.insert(index, ticket)
+        }
+
+        let results: Vec<_> = engine
+            .search(&self.input)
+            .into_iter()
+            .map(|ticket_id| {
+                let ticket = &self.tickets[ticket_id];
+                ListItem::new(ticket.clone())
             })
             .collect();
-        let messages =
-            List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
-        f.render_widget(messages, chunks[2]);
+        let tickets =
+            List::new(results).block(Block::default().borders(Borders::ALL).title("Tickets"));
+
+        f.render_widget(tickets, chunks[2]);
         Ok(())
+    }
+
+    pub fn update(&mut self, tickets: Vec<TicketData>) {
+        self.tickets = tickets.into_iter().map(|ticket| {
+            ticket.key
+        }).collect();
     }
 }
 
-impl CommentAdd {
-    pub fn new() -> Self {
-        return Self {
-            input: String::new(),
-            input_mode: InputMode::Normal,
-            messages: Vec::new(),
-            push_comment: false,
-        };
-    }
-
-    pub fn edit_mode(&mut self) {
-        self.input_mode = InputMode::Editing
-    }
-
-    pub fn normal_mode(&mut self) {
-        self.input_mode = InputMode::Normal
-    }
+impl SearchTicketsWidget {
+    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn normal_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
         match key {
             Key::Char('e') => {
-                self.edit_mode();
-                return Ok(EventState::Consumed);
-            }
-            Key::Char('P') => {
-                self.push_comment = true;
+                self.input_mode = InputMode::Editing;
                 return Ok(EventState::Consumed);
             }
             _ => return Ok(EventState::NotConsumed),
@@ -149,11 +155,6 @@ impl CommentAdd {
             }
             Key::Esc => {
                 self.normal_mode();
-                return Ok(EventState::Consumed);
-            }
-            Key::Enter => {
-                self.messages.push(self.input.clone());
-                self.input.clear();
                 return Ok(EventState::Consumed);
             }
             _ => return Ok(EventState::NotConsumed),

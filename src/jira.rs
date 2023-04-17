@@ -1,4 +1,3 @@
-use log::info;
 use serde::Deserialize;
 use serde::Serialize;
 use surrealdb::engine::any::connect;
@@ -51,9 +50,9 @@ impl Jira {
             db,
             projects,
             project_start_at: 0,
-            project_max_results: 2,
+            project_max_results: 50,
             tickets_start_at: 0,
-            tickets_max_results: 2,
+            tickets_max_results: 50,
             tickets,
         })
     }

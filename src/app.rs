@@ -5,9 +5,12 @@ use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
 use crate::widgets::labels::LabelsWidget;
 use crate::widgets::parent::TicketParentWidget;
+use crate::widgets::search_projects::SearchProjectsWidget;
+use crate::widgets::search_tickets::SearchTicketsWidget;
 use crate::widgets::ticket_relation::RelationWidget;
 use crate::widgets::ticket_transition::TransitionWidget;
 use crate::widgets::tickets::TicketWidget;
+use crate::widgets::InputMode;
 use crate::{
     config::Config,
     event::key::Key,
@@ -33,6 +36,8 @@ pub enum Focus {
     Description,
     Labels,
     Projects,
+    SearchProjects,
+    SearchTickets,
     Tickets,
     TicketRelation,
     TicketTransition,
@@ -51,6 +56,8 @@ pub struct App {
     parent: TicketParentWidget,
     projects: ProjectsWidget,
     relation: RelationWidget,
+    search_projects: SearchProjectsWidget,
+    search_tickets: SearchTicketsWidget,
     tickets: TicketWidget,
     ticket_transition: TransitionWidget,
     pub config: Config,
@@ -77,6 +84,8 @@ impl App {
             parent: TicketParentWidget::new(),
             projects: ProjectsWidget::new(projects, config.key_config.clone()),
             relation: RelationWidget::new(config.key_config.clone()),
+            search_projects: SearchProjectsWidget::new(projects),
+            search_tickets: SearchTicketsWidget::new(),
             tickets: TicketWidget::new(config.key_config.clone()),
             ticket_transition: TransitionWidget::new(Vec::new(), config.key_config.clone()),
         })
@@ -90,6 +99,16 @@ impl App {
             return Ok(());
         }
 
+        if let Focus::SearchProjects = self.focus {
+            self.search_projects.draw(f)?;
+            return Ok(());
+        }
+
+        if let Focus::SearchTickets = self.focus {
+            self.search_tickets.draw(f)?;
+            return Ok(());
+        }
+
         if let Focus::TicketTransition = self.focus {
             self.ticket_transition.draw(
                 f,
@@ -99,7 +118,7 @@ impl App {
         }
 
         if let Focus::CommentsAdd = self.focus {
-            self.comment_add.draw(f, self.tickets.selected())?;
+            self.comment_add.draw(f)?;
             return Ok(());
         }
 
@@ -238,17 +257,15 @@ impl App {
         Ok(())
     }
 
-    // pub async fn get_first_ticket_set(&mut self) -> anyhow::Result<()> {
-    //     let project = self.projects.selected_project().unwrap();
-    //     self.jira.get_jira_tickets(&project.key).await?;
-    //     self.tickets.update(&self.jira.tickets.issues).await?;
-    //     Ok(())
-    // }
-
     pub async fn update_tickets(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected_project().unwrap();
         self.jira.get_jira_tickets(&project.key).await?;
         self.tickets.update(&self.jira.tickets.issues).await?;
+        Ok(())
+    }
+
+    pub async fn update_search_tickets(&mut self) -> anyhow::Result<()> {
+        self.search_tickets.update(self.tickets.tickets.clone());
         Ok(())
     }
 
@@ -383,6 +400,16 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
             }
+            Focus::SearchProjects => {
+                if self.search_projects.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::SearchTickets => {
+                if self.search_tickets.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+            }
             Focus::TicketRelation => {
                 if self.relation.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
@@ -430,7 +457,7 @@ impl App {
                 }
             }
             Focus::CommentsAdd => {
-                if key == self.config.key_config.quit {
+                if key == self.config.key_config.esc {
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
@@ -497,6 +524,12 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
+                if key == self.config.key_config.search_cache {
+                    self.focus = Focus::SearchProjects;
+                    self.search_projects.input_mode = InputMode::Editing;
+                    return Ok(EventState::Consumed);
+                }
+
                 if key == self.config.key_config.next_page {
                     self.next_project_page().await?;
                     self.update_projects().await?;
@@ -507,6 +540,18 @@ impl App {
                 if key == self.config.key_config.previous_page {
                     self.previous_project_page().await?;
                     self.update_projects().await?;
+                    self.focus = Focus::Projects;
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::SearchProjects => {
+                if key == self.config.key_config.esc {
+                    self.focus = Focus::Projects;
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::SearchTickets => {
+                if key == self.config.key_config.esc {
                     self.focus = Focus::Projects;
                     return Ok(EventState::Consumed);
                 }
@@ -564,6 +609,13 @@ impl App {
                 if key == self.config.key_config.ticket_status {
                     self.update_ticket_transitions().await?;
                     self.focus = Focus::TicketTransition;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.search_cache {
+                    self.focus = Focus::SearchTickets;
+                    self.search_tickets.input_mode = InputMode::Editing;
+                    self.update_search_tickets().await?;
                     return Ok(EventState::Consumed);
                 }
             }

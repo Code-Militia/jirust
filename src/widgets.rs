@@ -7,6 +7,8 @@ pub mod error;
 pub mod labels;
 pub mod parent;
 pub mod projects;
+pub mod search_projects;
+pub mod search_tickets;
 pub mod ticket_relation;
 pub mod ticket_transition;
 pub mod tickets;
@@ -21,6 +23,12 @@ use tui::{
     widgets::{Block, BorderType, Borders},
     Frame,
 };
+
+#[derive(PartialEq, Debug)]
+pub enum InputMode {
+    Normal,
+    Editing,
+}
 
 #[derive(PartialEq, Debug)]
 pub enum EventState {
