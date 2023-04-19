@@ -35,7 +35,7 @@ impl ProjectsWidget {
         }
     }
 
-    pub fn next_project(&mut self, line: usize) {
+    pub fn next(&mut self, line: usize) {
         let i = match self.state.selected() {
             Some(i) if i + line >= self.projects.len() => Some(self.projects.len() - 1),
             Some(i) => Some(i + line),
@@ -45,7 +45,7 @@ impl ProjectsWidget {
         self.state.select(i);
     }
 
-    pub fn previous_project(&mut self, line: usize) {
+    pub fn previous(&mut self, line: usize) {
         let i = match self.state.selected() {
             Some(i) if i <= line => Some(0),
             Some(i) => Some(i - line),
@@ -69,7 +69,7 @@ impl ProjectsWidget {
         self.state.select(Some(self.projects.len() - 1));
     }
 
-    pub fn selected_project(&self) -> Option<&Project> {
+    pub fn selected(&self) -> Option<&Project> {
         match self.state.selected() {
             Some(i) => self.projects.get(i),
             None => None,
@@ -121,16 +121,16 @@ impl Component for ProjectsWidget {
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
-            self.next_project(1);
+            self.next(1);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_up {
-            self.previous_project(1);
+            self.previous(1);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_down_multiple_lines {
-            self.next_project(10);
+            self.next(10);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_up_multiple_lines {
-            self.previous_project(10);
+            self.previous(10);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_bottom {
             self.go_to_bottom();
