@@ -42,6 +42,13 @@ async fn main() -> anyhow::Result<()> {
 
     setup_terminal()?;
 
+    // setup panic handler to restore terminal before exiting
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic| {
+        shutdown_terminal();
+        original_hook(panic);
+    }));
+
     let mut app: App = App::new(config.clone()).await?;
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
