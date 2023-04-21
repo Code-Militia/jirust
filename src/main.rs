@@ -10,6 +10,7 @@ use crate::event::event::Event;
 use anyhow;
 use app::App;
 use crossterm::{
+    cursor,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
@@ -81,7 +82,6 @@ async fn main() -> anyhow::Result<()> {
     }
 
     shutdown_terminal();
-    terminal.show_cursor()?;
 
     Ok(())
 }
@@ -103,5 +103,11 @@ fn shutdown_terminal() {
 
     if let Err(e) = leave_raw_mode {
         eprintln!("leave_raw_mode failed:\n{}", e);
+    }
+
+    let show_cursor = io::stdout().execute(cursor::Show).map(|_| ());
+
+    if let Err(e) = show_cursor {
+        eprintln!("show_cursor failed:\n{}", e);
     }
 }
