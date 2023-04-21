@@ -63,6 +63,9 @@ impl LabelsWidget {
     }
 
     pub fn next(&mut self, line: usize) {
+        if self.labels.is_empty() {
+            return;
+        }
         let i = self
             .state
             .selected()

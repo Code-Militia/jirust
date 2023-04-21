@@ -101,6 +101,9 @@ impl RelationWidget {
     }
 
     pub fn next(&mut self, line: usize) {
+        if self.ticket_links.is_empty() {
+            return;
+        }
         let i = self
             .state
             .selected()
