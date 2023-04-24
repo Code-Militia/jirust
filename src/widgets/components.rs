@@ -63,6 +63,9 @@ impl ComponentsWidget {
     }
 
     pub fn next(&mut self, line: usize) {
+        if self.components.is_empty() {
+            return;
+        }
         let i = self
             .state
             .selected()

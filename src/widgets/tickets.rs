@@ -102,6 +102,9 @@ impl TicketWidget {
     }
 
     pub fn next(&mut self, line: usize) {
+        if self.tickets.is_empty() {
+            return;
+        }
         let i = self
             .state
             .selected()
