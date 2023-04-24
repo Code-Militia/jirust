@@ -10,6 +10,7 @@ use crate::event::event::Event;
 use anyhow;
 use app::App;
 use crossterm::{
+    cursor,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
@@ -42,6 +43,13 @@ async fn main() -> anyhow::Result<()> {
 
     setup_terminal()?;
 
+    // setup panic handler to restore terminal before exiting
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic| {
+        shutdown_terminal();
+        original_hook(panic);
+    }));
+
     let mut app: App = App::new(config.clone()).await?;
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
@@ -53,7 +61,8 @@ async fn main() -> anyhow::Result<()> {
     loop {
         terminal.draw(|f| {
             if let Err(err) = app.draw(f) {
-                // outln!(config #Error, "error: {}", err.to_string());
+                shutdown_terminal();
+                eprintln!("Error: {err:?}");
                 std::process::exit(1);
             }
         })?;
@@ -73,7 +82,6 @@ async fn main() -> anyhow::Result<()> {
     }
 
     shutdown_terminal();
-    terminal.show_cursor()?;
 
     Ok(())
 }
@@ -95,5 +103,11 @@ fn shutdown_terminal() {
 
     if let Err(e) = leave_raw_mode {
         eprintln!("leave_raw_mode failed:\n{}", e);
+    }
+
+    let show_cursor = io::stdout().execute(cursor::Show).map(|_| ());
+
+    if let Err(e) = show_cursor {
+        eprintln!("show_cursor failed:\n{}", e);
     }
 }
