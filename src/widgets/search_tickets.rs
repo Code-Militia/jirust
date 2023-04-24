@@ -1,28 +1,33 @@
 use simsearch::SimSearch;
 use tui::{
     backend::Backend,
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
+    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap, ListState},
     Frame,
 };
 
 use crate::{event::key::Key, jira::tickets::TicketData};
 
-use super::{EventState, InputMode};
+use super::{EventState, InputMode, draw_highlight_style};
 
 pub struct SearchTicketsWidget {
     input: String,
+    search_tickets: Vec<String>,
+    state: ListState,
     tickets: Vec<String>,
     pub input_mode: InputMode,
 }
 
 impl SearchTicketsWidget {
     pub fn new() -> Self {
+        let state = ListState::default();
         Self {
             input: String::new(),
             input_mode: InputMode::Normal,
+            search_tickets: Vec::new(),
+            state,
             tickets: Vec::new(),
         }
     }
@@ -33,6 +38,50 @@ impl SearchTicketsWidget {
 }
 
 impl SearchTicketsWidget {
+    fn draw_edit<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) -> anyhow::Result<()> {
+        self.search_tickets.clear();
+        let mut engine: SimSearch<usize> = SimSearch::new();
+
+        for (index, project) in self.tickets.iter().enumerate() {
+            engine.insert(index, project)
+        }
+
+        let results: Vec<_> = engine
+            .search(&self.input)
+            .into_iter()
+            .map(|project_id| {
+                let ticket = &self.tickets[project_id];
+                self.search_tickets.push(ticket.to_string());
+                ListItem::new(ticket.clone())
+            })
+            .collect();
+
+        let tickets =
+            List::new(results)
+            .block(Block::default().borders(Borders::ALL).title("Tickets"))
+            .highlight_style(draw_highlight_style());
+        f.render_stateful_widget(tickets, r, &mut self.state);
+
+        Ok(())
+    }
+
+    fn draw_normal<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) -> anyhow::Result<()> {
+        let results: Vec<_> = self.tickets
+            .iter()
+            .map(|project_id| {
+                // self.search_tickets.push(project_id.to_string());
+                ListItem::new(project_id.clone())
+            })
+            .collect();
+        let tickets =
+            List::new(results)
+            .block(Block::default().borders(Borders::ALL).title("Tickets"))
+            .highlight_style(draw_highlight_style());
+
+        f.render_widget(tickets, r);
+        Ok(())
+
+    }
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>) -> anyhow::Result<()> {
         let chunk_constrains = [
             Constraint::Length(1),
@@ -95,32 +144,56 @@ impl SearchTicketsWidget {
         );
 
         match self.input_mode {
-            InputMode::Normal =>
+            InputMode::Normal => {
                 // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
-                {}
 
-            InputMode::Editing => f.set_cursor(cursor_end_of_text.0, cursor_end_of_text.1),
+                self.draw_normal(f, chunks[2])?;
+            }
+            InputMode::Editing => {
+                self.draw_edit(f, chunks[2])?;
+                f.set_cursor(cursor_end_of_text.0, cursor_end_of_text.1)
+            }
         }
 
-        let mut engine: SimSearch<usize> = SimSearch::new();
-
-        for (index, ticket) in self.tickets.iter().enumerate() {
-            engine.insert(index, ticket)
-        }
-
-        let results: Vec<_> = engine
-            .search(&self.input)
-            .into_iter()
-            .map(|ticket_id| {
-                let ticket = &self.tickets[ticket_id];
-                ListItem::new(ticket.clone())
-            })
-            .collect();
-        let tickets =
-            List::new(results).block(Block::default().borders(Borders::ALL).title("Tickets"));
-
-        f.render_widget(tickets, chunks[2]);
+        // let mut engine: SimSearch<usize> = SimSearch::new();
+        //
+        // for (index, ticket) in self.tickets.iter().enumerate() {
+        //     engine.insert(index, ticket)
+        // }
+        //
+        // let results: Vec<_> = engine
+        //     .search(&self.input)
+        //     .into_iter()
+        //     .map(|ticket_id| {
+        //         let ticket = &self.tickets[ticket_id];
+        //         ListItem::new(ticket.clone())
+        //     })
+        //     .collect();
+        // let tickets =
+        //     List::new(results).block(Block::default().borders(Borders::ALL).title("Tickets"));
+        //
+        // f.render_widget(tickets, chunks[2]);
         Ok(())
+    }
+
+    pub fn next(&mut self, line: usize) {
+        let i = match self.state.selected() {
+            Some(i) if i + line >= self.tickets.len() => Some(self.tickets.len() - 1),
+            Some(i) => Some(i + line),
+            None => Some(0),
+        };
+
+        self.state.select(i);
+    }
+
+    pub fn previous(&mut self, line: usize) {
+        let i = match self.state.selected() {
+            Some(i) if i <= line => Some(0),
+            Some(i) => Some(i - line),
+            None => None,
+        };
+
+        self.state.select(i);
     }
 
     pub fn update(&mut self, tickets: Vec<TicketData>) {
@@ -132,6 +205,29 @@ impl SearchTicketsWidget {
 
 impl SearchTicketsWidget {
     // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+    fn movement(&mut self, key: Key) -> anyhow::Result<EventState> {
+        match key {
+            Key::Down => {
+                self.next(1);
+                return Ok(EventState::Consumed)
+            },
+            Key::Up => {
+                self.previous(1);
+                return Ok(EventState::Consumed)
+            },
+            Key::Ctrl('d') => {
+                self.next(10);
+                return Ok(EventState::Consumed)
+            }
+            Key::Ctrl('u') => {
+                self.previous(10);
+                return Ok(EventState::Consumed)
+            }
+            _ => {
+                return Ok(EventState::NotConsumed)
+            }
+        }
+    }
 
     fn normal_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
         match key {
@@ -139,7 +235,8 @@ impl SearchTicketsWidget {
                 self.input_mode = InputMode::Editing;
                 Ok(EventState::Consumed)
             }
-            _ => Ok(EventState::NotConsumed)
+            // _ => return Ok(EventState::NotConsumed)
+            _ => return self.movement(key)
         }
     }
 
@@ -157,7 +254,8 @@ impl SearchTicketsWidget {
                 self.normal_mode();
                 Ok(EventState::Consumed)
             }
-            _ => Ok(EventState::NotConsumed),
+            _ => return self.movement(key)
+            // _ => return Ok(EventState::NotConsumed)
         }
     }
 

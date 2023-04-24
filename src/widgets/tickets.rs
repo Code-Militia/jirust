@@ -143,6 +143,12 @@ impl TicketWidget {
         }
     }
 
+    pub fn select (&mut self, index: Option<usize>) {
+        if index.is_some() {
+            self.state.select(index)
+        }
+    }
+
     pub async fn update(&mut self, tickets: &[TicketData]) -> anyhow::Result<()> {
         self.tickets = tickets.to_vec();
         Ok(())

@@ -127,79 +127,77 @@ impl App {
             return Ok(());
         }
 
-        if let Focus::Tickets = self.focus {
-            let main_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(85), Constraint::Percentage(15)])
-                .split(f.size());
+        let main_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(85), Constraint::Percentage(15)])
+            .split(f.size());
 
-            let description_metadata = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
-                .split(main_chunks[0]);
+        let description_metadata = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
+            .split(main_chunks[0]);
 
-            let ticket_relation = main_chunks[1];
+        let ticket_relation = main_chunks[1];
 
-            let ticket_left_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(45), Constraint::Percentage(40)])
-                .split(description_metadata[0]);
+        let ticket_left_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(45), Constraint::Percentage(40)])
+            .split(description_metadata[0]);
 
-            let ticket_metadata_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([
-                    Constraint::Percentage(40),
-                    Constraint::Percentage(40),
-                    Constraint::Percentage(20),
-                ])
-                .split(ticket_left_chunks[1]);
+        let ticket_metadata_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Percentage(40),
+                Constraint::Percentage(40),
+                Constraint::Percentage(20),
+            ])
+            .split(ticket_left_chunks[1]);
 
-            let ticket_list = ticket_left_chunks[0];
-            let ticket_labels = ticket_metadata_chunks[0];
-            let ticket_component = ticket_metadata_chunks[1];
-            let ticket_parent = ticket_metadata_chunks[2];
+        let ticket_list = ticket_left_chunks[0];
+        let ticket_labels = ticket_metadata_chunks[0];
+        let ticket_component = ticket_metadata_chunks[1];
+        let ticket_parent = ticket_metadata_chunks[2];
 
-            let ticket_right_chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(100)])
-                .split(description_metadata[1]);
+        let ticket_right_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(100)])
+            .split(description_metadata[1]);
 
-            let ticket_description = ticket_right_chunks[0];
+        let ticket_description = ticket_right_chunks[0];
 
-            self.tickets
-                .draw(f, matches!(self.focus, Focus::Tickets), ticket_list)?;
+        self.tickets
+            .draw(f, matches!(self.focus, Focus::Tickets), ticket_list)?;
 
-            self.labels.draw(
-                f,
-                matches!(self.focus, Focus::Labels),
-                ticket_labels,
-                self.tickets.selected(),
-            )?;
+        self.labels.draw(
+            f,
+            matches!(self.focus, Focus::Labels),
+            ticket_labels,
+            self.tickets.selected(),
+        )?;
 
-            self.components.draw(
-                f,
-                matches!(self.focus, Focus::Components),
-                ticket_component,
-                self.tickets.selected(),
-            )?;
+        self.components.draw(
+            f,
+            matches!(self.focus, Focus::Components),
+            ticket_component,
+            self.tickets.selected(),
+        )?;
 
-            self.description.draw(
-                f,
-                matches!(self.focus, Focus::Description),
-                ticket_description,
-                self.tickets.selected(),
-            )?;
+        self.description.draw(
+            f,
+            matches!(self.focus, Focus::Description),
+            ticket_description,
+            self.tickets.selected(),
+        )?;
 
-            self.parent
-                .draw(f, false, ticket_parent, self.tickets.selected())?;
+        self.parent
+            .draw(f, false, ticket_parent, self.tickets.selected())?;
 
-            self.relation.draw(
-                f,
-                matches!(self.focus, Focus::TicketRelation),
-                ticket_relation,
-                self.tickets.selected(),
-            )?;
-        }
+        self.relation.draw(
+            f,
+            matches!(self.focus, Focus::TicketRelation),
+            ticket_relation,
+            self.tickets.selected(),
+        )?;
 
         if let Focus::CommentsList = self.focus {
             self.comments_list
@@ -273,9 +271,7 @@ impl App {
                 self.jira.get_jira_tickets(&project).await?;
                 self.tickets.update(&self.jira.tickets.issues).await?;
             }
-            None => {
-                return Ok(())
-            }
+            None => {}
         };
         Ok(())
     }
@@ -573,6 +569,11 @@ impl App {
                 }
             }
             Focus::SearchTickets => {
+                if key == self.config.key_config.enter {
+                    // self.update_tickets_from_projects_cache().await?;
+                    self.focus = Focus::Description;
+                    return Ok(EventState::Consumed);
+                }
                 if key == self.config.key_config.esc {
                     self.focus = Focus::Projects;
                     return Ok(EventState::Consumed);
