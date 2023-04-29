@@ -253,4 +253,15 @@ impl JiraTickets {
             .build()?;
         client.get(url).send().await?.text().await
     }
+
+    pub async fn search_jira_api(
+        &self,
+        ticket_key: &str,
+        jira_client: &JiraClient,
+    ) -> anyhow::Result<TicketData> {
+        let url = format!("/browse/{}", ticket_key);
+        let response = jira_client.get_from_jira_api(&url).await?;
+        let obj: TicketData = serde_json::from_str(&response)?;
+        Ok(obj)
+    }
 }

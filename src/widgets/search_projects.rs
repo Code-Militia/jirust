@@ -4,13 +4,13 @@ use tui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap, ListState},
+    widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap},
     Frame,
 };
 
 use crate::{event::key::Key, jira::projects::Project};
 
-use super::{EventState, InputMode, draw_highlight_style};
+use super::{draw_highlight_style, EventState, InputMode};
 
 pub struct SearchProjectsWidget {
     input: String,
@@ -63,8 +63,7 @@ impl SearchProjectsWidget {
             })
             .collect();
 
-        let projects =
-            List::new(results)
+        let projects = List::new(results)
             .block(Block::default().borders(Borders::ALL).title("Projects"))
             .highlight_style(draw_highlight_style());
         f.render_stateful_widget(projects, r, &mut self.state);
@@ -73,21 +72,20 @@ impl SearchProjectsWidget {
     }
 
     fn draw_normal<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) -> anyhow::Result<()> {
-        let results: Vec<_> = self.projects
+        let results: Vec<_> = self
+            .projects
             .iter()
             .map(|project_id| {
                 // self.search_projects.push(project_id.to_string());
                 ListItem::new(project_id.clone())
             })
             .collect();
-        let projects =
-            List::new(results)
+        let projects = List::new(results)
             .block(Block::default().borders(Borders::ALL).title("Projects"))
             .highlight_style(draw_highlight_style());
 
         f.render_widget(projects, r);
         Ok(())
-
     }
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>) -> anyhow::Result<()> {
         let chunk_constrains = [
@@ -167,7 +165,9 @@ impl SearchProjectsWidget {
 
     pub fn next(&mut self, line: usize) {
         let i = match self.state.selected() {
-            Some(i) if i + line >= self.search_projects.len() => Some(self.search_projects.len() - 1),
+            Some(i) if i + line >= self.search_projects.len() => {
+                Some(self.search_projects.len() - 1)
+            }
             Some(i) => Some(i + line),
             None => Some(0),
         };
@@ -200,23 +200,21 @@ impl SearchProjectsWidget {
         match key {
             Key::Down => {
                 self.next(1);
-                return Ok(EventState::Consumed)
-            },
+                return Ok(EventState::Consumed);
+            }
             Key::Up => {
                 self.previous(1);
-                return Ok(EventState::Consumed)
-            },
+                return Ok(EventState::Consumed);
+            }
             Key::Ctrl('d') => {
                 self.next(10);
-                return Ok(EventState::Consumed)
+                return Ok(EventState::Consumed);
             }
             Key::Ctrl('u') => {
                 self.previous(10);
-                return Ok(EventState::Consumed)
+                return Ok(EventState::Consumed);
             }
-            _ => {
-                return Ok(EventState::NotConsumed)
-            }
+            _ => return Ok(EventState::NotConsumed),
         }
     }
     fn normal_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
@@ -225,7 +223,7 @@ impl SearchProjectsWidget {
                 self.input_mode = InputMode::Editing;
                 Ok(EventState::Consumed)
             }
-            _ => return self.movement(key)        
+            _ => return self.movement(key),
         }
     }
 
@@ -243,7 +241,7 @@ impl SearchProjectsWidget {
                 self.normal_mode();
                 Ok(EventState::Consumed)
             }
-            _ => return self.movement(key)        
+            _ => return self.movement(key),
         }
     }
 

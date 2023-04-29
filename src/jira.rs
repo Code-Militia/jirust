@@ -1,3 +1,4 @@
+use log::info;
 use serde::Deserialize;
 use serde::Serialize;
 use surrealdb::engine::any::connect;
@@ -110,7 +111,7 @@ impl Jira {
             .expect("projects selected");
         let projects: Vec<Project> = query.take(0)?;
 
-        // Get initiall projects request
+        // Get initial projects request
         if projects.is_empty() {
             let jira_url = self.client.get_domain();
             let jira_api_version = self.client.get_api_version();
@@ -147,8 +148,8 @@ impl Jira {
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         let jira_url = self.client.get_domain();
         let url = format!(
-            "{}/rest/api/3/search?maxResults={}&startAt=0&jql=project%20%3D%20{}&expand=renderedFields",
-            jira_url, self.tickets_max_results, project_key
+            "{}/rest/api/3/search?maxResults={}&startAt={}&jql=project%20%3D%20{}&expand=renderedFields",
+            jira_url, self.tickets_max_results, self.tickets_start_at, project_key
         );
         let resp = self
             .tickets
@@ -166,6 +167,7 @@ impl Jira {
                     .expect("tickets inserted into db");
             });
         }
+
         Ok(self.tickets.issues.clone())
     }
 
@@ -188,12 +190,7 @@ impl Jira {
 
         if (self.tickets_start_at + self.tickets_max_results) < self.tickets.total {
             self.tickets_start_at += self.tickets_max_results;
-            let jira_url = self.client.get_domain();
-            let next_page_url = format!(
-                    "{}/rest/api/3/search?maxResults={}&startAt={}&jql=project%20%3D%20{}&expand=renderedFields",
-                    jira_url, self.tickets_max_results, (self.tickets_start_at + self.tickets_max_results), project_key
-                );
-            return self.get_and_record_tickets(&next_page_url).await;
+            return Ok(self.get_and_record_tickets(&project_key).await?);
         }
         Ok(self.tickets.issues.clone())
     }
@@ -202,11 +199,9 @@ impl Jira {
         &mut self,
         project_key: &str,
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
-        self.tickets_start_at = self.tickets_start_at.saturating_sub(self.tickets_max_results);
-        // self.tickets_start_at = self
-        //     .tickets_start_at
-        //     .checked_sub(self.tickets_max_results)
-        //     .unwrap_or(0);
+        self.tickets_start_at = self
+            .tickets_start_at
+            .saturating_sub(self.tickets_max_results);
         self.get_jira_tickets(project_key).await
     }
 
@@ -219,11 +214,36 @@ impl Jira {
             project_key, self.tickets_max_results, self.tickets_start_at
         );
         let mut query = self.db.query(sql).await.ok().unwrap();
-        let tickets: Vec<TicketData> = query.take(0)?;
-        if tickets.is_empty() {
+        // let tickets: Vec<TicketData> = query.take(0)?;
+        // if tickets.is_empty() {
+        //     self.get_and_record_tickets(project_key).await?;
+        //     return Ok(self.tickets.issues.clone());
+        // }
+        self.tickets.issues = query.take(0)?;
+        if self.tickets.issues.is_empty() {
             self.get_and_record_tickets(project_key).await?;
             return Ok(self.tickets.issues.clone());
         }
         Ok(self.tickets.issues.clone())
+    }
+
+    pub async fn search_jira_tickets(
+        &mut self,
+        ticket_key: &str,
+    ) -> anyhow::Result<()> {
+        // TODO: Fix this query
+        // let sql = format!("SELECT {} FROM tickets", ticket_key);
+        let t: Vec<TicketData> = self.db.select(("tickets", "id")).await.unwrap();
+        info!("t {:?}", t);
+        let sql = "SELECT * FROM tickets";
+        let mut query = self.db.query(sql).await.ok().unwrap();
+        // info!("query: {:?}", query);
+        self.tickets.issues = query.take(0)?;
+        if self.tickets.issues.is_empty() {
+            let ticket = self.tickets.search_jira_api(ticket_key, &self.client).await?;
+            let _create_ticket_record: TicketData = self.db.create(("tickets", ticket_key)) .content(ticket)
+                .await?;
+        }
+        Ok(())
     }
 }

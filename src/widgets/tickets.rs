@@ -110,7 +110,7 @@ impl TicketWidget {
             .selected()
             .map(|i| (i + line).min(self.tickets.len() - 1));
 
-        self.state.select(i);
+        self.select(i);
     }
 
     pub fn previous(&mut self, line: usize) {
@@ -119,21 +119,21 @@ impl TicketWidget {
             .selected()
             .map(|i| if i <= line { 0 } else { i - line });
 
-        self.state.select(i);
+        self.select(i);
     }
 
     pub fn go_to_top(&mut self) {
         if self.tickets.is_empty() {
             return;
         }
-        self.state.select(Some(0));
+        self.select(Some(0));
     }
 
     pub fn go_to_bottom(&mut self) {
         if self.tickets.is_empty() {
             return;
         }
-        self.state.select(Some(self.tickets.len() - 1));
+        self.select(Some(self.tickets.len() - 1))
     }
 
     pub fn selected(&self) -> Option<&TicketData> {
@@ -143,10 +143,22 @@ impl TicketWidget {
         }
     }
 
-    pub fn select (&mut self, index: Option<usize>) {
+    pub fn select(&mut self, index: Option<usize>) {
         if index.is_some() {
             self.state.select(index)
         }
+    }
+
+    pub fn select_ticket(&mut self, ticket_key: &str) -> anyhow::Result<bool> {
+        for (index, ticket_data) in self.tickets.iter().enumerate() {
+            if ticket_data.key == ticket_key.clone() {
+                self.select(Some(index));
+                return Ok(true);
+            }
+        }
+
+        // This needs to return some sort of error stating it did not find a ticket
+        Ok(false)
     }
 
     pub async fn update(&mut self, tickets: &[TicketData]) -> anyhow::Result<()> {

@@ -571,8 +571,19 @@ impl App {
             Focus::SearchTickets => {
                 if key == self.config.key_config.enter {
                     // self.update_tickets_from_projects_cache().await?;
-                    self.focus = Focus::Description;
-                    return Ok(EventState::Consumed);
+                    if self.search_tickets.selected().is_some() {
+                        let ticket = self.search_tickets.selected().unwrap();
+                        if self.tickets.select_ticket(ticket).is_ok() {
+                            self.focus = Focus::Description;
+                            return Ok(EventState::Consumed);
+                        }
+                    }
+
+                    self.jira.search_jira_tickets(&self.search_tickets.input).await?;
+                    if self.tickets.select_ticket(&self.search_tickets.input).is_ok() {
+                        self.focus = Focus::Description;
+                        return Ok(EventState::Consumed);
+                    }
                 }
                 if key == self.config.key_config.esc {
                     self.focus = Focus::Projects;

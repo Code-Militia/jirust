@@ -4,16 +4,16 @@ use tui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap, ListState},
+    widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap},
     Frame,
 };
 
 use crate::{event::key::Key, jira::tickets::TicketData};
 
-use super::{EventState, InputMode, draw_highlight_style};
+use super::{draw_highlight_style, EventState, InputMode};
 
 pub struct SearchTicketsWidget {
-    input: String,
+    pub input: String,
     search_tickets: Vec<String>,
     state: ListState,
     tickets: Vec<String>,
@@ -56,8 +56,7 @@ impl SearchTicketsWidget {
             })
             .collect();
 
-        let tickets =
-            List::new(results)
+        let tickets = List::new(results)
             .block(Block::default().borders(Borders::ALL).title("Tickets"))
             .highlight_style(draw_highlight_style());
         f.render_stateful_widget(tickets, r, &mut self.state);
@@ -66,21 +65,20 @@ impl SearchTicketsWidget {
     }
 
     fn draw_normal<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) -> anyhow::Result<()> {
-        let results: Vec<_> = self.tickets
+        let results: Vec<_> = self
+            .tickets
             .iter()
             .map(|project_id| {
                 // self.search_tickets.push(project_id.to_string());
                 ListItem::new(project_id.clone())
             })
             .collect();
-        let tickets =
-            List::new(results)
+        let tickets = List::new(results)
             .block(Block::default().borders(Borders::ALL).title("Tickets"))
             .highlight_style(draw_highlight_style());
 
         f.render_widget(tickets, r);
         Ok(())
-
     }
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>) -> anyhow::Result<()> {
         let chunk_constrains = [
@@ -155,24 +153,6 @@ impl SearchTicketsWidget {
             }
         }
 
-        // let mut engine: SimSearch<usize> = SimSearch::new();
-        //
-        // for (index, ticket) in self.tickets.iter().enumerate() {
-        //     engine.insert(index, ticket)
-        // }
-        //
-        // let results: Vec<_> = engine
-        //     .search(&self.input)
-        //     .into_iter()
-        //     .map(|ticket_id| {
-        //         let ticket = &self.tickets[ticket_id];
-        //         ListItem::new(ticket.clone())
-        //     })
-        //     .collect();
-        // let tickets =
-        //     List::new(results).block(Block::default().borders(Borders::ALL).title("Tickets"));
-        //
-        // f.render_widget(tickets, chunks[2]);
         Ok(())
     }
 
@@ -197,9 +177,14 @@ impl SearchTicketsWidget {
     }
 
     pub fn update(&mut self, tickets: Vec<TicketData>) {
-        self.tickets = tickets.into_iter().map(|ticket| {
-            ticket.key
-        }).collect();
+        self.tickets = tickets.into_iter().map(|ticket| ticket.key).collect();
+    }
+
+    pub fn selected(&self) -> Option<&String> {
+        match self.state.selected() {
+            Some(i) => self.search_tickets.get(i),
+            None => None,
+        }
     }
 }
 
@@ -209,23 +194,21 @@ impl SearchTicketsWidget {
         match key {
             Key::Down => {
                 self.next(1);
-                return Ok(EventState::Consumed)
-            },
+                return Ok(EventState::Consumed);
+            }
             Key::Up => {
                 self.previous(1);
-                return Ok(EventState::Consumed)
-            },
+                return Ok(EventState::Consumed);
+            }
             Key::Ctrl('d') => {
                 self.next(10);
-                return Ok(EventState::Consumed)
+                return Ok(EventState::Consumed);
             }
             Key::Ctrl('u') => {
                 self.previous(10);
-                return Ok(EventState::Consumed)
+                return Ok(EventState::Consumed);
             }
-            _ => {
-                return Ok(EventState::NotConsumed)
-            }
+            _ => return Ok(EventState::NotConsumed),
         }
     }
 
@@ -236,7 +219,7 @@ impl SearchTicketsWidget {
                 Ok(EventState::Consumed)
             }
             // _ => return Ok(EventState::NotConsumed)
-            _ => return self.movement(key)
+            _ => return self.movement(key),
         }
     }
 
@@ -254,8 +237,7 @@ impl SearchTicketsWidget {
                 self.normal_mode();
                 Ok(EventState::Consumed)
             }
-            _ => return self.movement(key)
-            // _ => return Ok(EventState::NotConsumed)
+            _ => return self.movement(key), // _ => return Ok(EventState::NotConsumed)
         }
     }
 

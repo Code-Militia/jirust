@@ -133,7 +133,7 @@ impl CommentAdd {
                 self.push_comment = true;
                 Ok(EventState::Consumed)
             }
-            _ => Ok(EventState::NotConsumed)
+            _ => Ok(EventState::NotConsumed),
         }
     }
 
@@ -156,7 +156,7 @@ impl CommentAdd {
                 self.input.clear();
                 Ok(EventState::Consumed)
             }
-            _ => Ok(EventState::NotConsumed)
+            _ => Ok(EventState::NotConsumed),
         }
     }
 
