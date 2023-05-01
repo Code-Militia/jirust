@@ -1,4 +1,3 @@
-use log::info;
 use serde::Deserialize;
 use serde::Serialize;
 use surrealdb::engine::any::connect;
@@ -62,10 +61,7 @@ impl Jira {
         self.project_start_at += self.project_max_results;
         let mut query = self
             .db
-            .query(format!(
-                "SELECT * FROM projects LIMIT {} START {}",
-                self.project_max_results, self.project_start_at
-            ))
+            .query(format!("SELECT * FROM projects",))
             .await
             .expect("projects selected");
         let projects: Vec<Project> = query.take(0)?;
@@ -103,10 +99,7 @@ impl Jira {
     pub async fn get_jira_projects(&mut self) -> anyhow::Result<Vec<Project>, anyhow::Error> {
         let mut query = self
             .db
-            .query(format!(
-                "SELECT * FROM projects LIMIT {} START {}",
-                self.project_max_results, self.project_start_at
-            ))
+            .query(format!("SELECT * FROM projects",))
             .await
             .expect("projects selected");
         let projects: Vec<Project> = query.take(0)?;
@@ -177,8 +170,8 @@ impl Jira {
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         self.tickets_start_at += self.tickets_max_results;
         let sql = format!(
-            "SELECT * FROM tickets WHERE fields.project.key = '{}' LIMIT {} START {}",
-            project_key, self.tickets_max_results, self.tickets_start_at
+            "SELECT * FROM tickets WHERE fields.project.key = '{}'",
+            project_key
         );
         let mut query = self.db.query(sql).await?;
         let tickets: Vec<TicketData> = query.take(0)?;
@@ -210,8 +203,8 @@ impl Jira {
         project_key: &str,
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         let sql = format!(
-            "SELECT * FROM tickets WHERE fields.project.key = '{}' LIMIT {} START {}",
-            project_key, self.tickets_max_results, self.tickets_start_at
+            "SELECT * FROM tickets WHERE fields.project.key = '{}'",
+            project_key
         );
         let mut query = self.db.query(sql).await.ok().unwrap();
         self.tickets.issues = query.take(0)?;
@@ -226,14 +219,22 @@ impl Jira {
         &mut self,
         ticket_key: &str,
     ) -> anyhow::Result<(), anyhow::Error> {
-        // TODO: Fix this query to handle tickets not in cache
         let t: TicketData = self.db.select(("tickets", ticket_key)).await?;
         self.tickets.issues.push(t);
-        if self.tickets.issues.is_empty() {
-            let ticket = self.tickets.search_jira_api(ticket_key, &self.client).await?;
-            let _create_ticket_record: TicketData = self.db.create(("tickets", ticket_key)) .content(ticket)
-                .await?;
-        }
+        Ok(())
+    }
+
+    pub async fn jira_ticket_api(&mut self, ticket_key: &str) -> anyhow::Result<()> {
+        let ticket = self
+            .tickets
+            .search_jira_ticket_api(ticket_key, &self.client)
+            .await?;
+        let _create_ticket_record: TicketData = self
+            .db
+            .create(("tickets", ticket_key))
+            .content(ticket)
+            .await?;
+
         Ok(())
     }
 }

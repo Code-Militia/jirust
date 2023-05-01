@@ -1,9 +1,9 @@
-use crate::widgets::error::ErrorComponent;
 use crate::jira::tickets::{PostTicketTransition, TicketTransition};
 use crate::widgets::comments::{CommentContents, CommentsList};
 use crate::widgets::comments_add::CommentAdd;
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
+use crate::widgets::error::ErrorComponent;
 use crate::widgets::labels::LabelsWidget;
 use crate::widgets::parent::TicketParentWidget;
 use crate::widgets::search_projects::SearchProjectsWidget;
@@ -11,7 +11,7 @@ use crate::widgets::search_tickets::SearchTicketsWidget;
 use crate::widgets::ticket_relation::RelationWidget;
 use crate::widgets::ticket_transition::TransitionWidget;
 use crate::widgets::tickets::TicketWidget;
-use crate::widgets::{InputMode, DrawableComponent};
+use crate::widgets::{DrawableComponent, InputMode};
 use crate::{
     config::Config,
     event::key::Key,
@@ -576,7 +576,6 @@ impl App {
             }
             Focus::SearchTickets => {
                 if key == self.config.key_config.enter {
-                    // self.update_tickets_from_projects_cache().await?;
                     if self.search_tickets.selected().is_some() {
                         let ticket = self.search_tickets.selected().unwrap();
                         if self.tickets.select_ticket(ticket).is_ok() {
@@ -585,8 +584,30 @@ impl App {
                         }
                     }
 
-                    self.jira.search_jira_tickets(&self.search_tickets.input).await?;
-                    if self.tickets.select_ticket(&self.search_tickets.input).is_ok() {
+                    if !self
+                        .jira
+                        .search_jira_tickets(&self.search_tickets.input)
+                        .await
+                        .is_ok()
+                    {
+                        if !self
+                            .jira
+                            .jira_ticket_api(&self.search_tickets.input)
+                            .await
+                            .is_ok()
+                        {
+                            self.error.set("Unable to locate ticket in cache and in JIRA \n You may not have access to view ticket".to_string())?;
+                            return Ok(EventState::NotConsumed);
+                        }
+                        self.update_tickets().await?;
+                        return Ok(EventState::Consumed);
+                    }
+
+                    if self
+                        .tickets
+                        .select_ticket(&self.search_tickets.input)
+                        .is_ok()
+                    {
                         self.focus = Focus::Description;
                         return Ok(EventState::Consumed);
                     }
