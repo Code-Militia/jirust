@@ -214,11 +214,6 @@ impl Jira {
             project_key, self.tickets_max_results, self.tickets_start_at
         );
         let mut query = self.db.query(sql).await.ok().unwrap();
-        // let tickets: Vec<TicketData> = query.take(0)?;
-        // if tickets.is_empty() {
-        //     self.get_and_record_tickets(project_key).await?;
-        //     return Ok(self.tickets.issues.clone());
-        // }
         self.tickets.issues = query.take(0)?;
         if self.tickets.issues.is_empty() {
             self.get_and_record_tickets(project_key).await?;
@@ -230,15 +225,10 @@ impl Jira {
     pub async fn search_jira_tickets(
         &mut self,
         ticket_key: &str,
-    ) -> anyhow::Result<()> {
-        // TODO: Fix this query
-        // let sql = format!("SELECT {} FROM tickets", ticket_key);
-        let t: Vec<TicketData> = self.db.select(("tickets", "id")).await.unwrap();
-        info!("t {:?}", t);
-        let sql = "SELECT * FROM tickets";
-        let mut query = self.db.query(sql).await.ok().unwrap();
-        // info!("query: {:?}", query);
-        self.tickets.issues = query.take(0)?;
+    ) -> anyhow::Result<(), anyhow::Error> {
+        // TODO: Fix this query to handle tickets not in cache
+        let t: TicketData = self.db.select(("tickets", ticket_key)).await?;
+        self.tickets.issues.push(t);
         if self.tickets.issues.is_empty() {
             let ticket = self.tickets.search_jira_api(ticket_key, &self.client).await?;
             let _create_ticket_record: TicketData = self.db.create(("tickets", ticket_key)) .content(ticket)

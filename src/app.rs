@@ -1,3 +1,4 @@
+use crate::widgets::error::ErrorComponent;
 use crate::jira::tickets::{PostTicketTransition, TicketTransition};
 use crate::widgets::comments::{CommentContents, CommentsList};
 use crate::widgets::comments_add::CommentAdd;
@@ -10,14 +11,14 @@ use crate::widgets::search_tickets::SearchTicketsWidget;
 use crate::widgets::ticket_relation::RelationWidget;
 use crate::widgets::ticket_transition::TransitionWidget;
 use crate::widgets::tickets::TicketWidget;
-use crate::widgets::InputMode;
+use crate::widgets::{InputMode, DrawableComponent};
 use crate::{
     config::Config,
     event::key::Key,
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
-use log::info;
+use tui::layout::Rect;
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -62,7 +63,7 @@ pub struct App {
     tickets: TicketWidget,
     ticket_transition: TransitionWidget,
     pub config: Config,
-    // pub error: ErrorComponent,
+    pub error: ErrorComponent,
 }
 
 impl App {
@@ -77,7 +78,7 @@ impl App {
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
             description: DescriptionWidget::new(config.key_config.clone()),
-            // error: ErrorComponent::new(config.key_config.clone()),
+            error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,
             jira,
             labels: LabelsWidget::new(config.key_config.clone()),
@@ -96,17 +97,20 @@ impl App {
         if let Focus::Projects = self.focus {
             self.projects
                 .draw(f, matches!(self.focus, Focus::Projects), f.size())?;
+            self.error.draw(f, Rect::default(), false)?;
 
             return Ok(());
         }
 
         if let Focus::SearchProjects = self.focus {
             self.search_projects.draw(f)?;
+            self.error.draw(f, Rect::default(), false)?;
             return Ok(());
         }
 
         if let Focus::SearchTickets = self.focus {
             self.search_tickets.draw(f)?;
+            self.error.draw(f, Rect::default(), false)?;
             return Ok(());
         }
 
@@ -213,6 +217,8 @@ impl App {
             )?;
             return Ok(());
         }
+
+        self.error.draw(f, Rect::default(), false)?;
 
         Ok(())
     }
@@ -368,9 +374,9 @@ impl App {
     }
 
     pub async fn component_event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        // if self.error.event(key)?.is_consumed() {
-        //     return Ok(EventState::Consumed);
-        // }
+        if self.error.event(key)?.is_consumed() {
+            return Ok(EventState::Consumed);
+        }
 
         // if !matches!(self.focus, Focus::Projects) && self.help.event(key)?.is_consumed() {
         //     return Ok(EventState::Consumed);
