@@ -42,7 +42,7 @@ impl ProjectsWidget {
             None => None,
         };
 
-        self.state.select(i);
+        self.select(i);
     }
 
     pub fn previous(&mut self, line: usize) {
@@ -52,21 +52,21 @@ impl ProjectsWidget {
             None => None,
         };
 
-        self.state.select(i);
+        self.select(i);
     }
 
     pub fn go_to_top(&mut self) {
         if self.projects.is_empty() {
             return;
         }
-        self.state.select(Some(0));
+        self.select(Some(0));
     }
 
     pub fn go_to_bottom(&mut self) {
         if self.projects.is_empty() {
             return;
         }
-        self.state.select(Some(self.projects.len() - 1));
+        self.select(Some(self.projects.len() - 1));
     }
 
     pub fn selected(&self) -> Option<&Project> {
@@ -74,6 +74,23 @@ impl ProjectsWidget {
             Some(i) => self.projects.get(i),
             None => None,
         }
+    }
+
+    pub fn select(&mut self, index: Option<usize>) {
+        if index.is_some() {
+            self.state.select(index)
+        }
+    }
+
+    pub fn select_project(&mut self, project_key: &str) -> anyhow::Result<()> {
+        for (index, project_data) in self.projects.iter().enumerate() {
+            if project_data.key == project_key.clone() {
+                self.select(Some(index));
+                return Ok(());
+            }
+        }
+
+        Ok(())
     }
 
     pub fn update(&mut self, jira_projects: &JiraProjects) {

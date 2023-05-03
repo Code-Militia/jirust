@@ -237,4 +237,27 @@ impl Jira {
 
         Ok(())
     }
+
+    pub async fn search_jira_projects(
+        &mut self,
+        project_key: &str,
+    ) -> anyhow::Result<(), anyhow::Error> {
+        let t: Project = self.db.select(("projects", project_key)).await?;
+        self.projects.values.push(t);
+        Ok(())
+    }
+
+    pub async fn jira_project_api(&mut self, project_key: &str) -> anyhow::Result<()> {
+        let project = self
+            .projects
+            .search_jira_project_api(project_key, &self.client)
+            .await?;
+        let _create_ticket_record: TicketData = self
+            .db
+            .create(("projects", project_key))
+            .content(project)
+            .await?;
+
+        Ok(())
+    }
 }

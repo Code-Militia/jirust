@@ -149,16 +149,15 @@ impl TicketWidget {
         }
     }
 
-    pub fn select_ticket(&mut self, ticket_key: &str) -> anyhow::Result<bool> {
+    pub fn select_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
         for (index, ticket_data) in self.tickets.iter().enumerate() {
             if ticket_data.key == ticket_key.clone() {
                 self.select(Some(index));
-                return Ok(true);
+                return Ok(());
             }
         }
 
-        // This needs to return some sort of error stating it did not find a ticket
-        Ok(false)
+        Ok(())
     }
 
     pub async fn update(&mut self, tickets: &[TicketData]) -> anyhow::Result<()> {

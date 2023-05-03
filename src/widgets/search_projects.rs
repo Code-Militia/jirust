@@ -13,11 +13,11 @@ use crate::{event::key::Key, jira::projects::Project};
 use super::{draw_highlight_style, EventState, InputMode};
 
 pub struct SearchProjectsWidget {
-    input: String,
     // projects: Vec<Project>,
     projects: Vec<String>,
     search_projects: Vec<String>,
     state: ListState,
+    pub input: String,
     pub input_mode: InputMode,
 }
 

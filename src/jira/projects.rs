@@ -59,4 +59,15 @@ impl JiraProjects {
             }
         }
     }
+
+    pub async fn search_jira_project_api(
+        &self,
+        project_key: &str,
+        jira_client: &JiraClient,
+    ) -> anyhow::Result<Project> {
+        let url = format!("rest/api/3/project/{}", project_key);
+        let response = jira_client.get_from_jira_api(&url).await?;
+        let obj: Project = serde_json::from_str(&response)?;
+        Ok(obj)
+    }
 }

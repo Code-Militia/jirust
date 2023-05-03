@@ -18,6 +18,7 @@ use crate::{
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
+use log::info;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
@@ -246,6 +247,7 @@ impl App {
     }
 
     pub async fn update_projects(&mut self) -> anyhow::Result<()> {
+        self.jira.get_jira_projects().await?;
         self.projects.update(&self.jira.projects);
         Ok(())
     }
@@ -271,16 +273,16 @@ impl App {
         Ok(())
     }
 
-    pub async fn update_tickets_from_projects_cache(&mut self) -> anyhow::Result<()> {
-        match self.search_projects.selected() {
-            Some(project) => {
-                self.jira.get_jira_tickets(&project).await?;
-                self.tickets.update(&self.jira.tickets.issues).await?;
-            }
-            None => {}
-        };
-        Ok(())
-    }
+    // pub async fn update_tickets_from_projects_cache(&mut self) -> anyhow::Result<()> {
+    //     match self.search_projects.selected() {
+    //         Some(project) => {
+    //             self.jira.get_jira_tickets(&project).await?;
+    //             self.tickets.update(&self.jira.tickets.issues).await?;
+    //         }
+    //         None => {}
+    //     };
+    //     Ok(())
+    // }
 
     pub async fn update_search_tickets(&mut self) -> anyhow::Result<()> {
         self.search_tickets.update(self.tickets.tickets.clone());
@@ -565,10 +567,27 @@ impl App {
             }
             Focus::SearchProjects => {
                 if key == self.config.key_config.enter {
-                    self.update_tickets_from_projects_cache().await?;
+                    let project_input = &self.search_projects.input;
+                    if self.search_projects.selected().is_some() {
+                        let project = self.search_projects.selected().unwrap();
+                        if self.projects.select_project(project).is_ok() {
+                            self.update_tickets().await?;
+                            self.focus = Focus::Tickets;
+                            return Ok(EventState::Consumed);
+                        }
+                    }
+                    if !self.jira.search_jira_projects(project_input).await.is_ok() {
+                        if !self.jira.jira_project_api(project_input).await.is_ok() {
+                            self.error.set("Unable to locate project in cache and in JIRA \n You may not have access to view project".to_string())?;
+                            return Ok(EventState::NotConsumed);
+                        }
+                    }
+                    self.projects.select_project(project_input)?;
+                    self.update_tickets().await?;
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
+
                 if key == self.config.key_config.esc {
                     self.focus = Focus::Projects;
                     return Ok(EventState::Consumed);
@@ -600,6 +619,7 @@ impl App {
                             return Ok(EventState::NotConsumed);
                         }
                         self.update_tickets().await?;
+                        self.focus = Focus::Description;
                         return Ok(EventState::Consumed);
                     }
 
