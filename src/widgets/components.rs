@@ -41,7 +41,7 @@ impl ComponentsWidget {
             .collect();
 
         let list = List::new(list_items)
-            .block(draw_block_style(focused, &title))
+            .block(draw_block_style(focused, title))
             .highlight_style(draw_highlight_style());
 
         f.render_stateful_widget(list, rect, &mut self.state);
@@ -55,11 +55,11 @@ impl ComponentsWidget {
         let mut state = ListState::default();
         state.select(Some(0));
 
-        return Self {
+        Self {
             key_config,
             components: vec![],
             state,
-        };
+        }
     }
 
     pub fn next(&mut self, line: usize) {
@@ -104,7 +104,7 @@ impl ComponentsWidget {
         }
     }
 
-    pub async fn update(&mut self, components: &Vec<Components>) -> anyhow::Result<()> {
+    pub async fn update(&mut self, components: &[Components]) -> anyhow::Result<()> {
         self.components = components
             .iter()
             .map(|component| component.name.clone())
@@ -134,6 +134,6 @@ impl ComponentsWidget {
             self.go_to_top();
             return Ok(EventState::Consumed);
         }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }

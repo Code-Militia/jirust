@@ -1,4 +1,3 @@
-use log::info;
 use serde::Deserialize;
 use serde::Serialize;
 use surrealdb::engine::any::connect;
@@ -51,9 +50,9 @@ impl Jira {
             db,
             projects,
             project_start_at: 0,
-            project_max_results: 2,
+            project_max_results: 50,
             tickets_start_at: 0,
-            tickets_max_results: 2,
+            tickets_max_results: 50,
             tickets,
         })
     }
@@ -62,10 +61,7 @@ impl Jira {
         self.project_start_at += self.project_max_results;
         let mut query = self
             .db
-            .query(format!(
-                "SELECT * FROM projects LIMIT {} START {}",
-                self.project_max_results, self.project_start_at
-            ))
+            .query(format!("SELECT * FROM projects",))
             .await
             .expect("projects selected");
         let projects: Vec<Project> = query.take(0)?;
@@ -97,21 +93,18 @@ impl Jira {
         if self.project_start_at >= 1 {
             self.project_start_at -= self.project_max_results;
         }
-        Ok(self.get_jira_projects().await?)
+        self.get_jira_projects().await
     }
 
     pub async fn get_jira_projects(&mut self) -> anyhow::Result<Vec<Project>, anyhow::Error> {
         let mut query = self
             .db
-            .query(format!(
-                "SELECT * FROM projects LIMIT {} START {}",
-                self.project_max_results, self.project_start_at
-            ))
+            .query(format!("SELECT * FROM projects",))
             .await
             .expect("projects selected");
         let projects: Vec<Project> = query.take(0)?;
 
-        // Get initiall projects request
+        // Get initial projects request
         if projects.is_empty() {
             let jira_url = self.client.get_domain();
             let jira_api_version = self.client.get_api_version();
@@ -148,8 +141,8 @@ impl Jira {
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         let jira_url = self.client.get_domain();
         let url = format!(
-            "{}/rest/api/3/search?maxResults={}&startAt=0&jql=project%20%3D%20{}&expand=renderedFields",
-            jira_url, self.tickets_max_results, project_key
+            "{}/rest/api/3/search?maxResults={}&startAt={}&jql=project%20%3D%20{}&expand=renderedFields",
+            jira_url, self.tickets_max_results, self.tickets_start_at, project_key
         );
         let resp = self
             .tickets
@@ -167,6 +160,7 @@ impl Jira {
                     .expect("tickets inserted into db");
             });
         }
+
         Ok(self.tickets.issues.clone())
     }
 
@@ -176,8 +170,8 @@ impl Jira {
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         self.tickets_start_at += self.tickets_max_results;
         let sql = format!(
-            "SELECT * FROM tickets WHERE fields.project.key = '{}' LIMIT {} START {}",
-            project_key, self.tickets_max_results, self.tickets_start_at
+            "SELECT * FROM tickets WHERE fields.project.key = '{}'",
+            project_key
         );
         let mut query = self.db.query(sql).await?;
         let tickets: Vec<TicketData> = query.take(0)?;
@@ -189,12 +183,7 @@ impl Jira {
 
         if (self.tickets_start_at + self.tickets_max_results) < self.tickets.total {
             self.tickets_start_at += self.tickets_max_results;
-            let jira_url = self.client.get_domain();
-            let next_page_url = format!(
-                    "{}/rest/api/3/search?maxResults={}&startAt={}&jql=project%20%3D%20{}&expand=renderedFields",
-                    jira_url, self.tickets_max_results, (self.tickets_start_at + self.tickets_max_results), project_key
-                );
-            return Ok(self.get_and_record_tickets(&next_page_url).await?);
+            return Ok(self.get_and_record_tickets(&project_key).await?);
         }
         Ok(self.tickets.issues.clone())
     }
@@ -205,9 +194,8 @@ impl Jira {
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         self.tickets_start_at = self
             .tickets_start_at
-            .checked_sub(self.tickets_max_results)
-            .unwrap_or(0);
-        Ok(self.get_jira_tickets(project_key).await?)
+            .saturating_sub(self.tickets_max_results);
+        self.get_jira_tickets(project_key).await
     }
 
     pub async fn get_jira_tickets(
@@ -215,15 +203,61 @@ impl Jira {
         project_key: &str,
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         let sql = format!(
-            "SELECT * FROM tickets WHERE fields.project.key = '{}' LIMIT {} START {}",
-            project_key, self.tickets_max_results, self.tickets_start_at
+            "SELECT * FROM tickets WHERE fields.project.key = '{}'",
+            project_key
         );
         let mut query = self.db.query(sql).await.ok().unwrap();
-        let tickets: Vec<TicketData> = query.take(0)?;
-        if tickets.is_empty() {
+        self.tickets.issues = query.take(0)?;
+        if self.tickets.issues.is_empty() {
             self.get_and_record_tickets(project_key).await?;
             return Ok(self.tickets.issues.clone());
         }
         Ok(self.tickets.issues.clone())
+    }
+
+    pub async fn search_jira_tickets(
+        &mut self,
+        ticket_key: &str,
+    ) -> anyhow::Result<(), anyhow::Error> {
+        let t: TicketData = self.db.select(("tickets", ticket_key)).await?;
+        self.tickets.issues.push(t);
+        Ok(())
+    }
+
+    pub async fn jira_ticket_api(&mut self, ticket_key: &str) -> anyhow::Result<()> {
+        let ticket = self
+            .tickets
+            .search_jira_ticket_api(ticket_key, &self.client)
+            .await?;
+        let _create_ticket_record: TicketData = self
+            .db
+            .create(("tickets", ticket_key))
+            .content(ticket)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn search_jira_projects(
+        &mut self,
+        project_key: &str,
+    ) -> anyhow::Result<(), anyhow::Error> {
+        let t: Project = self.db.select(("projects", project_key)).await?;
+        self.projects.values.push(t);
+        Ok(())
+    }
+
+    pub async fn jira_project_api(&mut self, project_key: &str) -> anyhow::Result<()> {
+        let project = self
+            .projects
+            .search_jira_project_api(project_key, &self.client)
+            .await?;
+        let _create_ticket_record: TicketData = self
+            .db
+            .create(("projects", project_key))
+            .content(project)
+            .await?;
+
+        Ok(())
     }
 }

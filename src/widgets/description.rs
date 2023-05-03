@@ -13,7 +13,6 @@ use super::{draw_block_style, EventState};
 
 #[derive(Debug)]
 pub struct DescriptionWidget {
-    description: String,
     key_config: KeyConfig,
     scroll: u16,
 }
@@ -51,11 +50,10 @@ impl DescriptionWidget {
 
 impl DescriptionWidget {
     pub fn new(key_config: KeyConfig) -> Self {
-        return Self {
-            description: String::new(),
+        Self {
             key_config,
             scroll: 0,
-        };
+        }
     }
 
     pub fn down(&mut self, lines: u16) {
@@ -85,13 +83,6 @@ impl DescriptionWidget {
             self.up(10);
             return Ok(EventState::Consumed);
         }
-        // } else if key == self.key_config.scroll_to_bottom {
-        //     self.go_to_bottom();
-        //     return Ok(EventState::Consumed);
-        // } else if key == self.key_config.scroll_to_top {
-        //     self.go_to_top();
-        //     return Ok(EventState::Consumed);
-        // }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }

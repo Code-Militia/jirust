@@ -13,7 +13,7 @@ use crate::{
     jira::tickets::{TicketTransition, TicketTransitions},
 };
 
-use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
+use super::{draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug)]
 pub struct TransitionWidget {
@@ -40,7 +40,7 @@ impl TransitionWidget {
         }
 
         let list = List::new(list_items)
-            .block(draw_block_style(focused, &title))
+            .block(draw_block_style(focused, title))
             .highlight_style(draw_highlight_style());
 
         let width = 80;
@@ -65,12 +65,12 @@ impl TransitionWidget {
         if !transitions.is_empty() {
             state.select(Some(0));
         }
-        return Self {
+        Self {
             state,
             key_config,
             push_transition: false,
             transitions: Vec::new(),
-        };
+        }
     }
 
     pub fn next(&mut self, line: usize) {
@@ -123,7 +123,7 @@ impl TransitionWidget {
 }
 
 impl Component for TransitionWidget {
-    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
@@ -148,6 +148,6 @@ impl Component for TransitionWidget {
             self.push_transition = true;
             return Ok(EventState::Consumed);
         }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }

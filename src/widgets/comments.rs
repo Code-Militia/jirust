@@ -41,7 +41,7 @@ impl CommentContents {
         let text = parse_html(&comment.rendered_body.clone());
         let paragraph = Paragraph::new(Span::styled(text, Style::default()))
             .alignment(Alignment::Left)
-            .block(draw_block_style(focused, &title))
+            .block(draw_block_style(focused, title))
             .wrap(Wrap { trim: true });
 
         f.render_widget(Clear, size);
@@ -52,10 +52,10 @@ impl CommentContents {
 
 impl CommentContents {
     pub fn new(key_config: KeyConfig) -> Self {
-        return Self {
+        Self {
             key_config,
             scroll: 0,
-        };
+        }
     }
 
     pub fn down(&mut self, lines: u16) {
@@ -82,14 +82,7 @@ impl CommentContents {
             self.up(10);
             return Ok(EventState::Consumed);
         }
-        // } else if key == self.key_config.scroll_to_bottom {
-        //     self.go_to_bottom();
-        //     return Ok(EventState::Consumed);
-        // } else if key == self.key_config.scroll_to_top {
-        //     self.go_to_top();
-        //     return Ok(EventState::Consumed);
-        // }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }
 
@@ -132,7 +125,7 @@ impl CommentsList {
         };
         let table = Table::new(rows)
             .header(headers)
-            .block(draw_block_style(focused, &title))
+            .block(draw_block_style(focused, title))
             .highlight_style(draw_highlight_style())
             .widths(&[
                 Constraint::Percentage(25),
@@ -152,11 +145,11 @@ impl CommentsList {
     pub fn new(key_config: KeyConfig) -> Self {
         let mut state = TableState::default();
         state.select(Some(0));
-        return Self {
+        Self {
             comments: None,
             key_config,
             state,
-        };
+        }
     }
 
     pub fn next(&mut self, line: usize) {
@@ -164,7 +157,7 @@ impl CommentsList {
             None => return,
             Some(c) => c,
         };
-        if comments.comments.len() == 0 {
+        if comments.comments.is_empty() {
             return;
         }
         let i = self
@@ -244,6 +237,6 @@ impl CommentsList {
             self.go_to_top();
             return Ok(EventState::Consumed);
         }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }

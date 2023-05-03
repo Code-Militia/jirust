@@ -11,7 +11,7 @@ use crate::{
     jira::tickets::{Links, TicketData},
 };
 
-use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
+use super::{draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug)]
 pub struct RelationWidget {
@@ -70,7 +70,7 @@ impl RelationWidget {
         });
         let table = Table::new(rows)
             .header(headers)
-            .block(draw_block_style(focused, &title))
+            .block(draw_block_style(focused, title))
             .highlight_style(draw_highlight_style())
             .widths(&[
                 Constraint::Percentage(15),
@@ -93,11 +93,11 @@ impl RelationWidget {
         let mut state = TableState::default();
         state.select(Some(0));
 
-        return Self {
+        Self {
             key_config,
             ticket_links: vec![],
             state,
-        };
+        }
     }
 
     pub fn next(&mut self, line: usize) {
@@ -155,7 +155,7 @@ impl RelationWidget {
 }
 
 impl Component for RelationWidget {
-    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
@@ -177,6 +177,6 @@ impl Component for RelationWidget {
             self.go_to_top();
             return Ok(EventState::Consumed);
         }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }

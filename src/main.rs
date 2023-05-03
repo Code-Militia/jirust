@@ -7,7 +7,6 @@ mod widgets;
 // mod log;
 
 use crate::event::event::Event;
-use anyhow;
 use app::App;
 use crossterm::{
     cursor,
@@ -22,22 +21,6 @@ use tui::{backend::CrosstermBackend, Terminal};
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     env_logger::init();
-
-    // use surrealdb::engine::any::connect;
-    // #[derive(Debug, Deserialize, Serialize)]
-    // struct T1 {
-    //     tf: i32
-    // }
-    // let db = connect("mem://").await?;
-    // db.use_ns("noc").use_db("database").await?;
-    // for n in 1..10000 {
-    //     let c: T1 = db.create(("T1", n)).content(T1 {
-    //         tf: n
-    //     }).await?;
-    //     info!("Db create test -- ${:?}", c);
-    // }
-    // let v: Vec<T1>  = db.select("T1").await?;
-    // info!("Db select test -- ${:?}", v);
 
     let config = config::Config::new().unwrap();
 
@@ -76,6 +59,7 @@ async fn main() -> anyhow::Result<()> {
                     }
                 }
                 Err(err) => app.error.set(err.to_string())?,
+                // Err(_err) => {}
             },
             Event::Tick => (),
         }

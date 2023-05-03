@@ -1,4 +1,4 @@
-pub mod commands;
+// pub mod commands;
 pub mod comments;
 pub mod comments_add;
 pub mod components;
@@ -7,11 +7,13 @@ pub mod error;
 pub mod labels;
 pub mod parent;
 pub mod projects;
+pub mod search_projects;
+pub mod search_tickets;
 pub mod ticket_relation;
 pub mod ticket_transition;
 pub mod tickets;
 
-use commands::CommandInfo;
+// use commands::CommandInfo;
 
 use async_trait::async_trait;
 use tui::{
@@ -21,6 +23,12 @@ use tui::{
     widgets::{Block, BorderType, Borders},
     Frame,
 };
+
+#[derive(PartialEq, Debug)]
+pub enum InputMode {
+    Normal,
+    Editing,
+}
 
 #[derive(PartialEq, Debug)]
 pub enum EventState {
@@ -78,7 +86,7 @@ pub trait MovableComponent {
 /// base component trait
 #[async_trait]
 pub trait Component {
-    fn commands(&self, out: &mut Vec<CommandInfo>);
+    // fn commands(&self, out: &mut Vec<CommandInfo>);
 
     fn event(&mut self, key: crate::event::key::Key) -> anyhow::Result<EventState>;
 

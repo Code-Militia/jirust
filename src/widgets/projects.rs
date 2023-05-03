@@ -13,7 +13,7 @@ use crate::{
     jira::projects::{JiraProjects, Project},
 };
 
-use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
+use super::{draw_block_style, draw_highlight_style, Component, EventState};
 
 pub struct ProjectsWidget {
     projects: Vec<Project>,
@@ -28,52 +28,69 @@ impl ProjectsWidget {
             state.select(Some(0));
         }
 
-        return Self {
+        Self {
             state,
             projects: projects.to_vec(),
             key_config,
-        };
+        }
     }
 
-    pub fn next_project(&mut self, line: usize) {
+    pub fn next(&mut self, line: usize) {
         let i = match self.state.selected() {
             Some(i) if i + line >= self.projects.len() => Some(self.projects.len() - 1),
             Some(i) => Some(i + line),
             None => None,
         };
 
-        self.state.select(i);
+        self.select(i);
     }
 
-    pub fn previous_project(&mut self, line: usize) {
+    pub fn previous(&mut self, line: usize) {
         let i = match self.state.selected() {
             Some(i) if i <= line => Some(0),
             Some(i) => Some(i - line),
             None => None,
         };
 
-        self.state.select(i);
+        self.select(i);
     }
 
     pub fn go_to_top(&mut self) {
         if self.projects.is_empty() {
             return;
         }
-        self.state.select(Some(0));
+        self.select(Some(0));
     }
 
     pub fn go_to_bottom(&mut self) {
         if self.projects.is_empty() {
             return;
         }
-        self.state.select(Some(self.projects.len() - 1));
+        self.select(Some(self.projects.len() - 1));
     }
 
-    pub fn selected_project(&self) -> Option<&Project> {
+    pub fn selected(&self) -> Option<&Project> {
         match self.state.selected() {
             Some(i) => self.projects.get(i),
             None => None,
         }
+    }
+
+    pub fn select(&mut self, index: Option<usize>) {
+        if index.is_some() {
+            self.state.select(index)
+        }
+    }
+
+    pub fn select_project(&mut self, project_key: &str) -> anyhow::Result<()> {
+        for (index, project_data) in self.projects.iter().enumerate() {
+            if project_data.key == project_key.clone() {
+                self.select(Some(index));
+                return Ok(());
+            }
+        }
+
+        Ok(())
     }
 
     pub fn update(&mut self, jira_projects: &JiraProjects) {
@@ -97,7 +114,7 @@ impl ProjectsWidget {
         }
 
         let list = List::new(list_items)
-            .block(draw_block_style(focused, &title))
+            .block(draw_block_style(focused, title))
             .highlight_style(draw_highlight_style());
 
         let width = 80;
@@ -117,20 +134,20 @@ impl ProjectsWidget {
 }
 
 impl Component for ProjectsWidget {
-    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
-            self.next_project(1);
+            self.next(1);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_up {
-            self.previous_project(1);
+            self.previous(1);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_down_multiple_lines {
-            self.next_project(10);
+            self.next(10);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_up_multiple_lines {
-            self.previous_project(10);
+            self.previous(10);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_bottom {
             self.go_to_bottom();
@@ -139,6 +156,6 @@ impl Component for ProjectsWidget {
             self.go_to_top();
             return Ok(EventState::Consumed);
         }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }

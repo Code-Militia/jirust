@@ -7,7 +7,7 @@ use tui::{
 
 use crate::{config::KeyConfig, event::key::Key, jira::tickets::TicketData};
 
-use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
+use super::{draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug)]
 pub struct TicketWidget {
@@ -67,7 +67,7 @@ impl TicketWidget {
         });
         let table = Table::new(rows)
             .header(headers)
-            .block(draw_block_style(focused, &title))
+            .block(draw_block_style(focused, title))
             .highlight_style(draw_highlight_style())
             .widths(&[
                 Constraint::Percentage(15),
@@ -94,11 +94,11 @@ impl TicketWidget {
         labels_state.select(Some(0));
         state.select(Some(0));
 
-        return Self {
+        Self {
             key_config,
             tickets: vec![],
             state,
-        };
+        }
     }
 
     pub fn next(&mut self, line: usize) {
@@ -110,7 +110,7 @@ impl TicketWidget {
             .selected()
             .map(|i| (i + line).min(self.tickets.len() - 1));
 
-        self.state.select(i);
+        self.select(i);
     }
 
     pub fn previous(&mut self, line: usize) {
@@ -119,21 +119,21 @@ impl TicketWidget {
             .selected()
             .map(|i| if i <= line { 0 } else { i - line });
 
-        self.state.select(i);
+        self.select(i);
     }
 
     pub fn go_to_top(&mut self) {
         if self.tickets.is_empty() {
             return;
         }
-        self.state.select(Some(0));
+        self.select(Some(0));
     }
 
     pub fn go_to_bottom(&mut self) {
         if self.tickets.is_empty() {
             return;
         }
-        self.state.select(Some(self.tickets.len() - 1));
+        self.select(Some(self.tickets.len() - 1))
     }
 
     pub fn selected(&self) -> Option<&TicketData> {
@@ -143,14 +143,31 @@ impl TicketWidget {
         }
     }
 
-    pub async fn update(&mut self, tickets: &Vec<TicketData>) -> anyhow::Result<()> {
+    pub fn select(&mut self, index: Option<usize>) {
+        if index.is_some() {
+            self.state.select(index)
+        }
+    }
+
+    pub fn select_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
+        for (index, ticket_data) in self.tickets.iter().enumerate() {
+            if ticket_data.key == ticket_key.clone() {
+                self.select(Some(index));
+                return Ok(());
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn update(&mut self, tickets: &[TicketData]) -> anyhow::Result<()> {
         self.tickets = tickets.to_vec();
         Ok(())
     }
 }
 
 impl Component for TicketWidget {
-    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
@@ -172,6 +189,6 @@ impl Component for TicketWidget {
             self.go_to_top();
             return Ok(EventState::Consumed);
         }
-        return Ok(EventState::NotConsumed);
+        Ok(EventState::NotConsumed)
     }
 }

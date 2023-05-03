@@ -1,5 +1,4 @@
 use base64::{engine::general_purpose, Engine as _};
-use log::info;
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -12,36 +11,36 @@ pub struct JiraClient {
 }
 
 impl JiraClient {
-    pub fn set_domain(&mut self, url: String) {
-        self.jira_url = url
-    }
-
-    pub fn set_api_version(&mut self, api_version: String) {
-        self.jira_api_version = api_version
-    }
-
-    pub fn set_api_key(&mut self, jira_api_key: String) {
-        self.jira_api_key = jira_api_key
-    }
+    // pub fn set_domain(&mut self, url: String) {
+    //     self.jira_url = url
+    // }
+    //
+    // pub fn set_api_version(&mut self, api_version: String) {
+    //     self.jira_api_version = api_version
+    // }
+    //
+    // pub fn set_api_key(&mut self, jira_api_key: String) {
+    //     self.jira_api_key = jira_api_key
+    // }
 
     pub fn get_basic_auth(&self) -> HeaderMap {
         let header_content_type = HeaderValue::from_static("application/json");
-        let jira_basic_auth_str = format!("Basic {}", self.jira_api_key).to_string();
+        let jira_basic_auth_str = format!("Basic {}", self.jira_api_key);
         let mut jira_token_header = HeaderValue::from_str(&jira_basic_auth_str).unwrap();
         jira_token_header.set_sensitive(true);
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, header_content_type.clone());
-        headers.insert(ACCEPT, header_content_type.clone());
+        headers.insert(ACCEPT, header_content_type);
         headers.insert(AUTHORIZATION, jira_token_header);
 
-        return headers;
+        headers
     }
 
     pub fn get_domain(&self) -> &String {
-        return &self.jira_url;
+        &self.jira_url
     }
     pub fn get_api_version(&self) -> &String {
-        return &self.jira_api_version;
+        &self.jira_api_version
     }
 
     pub async fn post_to_jira_api(&self, api_url: &str, data: String) -> anyhow::Result<String> {
@@ -73,12 +72,12 @@ impl JiraClient {
         jira_email: String,
         jira_url: String,
     ) -> Self {
-        return JiraClient {
+        JiraClient {
             jira_api_key,
             jira_api_version,
             jira_email,
             jira_url,
-        };
+        }
     }
 }
 
@@ -93,5 +92,5 @@ pub fn jira_authentication() -> JiraClient {
     let jira_email = env::var(env_jira_email).expect("$JIRA_EMAIL is not set");
     let jira_encoded_auth: String =
         general_purpose::STANDARD_NO_PAD.encode(format!("{jira_email}:{jira_api_key}"));
-    return JiraClient::new(jira_api_version, jira_encoded_auth, jira_email, jira_url);
+    JiraClient::new(jira_api_version, jira_encoded_auth, jira_email, jira_url)
 }
