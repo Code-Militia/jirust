@@ -18,7 +18,6 @@ use crate::{
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
-use log::info;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
@@ -69,7 +68,13 @@ pub struct App {
 
 impl App {
     pub async fn new(config: Config) -> anyhow::Result<App> {
-        let mut jira = Jira::new().await?;
+        let mut jira = Jira::new(
+            &config.jira_config.domain,
+            &config.jira_config.api_key,
+            &config.jira_config.api_version,
+            &config.jira_config.user_email,
+        )
+        .await?;
         let projects = &jira.get_jira_projects().await?;
 
         Ok(Self {
@@ -85,11 +90,11 @@ impl App {
             labels: LabelsWidget::new(config.key_config.clone()),
             // load_state: LoadState::Complete,
             parent: TicketParentWidget::new(),
-            projects: ProjectsWidget::new(projects, config.key_config.clone()),
+            projects: ProjectsWidget::new(projects, config.key_config.clone(), config.jira_config.domain.clone()),
             relation: RelationWidget::new(config.key_config.clone()),
             search_projects: SearchProjectsWidget::new(projects),
             search_tickets: SearchTicketsWidget::new(),
-            tickets: TicketWidget::new(config.key_config.clone()),
+            tickets: TicketWidget::new(config.key_config.clone(), config.jira_config.domain.clone()),
             ticket_transition: TransitionWidget::new(Vec::new(), config.key_config.clone()),
         })
     }

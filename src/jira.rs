@@ -38,8 +38,14 @@ pub struct Jira {
 }
 
 impl Jira {
-    pub async fn new() -> anyhow::Result<Jira, anyhow::Error> {
-        let auth = jira_authentication();
+    pub async fn new(
+        jira_domain: &str,
+        jira_api_key: &str,
+        jira_api_version: &str,
+        jira_user_email: &str,
+    ) -> anyhow::Result<Jira, anyhow::Error> {
+        let auth =
+            jira_authentication(jira_domain, jira_api_key, jira_api_version, jira_user_email);
         let db = connect("mem://").await?;
         db.use_ns("noc").use_db("database").await?;
         let projects: JiraProjects = JiraProjects::new().await?;

@@ -16,19 +16,21 @@ use crate::{
 use super::{draw_block_style, draw_highlight_style, Component, EventState};
 
 pub struct ProjectsWidget {
+    jira_domain: String,
     projects: Vec<Project>,
     state: ListState,
     key_config: KeyConfig,
 }
 
 impl ProjectsWidget {
-    pub fn new(projects: &Vec<Project>, key_config: KeyConfig) -> Self {
+    pub fn new(projects: &Vec<Project>, key_config: KeyConfig, jira_domain: String) -> Self {
         let mut state = ListState::default();
         if !projects.is_empty() {
             state.select(Some(0));
         }
 
         Self {
+            jira_domain,
             state,
             projects: projects.to_vec(),
             key_config,
@@ -68,6 +70,20 @@ impl ProjectsWidget {
         }
         self.select(Some(self.projects.len() - 1));
     }
+
+    // pub fn open_browser(&self) {
+    //     if self.selected().is_some() {
+    //         let ticket = self.selected().unwrap();
+    //         let url = self.jira_domain.clone() + "/browse/" + &ticket.key.clone();
+    //         match open::that(url.clone()) {
+    //             Ok(()) => {},
+    //             Err(e) => {
+    //                 // todo!("Add error condition");
+    //                 panic!("{:?} url: {:?}", e, url);
+    //             }
+    //         }
+    //     }
+    // }
 
     pub fn selected(&self) -> Option<&Project> {
         match self.state.selected() {

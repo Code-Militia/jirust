@@ -1,3 +1,6 @@
+use std::{os, process::Command};
+
+use log::info;
 use tui::{
     backend::Backend,
     layout::{Constraint, Rect},
@@ -11,6 +14,7 @@ use super::{draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug)]
 pub struct TicketWidget {
+    jira_domain: String,
     key_config: KeyConfig,
     state: TableState,
     pub tickets: Vec<TicketData>,
@@ -86,7 +90,7 @@ impl TicketWidget {
 }
 
 impl TicketWidget {
-    pub fn new(key_config: KeyConfig) -> Self {
+    pub fn new(key_config: KeyConfig, jira_domain: String) -> Self {
         let mut components_state = ListState::default();
         let mut labels_state = ListState::default();
         let mut state = TableState::default();
@@ -95,6 +99,7 @@ impl TicketWidget {
         state.select(Some(0));
 
         Self {
+            jira_domain,
             key_config,
             tickets: vec![],
             state,
@@ -134,6 +139,20 @@ impl TicketWidget {
             return;
         }
         self.select(Some(self.tickets.len() - 1))
+    }
+
+    pub fn open_browser(&self) {
+        if self.selected().is_some() {
+            let ticket = self.selected().unwrap();
+            let url = self.jira_domain.clone() + "/browse/" + &ticket.key.clone();
+            match open::that(url.clone()) {
+                Ok(()) => {},
+                Err(e) => {
+                    // todo!("Add error condition");
+                    panic!("{:?} url: {:?}", e, url);
+                }
+            }
+        }
     }
 
     pub fn selected(&self) -> Option<&TicketData> {
@@ -187,6 +206,9 @@ impl Component for TicketWidget {
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_top {
             self.go_to_top();
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.open_browser {
+            self.open_browser();
             return Ok(EventState::Consumed);
         }
         Ok(EventState::NotConsumed)
