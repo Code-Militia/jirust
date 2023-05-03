@@ -81,16 +81,18 @@ impl JiraClient {
     }
 }
 
-pub fn jira_authentication() -> JiraClient {
-    let env_jira_url = "JIRA_URL";
-    let env_jira_api_version = "JIRA_API_VERSION";
-    let env_jira_api_key = "JIRA_API_KEY";
-    let env_jira_email = "JIRA_EMAIL";
-    let jira_url = env::var(env_jira_url).expect("$JIRA_URL is not set");
-    let jira_api_version = env::var(env_jira_api_version).expect("$JIRA_API_VERSION is not set");
-    let jira_api_key = env::var(env_jira_api_key).expect("$JIRA_API_KEY is not set");
-    let jira_email = env::var(env_jira_email).expect("$JIRA_EMAIL is not set");
+pub fn jira_authentication(
+    jira_domain: &str,
+    jira_api_key: &str,
+    jira_api_version: &str,
+    jira_user_email: &str,
+) -> JiraClient {
     let jira_encoded_auth: String =
-        general_purpose::STANDARD_NO_PAD.encode(format!("{jira_email}:{jira_api_key}"));
-    JiraClient::new(jira_api_version, jira_encoded_auth, jira_email, jira_url)
+        general_purpose::STANDARD_NO_PAD.encode(format!("{jira_user_email}:{jira_api_key}"));
+    JiraClient::new(
+        jira_api_version.to_string(),
+        jira_encoded_auth,
+        jira_user_email.to_string(),
+        jira_domain.to_string(),
+    )
 }
