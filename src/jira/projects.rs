@@ -21,9 +21,9 @@ pub struct JiraProjects {
 impl JiraProjects {
     pub async fn new() -> anyhow::Result<Self> {
         Ok(Self {
-            is_last: true, // TODO: Will need to refactor to handle pagination
+            is_last: true,
             max_results: 0,
-            next_page: None, // TODO: Will need to refactor to handle pagination
+            next_page: None,
             start_at: 0,
             total: 0,
             values: Vec::new(),
@@ -48,7 +48,6 @@ impl JiraProjects {
         jira_auth: &JiraClient,
     ) -> anyhow::Result<JiraProjects> {
         match &self.next_page {
-            // TODO: Refactor to return an error
             None => Ok(self.clone()),
             Some(next_page_url) => {
                 let resp = self

@@ -32,12 +32,9 @@ base64 = "0.21.0"
 html2md = "0.2.14"
 markdown = "0.3.0"
 htmltoadf = "0.1.7"
-# simsearch = "0.2"
-# aho-corasick = "0.7.20"
 simsearch = "0.2.4"
 open = "4.1.0"
-# rust-fuzzy-search = "0.1.1"
-# async-recursion = "1.0.0"
+itertools = "0.10.5"
 # rusqlite = "0.28.0"
 
 [patch.crates-io]

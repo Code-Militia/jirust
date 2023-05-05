@@ -13,7 +13,7 @@ use crate::{
     jira::tickets::{TicketTransition, TicketTransitions},
 };
 
-use super::{draw_block_style, draw_highlight_style, Component, EventState};
+use super::{draw_block_style, draw_highlight_style, Component, EventState, commands::CommandInfo};
 
 #[derive(Debug)]
 pub struct TransitionWidget {
@@ -123,7 +123,7 @@ impl TransitionWidget {
 }
 
 impl Component for TransitionWidget {
-    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
@@ -144,7 +144,7 @@ impl Component for TransitionWidget {
         } else if key == self.key_config.scroll_to_top {
             self.go_to_top();
             return Ok(EventState::Consumed);
-        } else if key == self.key_config.move_ticket {
+        } else if key == self.key_config.enter {
             self.push_transition = true;
             return Ok(EventState::Consumed);
         }
