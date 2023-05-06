@@ -11,7 +11,7 @@ use crate::{
     jira::tickets::{Links, TicketData},
 };
 
-use super::{draw_block_style, draw_highlight_style, Component, EventState};
+use super::{draw_block_style, draw_highlight_style, Component, EventState, commands::CommandInfo};
 
 #[derive(Debug)]
 pub struct RelationWidget {
@@ -141,21 +141,10 @@ impl RelationWidget {
             None => None,
         }
     }
-
-    // pub async fn update(
-    //     &mut self,
-    //     db: &SurrealAny,
-    //     jira_auth: &JiraAuth,
-    //     project_key: &str,
-    //     ticket: &JiraTickets,
-    // ) -> anyhow::Result<()> {
-    //     self.tickets = ticket.get_jira_tickets(db, jira_auth, project_key).await?;
-    //     Ok(())
-    // }
 }
 
 impl Component for RelationWidget {
-    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {

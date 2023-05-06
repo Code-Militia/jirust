@@ -1,8 +1,7 @@
-use super::{Component, DrawableComponent, EventState};
+use super::{Component, DrawableComponent, EventState, commands::CommandInfo};
 use crate::config::KeyConfig;
 use crate::event::key::Key;
 use anyhow::Result;
-use log::info;
 use tui::{
     backend::Backend,
     layout::{Alignment, Rect},
@@ -58,7 +57,7 @@ impl DrawableComponent for ErrorComponent {
 }
 
 impl Component for ErrorComponent {
-    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> Result<EventState> {
         if self.visible {

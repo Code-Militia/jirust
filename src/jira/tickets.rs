@@ -229,7 +229,6 @@ pub struct JiraTickets {
     pub issues: Vec<TicketData>,
 }
 
-// TODO: handle pagination
 impl JiraTickets {
     pub async fn new() -> anyhow::Result<Self> {
         let issues = Vec::new();

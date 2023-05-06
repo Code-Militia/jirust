@@ -14,7 +14,7 @@ use tui::{
 
 use crate::config::KeyConfig;
 
-use super::{draw_block_style, draw_highlight_style, EventState};
+use super::{draw_block_style, draw_highlight_style, EventState, commands::CommandInfo, Component};
 
 #[derive(Debug)]
 pub struct CommentContents {
@@ -216,8 +216,10 @@ impl CommentsList {
     }
 }
 
-impl CommentsList {
-    pub fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
+impl Component for CommentsList {
+    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+
+    fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if key == self.key_config.scroll_down {
             self.next(1);
             return Ok(EventState::Consumed);

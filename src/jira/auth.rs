@@ -1,7 +1,6 @@
 use base64::{engine::general_purpose, Engine as _};
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
-use std::env;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JiraClient {
     pub jira_api_key: String,

@@ -67,7 +67,7 @@ impl Jira {
         self.project_start_at += self.project_max_results;
         let mut query = self
             .db
-            .query(format!("SELECT * FROM projects",))
+            .query("SELECT * FROM projects")
             .await
             .expect("projects selected");
         let projects: Vec<Project> = query.take(0)?;
@@ -105,7 +105,7 @@ impl Jira {
     pub async fn get_jira_projects(&mut self) -> anyhow::Result<Vec<Project>, anyhow::Error> {
         let mut query = self
             .db
-            .query(format!("SELECT * FROM projects",))
+            .query("SELECT * FROM projects")
             .await
             .expect("projects selected");
         let projects: Vec<Project> = query.take(0)?;
@@ -189,7 +189,7 @@ impl Jira {
 
         if (self.tickets_start_at + self.tickets_max_results) < self.tickets.total {
             self.tickets_start_at += self.tickets_max_results;
-            return Ok(self.get_and_record_tickets(&project_key).await?);
+            return self.get_and_record_tickets(project_key).await;
         }
         Ok(self.tickets.issues.clone())
     }
