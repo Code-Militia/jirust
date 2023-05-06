@@ -20,6 +20,7 @@ use crate::{
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
+use log::info;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
@@ -405,7 +406,7 @@ impl App {
             None => return Ok(()),
             Some(t) => t,
         };
-        if comment.is_empty() && self.comment_add.push_comment {
+        if !comment.is_empty() && self.comment_add.push_comment {
             let comment = comment.join(" \n ");
             ticket
                 .add_comment(&self.jira.db, &comment, &self.jira.client)

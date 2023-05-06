@@ -183,6 +183,7 @@ impl TicketData {
         jira_client: &JiraClient,
     ) -> anyhow::Result<CommentBody> {
         let url = format!("/rest/api/3/issue/{}/comment?expand=renderedBody", self.key);
+        info!("comment: {:?}", comment);
         let html = markdown::to_html(comment);
         let adf = convert_html_str_to_adf_str(html);
         let adf = format!("{{ \"body\": {} }}", adf);
