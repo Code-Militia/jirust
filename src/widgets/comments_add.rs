@@ -1,4 +1,5 @@
 use crate::event::key::Key;
+use log::info;
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -43,6 +44,8 @@ impl CommentAdd {
                 Span::raw(" to exit, "),
                 Span::styled("e", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" to start editing."),
+                Span::styled("P", Style::default().add_modifier(Modifier::BOLD)),
+                Span::raw(" to push comments to jira."),
             ],
             Style::default().add_modifier(Modifier::UNDERLINED),
         );
