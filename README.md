@@ -7,7 +7,7 @@ An application with developers and engineers in mind.  It is solely focused on u
 ## Install
 make sure you have Rust installed.  See https://www.rust-lang.org/tools/install
 
-Run `cargo install jirust --version 0.1.0-alpha.4`
+Run `cargo install jirust --version 0.1.0-alpha.6`
 
 ## Important notices
 * This is currently tested with JIRA cloud.
@@ -34,6 +34,9 @@ These are environment variables required to use this tool.
 ## Default keys
 * Filter/Search: "/"
 * Help: "?"
+
+## Usage (Youtube)
+[link](https://www.youtube.com/watch?v=gRgz1M30q9I)
 
 ## TODO:
 - [X] UI to generate a list of all projects

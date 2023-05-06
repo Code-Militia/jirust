@@ -1,7 +1,6 @@
 use super::auth::JiraClient;
 use super::SurrealAny;
 use htmltoadf::convert_html_str_to_adf_str;
-use log::info;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -169,8 +168,6 @@ impl TicketData {
         match ticket.fields.comments {
             None => Ok(self.save_ticket_comments_from_api(db, jira_client).await?),
             Some(c) => {
-                info!("in get_comments some block");
-                info!("get_comments some block response -- {:?}", c);
                 Ok(c)
             }
         }
@@ -183,7 +180,6 @@ impl TicketData {
         jira_client: &JiraClient,
     ) -> anyhow::Result<CommentBody> {
         let url = format!("/rest/api/3/issue/{}/comment?expand=renderedBody", self.key);
-        info!("comment: {:?}", comment);
         let html = markdown::to_html(comment);
         let adf = convert_html_str_to_adf_str(html);
         let adf = format!("{{ \"body\": {} }}", adf);
@@ -191,7 +187,6 @@ impl TicketData {
             .post_to_jira_api(&url, adf)
             .await
             .expect("unable to save comment");
-        info!("comment response {:?}", response);
         let comments: CommentBody =
             serde_json::from_str(response.as_str()).expect("unable to deserialize comments");
 
