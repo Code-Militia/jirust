@@ -18,7 +18,7 @@ serde_with = { version = "1.4.0", features = ["json"]}
 
 crossterm = "0.25.0"
 
-tui = { package = "ratatui" }
+tui = { package = "ratatui", version = "0.20.1" }
 
 reqwest = { version = "0.11.11", features = ["default", "json"] }
 
