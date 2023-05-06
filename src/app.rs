@@ -288,6 +288,28 @@ impl App {
         res
     }
 
+    fn update_project_commands(&mut self) {
+        self.help.set_cmds(self.project_commands());
+    }
+
+    fn project_commands(&self) -> Vec<CommandInfo> {
+        let mut res = vec![
+            CommandInfo::new(commands::go_back(&self.config.key_config)),
+            CommandInfo::new(commands::exit_pop_up(&self.config.key_config)),
+            CommandInfo::new(commands::filter(&self.config.key_config)),
+            CommandInfo::new(commands::help(&self.config.key_config)),
+            CommandInfo::new(commands::scroll(&self.config.key_config)),
+            CommandInfo::new(commands::scroll_to_top_bottom(&self.config.key_config)),
+            CommandInfo::new(commands::scroll_up_down_multiple_lines(
+                &self.config.key_config,
+            )),
+        ];
+
+        self.tickets.commands(&mut res);
+
+        res
+    }
+
     pub async fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if self.component_event(key).await?.is_consumed() {
             return Ok(EventState::Consumed);
@@ -470,6 +492,10 @@ impl App {
                 }
             }
             Focus::Projects => {
+                if self.help.event(key)?.is_consumed() {
+                    self.update_project_commands();
+                    return Ok(EventState::Consumed);
+                }
                 if self.projects.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
