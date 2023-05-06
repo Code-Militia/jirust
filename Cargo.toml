@@ -1,7 +1,13 @@
 [package]
+authors = ["Akhter (Mo) Ali <akali1987@gmail.com"]
 name = "jirust"
-version = "0.1.0"
+description = "A JIRA terminal user interface"
 edition = "2021"
+homepage = "https://github.com/moali87/jirust"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/moali87/jirust"
+version = "0.1.0-alpha.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

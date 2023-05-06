@@ -130,6 +130,7 @@ pub fn draw_block_style(focused: bool, title: &str) -> Block {
         Block::default()
             .border_type(BorderType::Double)
             .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Green))
             .title(title)
             .title_alignment(tui::layout::Alignment::Center)
     } else {
