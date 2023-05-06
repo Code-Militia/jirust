@@ -167,7 +167,7 @@ impl TicketWidget {
 
     pub fn select_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
         for (index, ticket_data) in self.tickets.iter().enumerate() {
-            if ticket_data.key == ticket_key.clone() {
+            if ticket_data.key == ticket_key {
                 self.select(Some(index));
                 return Ok(());
             }

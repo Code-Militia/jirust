@@ -8,7 +8,7 @@ use serde::Deserialize;
 #[cfg(test)] // TODO: What does this do?
 use serde::Serialize;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Default)]
 pub struct Config {
     #[serde(default)]
     pub key_config: KeyConfig,
@@ -126,14 +126,14 @@ impl Default for JiraConfig {
     }
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            key_config: KeyConfig::default(),
-            jira_config: JiraConfig::default(),
-        }
-    }
-}
+// impl Default for Config {
+//     fn default() -> Self {
+//         Self {
+//             key_config: KeyConfig::default(),
+//             jira_config: JiraConfig::default(),
+//         }
+//     }
+// }
 
 impl Config {
     pub fn new() -> anyhow::Result<Self> {

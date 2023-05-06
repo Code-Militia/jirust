@@ -20,7 +20,6 @@ use crate::{
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
-use log::info;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
@@ -95,7 +94,7 @@ impl App {
             labels: LabelsWidget::new(config.key_config.clone()),
             // load_state: LoadState::Complete,
             parent: TicketParentWidget::new(),
-            projects: ProjectsWidget::new(projects, config.key_config.clone(), config.jira_config.domain.clone()),
+            projects: ProjectsWidget::new(projects, config.key_config.clone()),
             relation: RelationWidget::new(config.key_config.clone()),
             search_projects: SearchProjectsWidget::new(projects),
             search_tickets: SearchTicketsWidget::new(),
@@ -220,6 +219,7 @@ impl App {
         if let Focus::CommentsList = self.focus {
             self.comments_list
                 .draw(f, matches!(self.focus, Focus::Projects), f.size())?;
+            self.help.draw(f, Rect::default(), false)?;
             return Ok(());
         }
 
@@ -433,12 +433,12 @@ impl App {
             return Ok(EventState::Consumed);
         }
 
-        if !matches!(self.focus, Focus::Projects) && self.help.event(key)?.is_consumed() {
-            return Ok(EventState::Consumed);
-        }
-
         match self.focus {
             Focus::CommentsList => {
+                if self.help.event(key)?.is_consumed() {
+                    self.update_comments_list_commands();
+                    return Ok(EventState::Consumed);
+                }
                 if self.comments_list.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
@@ -490,6 +490,10 @@ impl App {
                 }
             }
             Focus::Tickets => {
+                if self.help.event(key)?.is_consumed() {
+                    self.update_tickets_commands();
+                    return Ok(EventState::Consumed);
+                }
                 if self.tickets.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
@@ -634,11 +638,9 @@ impl App {
                             return Ok(EventState::Consumed);
                         }
                     }
-                    if !self.jira.search_jira_projects(project_input).await.is_ok() {
-                        if !self.jira.jira_project_api(project_input).await.is_ok() {
-                            self.error.set("Unable to locate project in cache and in JIRA \n You may not have access to view project".to_string())?;
-                            return Ok(EventState::NotConsumed);
-                        }
+                    if self.jira.search_jira_projects(project_input).await.is_err() && self.jira.jira_project_api(project_input).await.is_err() {
+                        self.error.set("Unable to locate project in cache and in JIRA \n You may not have access to view project".to_string())?;
+                        return Ok(EventState::NotConsumed);
                     }
                     self.projects.select_project(project_input)?;
                     self.update_tickets().await?;
@@ -661,17 +663,17 @@ impl App {
                         }
                     }
 
-                    if !self
+                    if self
                         .jira
                         .search_jira_tickets(&self.search_tickets.input)
                         .await
-                        .is_ok()
+                        .is_err()
                     {
-                        if !self
+                        if self
                             .jira
                             .jira_ticket_api(&self.search_tickets.input)
                             .await
-                            .is_ok()
+                            .is_err()
                         {
                             self.error.set("Unable to locate ticket in cache and in JIRA \n You may not have access to view ticket".to_string())?;
                             return Ok(EventState::NotConsumed);

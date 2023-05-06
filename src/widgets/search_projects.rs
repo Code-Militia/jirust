@@ -200,21 +200,21 @@ impl SearchProjectsWidget {
         match key {
             Key::Down => {
                 self.next(1);
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
             Key::Up => {
                 self.previous(1);
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
             Key::Ctrl('d') => {
                 self.next(10);
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
             Key::Ctrl('u') => {
                 self.previous(10);
-                return Ok(EventState::Consumed);
+                Ok(EventState::Consumed)
             }
-            _ => return Ok(EventState::NotConsumed),
+            _ => Ok(EventState::NotConsumed),
         }
     }
     fn normal_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
@@ -223,7 +223,7 @@ impl SearchProjectsWidget {
                 self.input_mode = InputMode::Editing;
                 Ok(EventState::Consumed)
             }
-            _ => return self.movement(key),
+            _ => self.movement(key),
         }
     }
 
@@ -241,7 +241,7 @@ impl SearchProjectsWidget {
                 self.normal_mode();
                 Ok(EventState::Consumed)
             }
-            _ => return self.movement(key),
+            _ => self.movement(key),
         }
     }
 

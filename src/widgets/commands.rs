@@ -85,7 +85,7 @@ pub fn move_focus(key: &KeyConfig) -> CommandText {
 pub fn ticket_add_comments(key: &KeyConfig) -> CommandText {
     CommandText::new(
         format!(
-            "View comments on ticket [{}]",
+            "Add comments to ticket [{}]",
             key.ticket_add_comments
         ),
         CMD_GROUP_GENERAL,

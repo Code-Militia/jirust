@@ -16,21 +16,19 @@ use crate::{
 use super::{draw_block_style, draw_highlight_style, Component, EventState, commands::CommandInfo};
 
 pub struct ProjectsWidget {
-    jira_domain: String,
     projects: Vec<Project>,
     state: ListState,
     key_config: KeyConfig,
 }
 
 impl ProjectsWidget {
-    pub fn new(projects: &Vec<Project>, key_config: KeyConfig, jira_domain: String) -> Self {
+    pub fn new(projects: &Vec<Project>, key_config: KeyConfig) -> Self {
         let mut state = ListState::default();
         if !projects.is_empty() {
             state.select(Some(0));
         }
 
         Self {
-            jira_domain,
             state,
             projects: projects.to_vec(),
             key_config,
@@ -100,7 +98,7 @@ impl ProjectsWidget {
 
     pub fn select_project(&mut self, project_key: &str) -> anyhow::Result<()> {
         for (index, project_data) in self.projects.iter().enumerate() {
-            if project_data.key == project_key.clone() {
+            if project_data.key == project_key {
                 self.select(Some(index));
                 return Ok(());
             }
