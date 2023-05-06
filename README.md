@@ -9,8 +9,9 @@ An application with developers and engineers in mind.  It is solely focused on u
 * I'm (Author: Mo Ali) am an infrastructure engineer by trade.  This is my first programming project that I'm sharing out.  This is also my first rust project and am using it to learn rust.  You can watch my development on [twitch](https://www.twitch.tv/mo_ali141)
 
 ## Current requirements
+
 These are environment variables required to use this tool.
----
+
 * JIRA_USER_EMAIL: "example@examplerserver.com" 
 * JIRA_API_KEY: "abcdefghijklmnopqrstuvwxyz1234567890"
 * JIRA_DOMAIN: "https://mycompany.atlassian.net"
