@@ -1,8 +1,10 @@
 # Jirust - WIP
 A terminal UI for jira written in rust.
 
-An application with developers and engineers in mind.  It is solely focused on updating tickets at the moment.
 NOTE: This is currently tested with JIRA cloud.
+NOTE: I'm (Author: Mo Ali) am an infrastructure engineer by trade.  This is my first programming project that I'm sharing out.  This is also my first rust project and am using it to learn rust.  You can watch my development on [twitch](https://www.twitch.tv/mo_ali141)
+
+An application with developers and engineers in mind.  It is solely focused on updating tickets at the moment.
 ![jirust](https://user-images.githubusercontent.com/7011993/225179809-b4683ea5-93e5-4c4c-abf5-e6534df0f5a3.gif)
 
 ## Current requirements
