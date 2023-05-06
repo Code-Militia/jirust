@@ -20,7 +20,6 @@ use crate::{
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
-use log::info;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
