@@ -30,7 +30,7 @@ These are environment variables required to use this tool.
 * Filter/Search: "/"
 * Help: "?"
 
-TODO:
+## TODO:
 - [X] UI to generate a list of all projects
 - [X] Pagination for projects greater than the max limit returned by JIRA rest API
 - [X] UI to list all issues/tasks on selected project
@@ -40,3 +40,7 @@ TODO:
 - [ ] Add functionality to support ticket sorting by sprint
 - [ ] Only view specified ticket status
 - [ ] Only view tickets assigned to specific user
+
+## Credit
+I've been copying a lot of [gobang](https://github.com/TaKO8Ki/gobang/tree/main) project.  This wouldn't have been possible if it wasn't for that project.  Thank you.
+
