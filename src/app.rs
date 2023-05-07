@@ -567,12 +567,12 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
-                if key == self.config.key_config.move_up {
+                if key == self.config.key_config.previous || key == self.config.key_config.move_up {
                     self.focus = Focus::Labels;
                     return Ok(EventState::Consumed);
                 }
 
-                if key == self.config.key_config.move_down {
+                if key == self.config.key_config.next || key == self.config.key_config.move_down {
                     self.focus = Focus::TicketRelation;
                     return Ok(EventState::Consumed);
                 }
@@ -599,6 +599,16 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
+                if key == self.config.key_config.previous {
+                    self.focus = Focus::TicketRelation;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.next{
+                    self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+
                 if key == self.config.key_config.ticket_view_comments {
                     self.update_comments_view().await?;
                     self.focus = Focus::CommentsList;
@@ -606,11 +616,11 @@ impl App {
                 }
             }
             Focus::Labels => {
-                if key == self.config.key_config.move_up {
+                if key == self.config.key_config.previous || key == self.config.key_config.move_up {
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
-                if key == self.config.key_config.move_down {
+                if key == self.config.key_config.next || key == self.config.key_config.move_down {
                     self.update_components().await?;
                     self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
@@ -729,8 +739,13 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
-                if key == self.config.key_config.move_up {
+                if key == self.config.key_config.previous || key == self.config.key_config.move_up {
                     self.focus = Focus::Components;
+                    return Ok(EventState::Consumed);
+                }
+
+                if key == self.config.key_config.next || key == self.config.key_config.move_right {
+                    self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
 
@@ -746,13 +761,13 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
-                if key == self.config.key_config.move_down {
+                if key == self.config.key_config.next || key == self.config.key_config.move_down {
                     self.update_labels().await?;
                     self.focus = Focus::Labels;
                     return Ok(EventState::Consumed);
                 }
 
-                if key == self.config.key_config.move_right {
+                if key == self.config.key_config.previous || key == self.config.key_config.move_right {
                     self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }

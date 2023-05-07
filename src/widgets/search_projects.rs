@@ -202,11 +202,11 @@ impl SearchProjectsWidget {
 
     fn movement(&mut self, key: Key) -> anyhow::Result<EventState> {
         match key {
-            Key::Down => {
+            Key::Down | Key::Tab => {
                 self.next(1);
                 Ok(EventState::Consumed)
             }
-            Key::Up => {
+            Key::Up | Key::BackTab => {
                 self.previous(1);
                 Ok(EventState::Consumed)
             }
@@ -222,6 +222,7 @@ impl SearchProjectsWidget {
         }
     }
     fn normal_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        self.state.select(None);
         match key {
             Key::Char('e') => {
                 self.input_mode = InputMode::Editing;
