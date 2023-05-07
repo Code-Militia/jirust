@@ -60,7 +60,6 @@ impl ComponentsWidget {
 impl ComponentsWidget {
     pub fn new(key_config: KeyConfig) -> Self {
         let state = ListState::default();
-        // state.select(Some(0));
 
         Self {
             key_config,

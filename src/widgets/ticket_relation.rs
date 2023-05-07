@@ -97,8 +97,7 @@ impl RelationWidget {
 
 impl RelationWidget {
     pub fn new(key_config: KeyConfig) -> Self {
-        let mut state = TableState::default();
-        state.select(Some(0));
+        let state = TableState::default();
 
         Self {
             key_config,

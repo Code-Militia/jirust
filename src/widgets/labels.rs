@@ -59,8 +59,7 @@ impl LabelsWidget {
 
 impl LabelsWidget {
     pub fn new(key_config: KeyConfig) -> Self {
-        let mut state = ListState::default();
-        state.select(Some(0));
+        let state = ListState::default();
 
         Self {
             key_config,
