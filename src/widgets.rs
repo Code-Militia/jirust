@@ -20,7 +20,7 @@ use async_trait::async_trait;
 use tui::{
     backend::Backend,
     layout::Rect,
-    style::{Color, Style},
+    style::{Color, Style, Modifier},
     widgets::{Block, BorderType, Borders},
     Frame,
 };
@@ -57,13 +57,6 @@ pub trait DrawableComponent {
     fn draw<B: Backend>(&self, f: &mut Frame<B>, rect: Rect, focused: bool) -> anyhow::Result<()>;
 }
 
-// pub trait TicketDrawableComponent {
-//     fn draw<B: Backend>(&mut self, f: &mut Frame<B>, rect: Rect, focused: bool) -> anyhow::Result<()>;
-//     fn draw_metadata<B: Backend>(&self, f: &mut Frame<B>, rect: Rect) -> anyhow::Result<()>;
-//     fn draw_description<B: Backend>(&self, f: &mut Frame<B>, rect: Rect) -> anyhow::Result<()>;
-//     fn draw_work_log<B: Backend>(&self, f: &mut Frame<B>, rect: Rect) -> anyhow::Result<()>;
-// }
-
 pub trait StatefulDrawableComponent {
     fn draw<B: Backend>(
         &mut self,
@@ -90,14 +83,6 @@ pub trait Component {
     fn commands(&self, out: &mut Vec<CommandInfo>);
 
     fn event(&mut self, key: crate::event::key::Key) -> anyhow::Result<EventState>;
-
-    // async fn async_event(
-    //     &mut self,
-    //     _key: crate::event::key::Key,
-    //     _pool: &Box<dyn Pool>, // TODO: change this to issues pool instead of databases
-    // ) -> Result<EventState> {
-    //     Ok(EventState::NotConsumed)
-    // }
 
     fn focused(&self) -> bool {
         false

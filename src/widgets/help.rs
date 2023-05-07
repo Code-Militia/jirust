@@ -55,15 +55,6 @@ impl DrawableComponent for HelpWidget {
                 Paragraph::new(self.get_text(chunks[0].width as usize)).scroll((scroll, 0)),
                 chunks[0],
             );
-
-            // f.render_widget(
-            //     Paragraph::new(Spans::from(vec![Span::styled(
-            //         format!("gobang {}", Version::new()),
-            //         Style::default(),
-            //     )]))
-            //     .alignment(Alignment::Right),
-            //     chunks[1],
-            // );
         }
 
         Ok(())

@@ -34,6 +34,13 @@ impl RelationWidget {
             Some(ticket_data) => ticket_data,
         };
 
+        if !focused {
+            self.state.select(None)
+        }
+        if focused && self.selected().is_none() {
+            self.state.select(Some(0))
+        }
+
         let title = "Relation";
         let header_cells = ["Relation", "Key", "Summary", "Priority", "Type", "Status"];
         let headers = Row::new(header_cells);

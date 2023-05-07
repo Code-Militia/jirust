@@ -69,20 +69,6 @@ impl ProjectsWidget {
         self.select(Some(self.projects.len() - 1));
     }
 
-    // pub fn open_browser(&self) {
-    //     if self.selected().is_some() {
-    //         let ticket = self.selected().unwrap();
-    //         let url = self.jira_domain.clone() + "/browse/" + &ticket.key.clone();
-    //         match open::that(url.clone()) {
-    //             Ok(()) => {},
-    //             Err(e) => {
-    //                 // todo!("Add error condition");
-    //                 panic!("{:?} url: {:?}", e, url);
-    //             }
-    //         }
-    //     }
-    // }
-
     pub fn selected(&self) -> Option<&Project> {
         match self.state.selected() {
             Some(i) => self.projects.get(i),

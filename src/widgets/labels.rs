@@ -33,6 +33,13 @@ impl LabelsWidget {
             Some(ticket_data) => ticket_data,
         };
 
+        if !focused {
+            self.state.select(None)
+        }
+        if focused && self.selected().is_none() {
+            self.state.select(Some(0))
+        }
+
         let list_items: Vec<_> = ticket
             .fields
             .labels

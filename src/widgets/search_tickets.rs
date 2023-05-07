@@ -69,7 +69,6 @@ impl SearchTicketsWidget {
             .tickets
             .iter()
             .map(|project_id| {
-                // self.search_tickets.push(project_id.to_string());
                 ListItem::new(project_id.clone())
             })
             .collect();
@@ -193,7 +192,6 @@ impl SearchTicketsWidget {
 }
 
 impl SearchTicketsWidget {
-    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
     fn movement(&mut self, key: Key) -> anyhow::Result<EventState> {
         match key {
             Key::Down => {
