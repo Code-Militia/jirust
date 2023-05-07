@@ -120,7 +120,7 @@ impl SearchProjectsWidget {
                 Span::raw(" to stop editing, "),
                 Span::styled("Return", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" to search project. "),
-                Span::styled("Up/Down & Return", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Up/S-Tab/Down/Tab & Return", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" to select project. "),
             ],
             Style::default(),

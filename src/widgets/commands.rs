@@ -82,6 +82,16 @@ pub fn move_focus(key: &KeyConfig) -> CommandText {
     )
 }
 
+pub fn move_focus_with_tab(key: &KeyConfig) -> CommandText {
+    CommandText::new(
+        format!(
+            "Move focus [{}, {}]",
+            key.next, "<S-Tab>"
+        ),
+        CMD_GROUP_GENERAL,
+    )
+}
+
 pub fn ticket_add_comments(key: &KeyConfig) -> CommandText {
     CommandText::new(
         format!(

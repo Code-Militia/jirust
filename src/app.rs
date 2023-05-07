@@ -254,6 +254,7 @@ impl App {
                 &self.config.key_config,
             )),
             CommandInfo::new(commands::move_focus(&self.config.key_config)),
+            CommandInfo::new(commands::move_focus_with_tab(&self.config.key_config)),
 
             CommandInfo::new(commands::ticket_add_comments(&self.config.key_config)),
             CommandInfo::new(commands::ticket_open_browser(&self.config.key_config)),

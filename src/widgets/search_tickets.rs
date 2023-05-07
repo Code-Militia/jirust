@@ -112,7 +112,7 @@ impl SearchTicketsWidget {
                 Span::raw(" to stop editing. "),
                 Span::styled("Return", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" to search ticket. "),
-                Span::styled("Up/Down & Return", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("Up/S-Tab/Down/Tab & Return", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" to select ticket. "),
             ],
             Style::default(),
