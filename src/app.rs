@@ -444,8 +444,7 @@ impl App {
             ticket.transition(data, &self.jira.client).await?;
             self.focus = Focus::Tickets;
             self.ticket_transition.push_transition = false;
-            let project = self.projects.selected().unwrap();
-            self.jira.get_and_record_tickets(&project.key).await?;
+            self.jira.update_ticket(&ticket.key).await?;
         }
         Ok(())
     }
