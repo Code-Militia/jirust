@@ -141,14 +141,23 @@ impl Jira {
         Ok(self.projects.values.clone())
     }
 
+    pub async fn update_ticket(&mut self, ticket_key: &str) -> anyhow::Result<(), anyhow::Error> {
+        let jira_url = self.client.get_domain();
+        let url = format!("{}/rest/api/{}/issue/{}?expand=renderedFields", jira_url, self.client.jira_api_version, ticket_key);
+        let resp = self.tickets.get_tickets_from_jira_api(&self.client, &url).await?; 
+        let ticket: TicketData = serde_json::from_str(resp.as_str()).expect("ticket deserialized");
+        let _ticket_update: TicketData = self.db.update(("tickets", &ticket.key)).content(ticket.clone()).await?;
+        Ok(())
+    }
+
     pub async fn get_and_record_tickets(
         &mut self,
         project_key: &str,
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         let jira_url = self.client.get_domain();
         let url = format!(
-            "{}/rest/api/3/search?maxResults={}&startAt={}&jql=project%20%3D%20{}&expand=renderedFields",
-            jira_url, self.tickets_max_results, self.tickets_start_at, project_key
+            "{}/rest/api/{}/search?maxResults={}&startAt={}&jql=project%20%3D%20{}&expand=renderedFields",
+            jira_url, self.client.get_api_version(), self.tickets_max_results, self.tickets_start_at, project_key
         );
         let resp = self
             .tickets
