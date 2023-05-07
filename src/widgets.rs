@@ -20,7 +20,7 @@ use async_trait::async_trait;
 use tui::{
     backend::Backend,
     layout::Rect,
-    style::{Color, Style, Modifier},
+    style::{Color, Style},
     widgets::{Block, BorderType, Borders},
     Frame,
 };
