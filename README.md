@@ -7,7 +7,7 @@ An application with developers and engineers in mind.  It is solely focused on u
 ## Install
 make sure you have Rust installed.  See https://www.rust-lang.org/tools/install
 
-Run `cargo install jirust --version 0.1.0-alpha.7`
+Run `cargo install jirust --version 0.1.0-alpha.8`
 
 ## Important notices
 * This is currently tested with JIRA cloud.
@@ -27,6 +27,7 @@ These are environment variables required to use this tool.
 * List tickets
 * List ticket details such as labels, components, description, and parent ticket even if parent is another ticket or epic.
 * Filter/Search ticket (Search JIRA API if not found within pagination limit)
+* View ticket in browser
 * List ticket comments
 * Add comments to ticket
 * Move ticket to another status (ex: To do -> In Progress)
