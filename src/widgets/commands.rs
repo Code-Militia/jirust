@@ -92,6 +92,16 @@ pub fn ticket_add_comments(key: &KeyConfig) -> CommandText {
     )
 }
 
+pub fn ticket_open_browser(key: &KeyConfig) -> CommandText {
+    CommandText::new(
+        format!(
+            "View ticket in browser [{}]",
+            key.open_browser
+        ),
+        CMD_GROUP_GENERAL,
+    )
+}
+
 pub fn ticket_view_comments(key: &KeyConfig) -> CommandText {
     CommandText::new(
         format!(
