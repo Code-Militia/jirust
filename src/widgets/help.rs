@@ -1,7 +1,7 @@
 use super::{Component, DrawableComponent, EventState};
-use crate::widgets::CommandInfo;
 use crate::config::KeyConfig;
 use crate::event::key::Key;
+use crate::widgets::CommandInfo;
 use anyhow::Result;
 use itertools::Itertools;
 use std::convert::From;

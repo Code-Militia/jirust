@@ -13,7 +13,7 @@ use crate::{
     jira::tickets::{TicketTransition, TicketTransitions},
 };
 
-use super::{draw_block_style, draw_highlight_style, Component, EventState, commands::CommandInfo};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug)]
 pub struct TransitionWidget {

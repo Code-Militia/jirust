@@ -192,15 +192,11 @@ impl From<event::KeyEvent> for Key {
             event::KeyEvent {
                 code: event::KeyCode::BackTab,
                 ..
-            } => {
-                Key::BackTab
-            },
+            } => Key::BackTab,
             event::KeyEvent {
                 code: event::KeyCode::Tab,
                 ..
-            } => {
-                Key::Tab
-            },
+            } => Key::Tab,
 
             // First check for char + modifier
             event::KeyEvent {
@@ -224,7 +220,7 @@ impl From<event::KeyEvent> for Key {
             _x => {
                 // info!("{:?}", _x);
                 Key::Unknown
-            },
+            }
         }
     }
 }

@@ -13,7 +13,7 @@ use crate::{
     jira::projects::{JiraProjects, Project},
 };
 
-use super::{draw_block_style, draw_highlight_style, Component, EventState, commands::CommandInfo};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 pub struct ProjectsWidget {
     projects: Vec<Project>,

@@ -14,7 +14,7 @@ use tui::{
 
 use crate::config::KeyConfig;
 
-use super::{draw_block_style, draw_highlight_style, EventState, commands::CommandInfo, Component};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug)]
 pub struct CommentContents {

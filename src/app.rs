@@ -1,5 +1,5 @@
 use crate::jira::tickets::{PostTicketTransition, TicketTransition};
-use crate::widgets::commands::{CommandInfo, self};
+use crate::widgets::commands::{self, CommandInfo};
 use crate::widgets::comments::{CommentContents, CommentsList};
 use crate::widgets::comments_add::CommentAdd;
 use crate::widgets::components::ComponentsWidget;
@@ -98,7 +98,10 @@ impl App {
             relation: RelationWidget::new(config.key_config.clone()),
             search_projects: SearchProjectsWidget::new(projects),
             search_tickets: SearchTicketsWidget::new(),
-            tickets: TicketWidget::new(config.key_config.clone(), config.jira_config.domain.clone()),
+            tickets: TicketWidget::new(
+                config.key_config.clone(),
+                config.jira_config.domain.clone(),
+            ),
             ticket_transition: TransitionWidget::new(Vec::new(), config.key_config.clone()),
         })
     }
@@ -255,12 +258,10 @@ impl App {
             )),
             CommandInfo::new(commands::move_focus(&self.config.key_config)),
             CommandInfo::new(commands::move_focus_with_tab(&self.config.key_config)),
-
             CommandInfo::new(commands::ticket_add_comments(&self.config.key_config)),
             CommandInfo::new(commands::ticket_open_browser(&self.config.key_config)),
             CommandInfo::new(commands::ticket_transition(&self.config.key_config)),
             CommandInfo::new(commands::ticket_view_comments(&self.config.key_config)),
-
         ];
 
         self.tickets.commands(&mut res);
@@ -272,7 +273,6 @@ impl App {
         self.help.set_cmds(self.comments_list_commands());
     }
 
-
     fn comments_list_commands(&self) -> Vec<CommandInfo> {
         let mut res = vec![
             CommandInfo::new(commands::go_back(&self.config.key_config)),
@@ -282,7 +282,6 @@ impl App {
             CommandInfo::new(commands::scroll_up_down_multiple_lines(
                 &self.config.key_config,
             )),
-
         ];
 
         self.comments_list.commands(&mut res);
@@ -605,7 +604,7 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
-                if key == self.config.key_config.next{
+                if key == self.config.key_config.next {
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
@@ -675,7 +674,9 @@ impl App {
                             return Ok(EventState::Consumed);
                         }
                     }
-                    if self.jira.search_jira_projects(project_input).await.is_err() && self.jira.jira_project_api(project_input).await.is_err() {
+                    if self.jira.search_jira_projects(project_input).await.is_err()
+                        && self.jira.jira_project_api(project_input).await.is_err()
+                    {
                         self.error.set("Unable to locate project in cache and in JIRA \n You may not have access to view project".to_string())?;
                         return Ok(EventState::NotConsumed);
                     }
@@ -768,7 +769,9 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
-                if key == self.config.key_config.previous || key == self.config.key_config.move_right {
+                if key == self.config.key_config.previous
+                    || key == self.config.key_config.move_right
+                {
                     self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
@@ -786,14 +789,12 @@ impl App {
 
                 if key == self.config.key_config.next_page {
                     self.next_ticket_page().await?;
-                    self.update_tickets().await?;
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
 
                 if key == self.config.key_config.previous_page {
                     self.previous_ticket_page().await?;
-                    self.update_tickets().await?;
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }

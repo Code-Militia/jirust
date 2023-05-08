@@ -68,9 +68,7 @@ impl SearchTicketsWidget {
         let results: Vec<_> = self
             .tickets
             .iter()
-            .map(|project_id| {
-                ListItem::new(project_id.clone())
-            })
+            .map(|project_id| ListItem::new(project_id.clone()))
             .collect();
         let tickets = List::new(results)
             .block(Block::default().borders(Borders::ALL).title("Tickets"))
@@ -112,7 +110,10 @@ impl SearchTicketsWidget {
                 Span::raw(" to stop editing. "),
                 Span::styled("Return", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" to search ticket. "),
-                Span::styled("Up/S-Tab/Down/Tab & Return", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "Up/S-Tab/Down/Tab & Return",
+                    Style::default().add_modifier(Modifier::BOLD),
+                ),
                 Span::raw(" to select ticket. "),
             ],
             Style::default(),
