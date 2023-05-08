@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinkFields {
     pub issuetype: Type,
-    pub priority: Priority,
+    pub priority: Option<Priority>,
     pub status: Status,
     pub summary: String,
 }
