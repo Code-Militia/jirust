@@ -30,12 +30,7 @@ impl CommandInfo {
 }
 
 pub fn go_back(key: &KeyConfig) -> CommandText {
-    CommandText::new(
-        format!(
-            "Go back [{}]",
-            key.esc),
-        CMD_GROUP_GENERAL,
-    )
+    CommandText::new(format!("Go back [{}]", key.esc), CMD_GROUP_GENERAL)
 }
 
 pub fn scroll(key: &KeyConfig) -> CommandText {
@@ -82,32 +77,30 @@ pub fn move_focus(key: &KeyConfig) -> CommandText {
     )
 }
 
+pub fn move_focus_with_tab(key: &KeyConfig) -> CommandText {
+    CommandText::new(
+        format!("Move focus [{}, {}]", key.next, "<S-Tab>"),
+        CMD_GROUP_GENERAL,
+    )
+}
+
 pub fn ticket_add_comments(key: &KeyConfig) -> CommandText {
     CommandText::new(
-        format!(
-            "Add comments to ticket [{}]",
-            key.ticket_add_comments
-        ),
+        format!("Add comments to ticket [{}]", key.ticket_add_comments),
         CMD_GROUP_GENERAL,
     )
 }
 
 pub fn ticket_open_browser(key: &KeyConfig) -> CommandText {
     CommandText::new(
-        format!(
-            "View ticket in browser [{}]",
-            key.open_browser
-        ),
+        format!("View ticket in browser [{}]", key.open_browser),
         CMD_GROUP_GENERAL,
     )
 }
 
 pub fn ticket_view_comments(key: &KeyConfig) -> CommandText {
     CommandText::new(
-        format!(
-            "View comments on ticket [{}]",
-            key.ticket_view_comments
-        ),
+        format!("View comments on ticket [{}]", key.ticket_view_comments),
         CMD_GROUP_GENERAL,
     )
 }

@@ -1,4 +1,4 @@
-use super::{Component, DrawableComponent, EventState, commands::CommandInfo};
+use super::{commands::CommandInfo, Component, DrawableComponent, EventState};
 use crate::config::KeyConfig;
 use crate::event::key::Key;
 use anyhow::Result;

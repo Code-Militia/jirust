@@ -68,10 +68,7 @@ impl SearchTicketsWidget {
         let results: Vec<_> = self
             .tickets
             .iter()
-            .map(|project_id| {
-                // self.search_tickets.push(project_id.to_string());
-                ListItem::new(project_id.clone())
-            })
+            .map(|project_id| ListItem::new(project_id.clone()))
             .collect();
         let tickets = List::new(results)
             .block(Block::default().borders(Borders::ALL).title("Tickets"))
@@ -113,7 +110,10 @@ impl SearchTicketsWidget {
                 Span::raw(" to stop editing. "),
                 Span::styled("Return", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" to search ticket. "),
-                Span::styled("Up/Down & Return", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    "Up/S-Tab/Down/Tab & Return",
+                    Style::default().add_modifier(Modifier::BOLD),
+                ),
                 Span::raw(" to select ticket. "),
             ],
             Style::default(),
@@ -193,14 +193,13 @@ impl SearchTicketsWidget {
 }
 
 impl SearchTicketsWidget {
-    // fn commands(&self, _out: &mut Vec<CommandInfo>) {}
     fn movement(&mut self, key: Key) -> anyhow::Result<EventState> {
         match key {
-            Key::Down => {
+            Key::Down | Key::Tab => {
                 self.next(1);
                 Ok(EventState::Consumed)
             }
-            Key::Up => {
+            Key::Up | Key::BackTab => {
                 self.previous(1);
                 Ok(EventState::Consumed)
             }
@@ -217,6 +216,7 @@ impl SearchTicketsWidget {
     }
 
     fn normal_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        self.state.select(None);
         match key {
             Key::Char('e') => {
                 self.input_mode = InputMode::Editing;

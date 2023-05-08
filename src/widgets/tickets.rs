@@ -7,7 +7,7 @@ use tui::{
 
 use crate::{config::KeyConfig, event::key::Key, jira::tickets::TicketData};
 
-use super::{draw_block_style, draw_highlight_style, Component, EventState, commands::CommandInfo};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug)]
 pub struct TicketWidget {
@@ -143,7 +143,7 @@ impl TicketWidget {
             let ticket = self.selected().unwrap();
             let url = self.jira_domain.clone() + "/browse/" + &ticket.key.clone();
             match open::that(url.clone()) {
-                Ok(()) => {},
+                Ok(()) => {}
                 Err(e) => {
                     // todo!("Add error condition");
                     panic!("{:?} url: {:?}", e, url);

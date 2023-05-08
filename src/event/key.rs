@@ -13,6 +13,8 @@ pub enum Key {
     Enter,
     /// Tabulation key
     Tab,
+    /// Tabulation key with shift modifier
+    BackTab,
     /// Backspace key
     Backspace,
     /// Escape key
@@ -188,6 +190,10 @@ impl From<event::KeyEvent> for Key {
                 ..
             } => Key::Enter,
             event::KeyEvent {
+                code: event::KeyCode::BackTab,
+                ..
+            } => Key::BackTab,
+            event::KeyEvent {
                 code: event::KeyCode::Tab,
                 ..
             } => Key::Tab,
@@ -211,7 +217,10 @@ impl From<event::KeyEvent> for Key {
                 ..
             } => Key::Char(c),
 
-            _ => Key::Unknown,
+            _x => {
+                // info!("{:?}", _x);
+                Key::Unknown
+            }
         }
     }
 }

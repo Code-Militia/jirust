@@ -11,7 +11,7 @@ use crate::{
     jira::tickets::{Links, TicketData},
 };
 
-use super::{draw_block_style, draw_highlight_style, Component, EventState, commands::CommandInfo};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug)]
 pub struct RelationWidget {
@@ -33,6 +33,13 @@ impl RelationWidget {
             None => return Ok(()),
             Some(ticket_data) => ticket_data,
         };
+
+        if !focused {
+            self.state.select(None)
+        }
+        if focused && self.selected().is_none() {
+            self.state.select(Some(0))
+        }
 
         let title = "Relation";
         let header_cells = ["Relation", "Key", "Summary", "Priority", "Type", "Status"];
@@ -90,8 +97,7 @@ impl RelationWidget {
 
 impl RelationWidget {
     pub fn new(key_config: KeyConfig) -> Self {
-        let mut state = TableState::default();
-        state.select(Some(0));
+        let state = TableState::default();
 
         Self {
             key_config,

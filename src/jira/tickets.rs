@@ -167,9 +167,7 @@ impl TicketData {
             .expect("Failed to get TicketData from DB in get_comments");
         match ticket.fields.comments {
             None => Ok(self.save_ticket_comments_from_api(db, jira_client).await?),
-            Some(c) => {
-                Ok(c)
-            }
+            Some(c) => Ok(c),
         }
     }
 

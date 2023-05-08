@@ -27,6 +27,13 @@ impl ComponentsWidget {
     ) -> anyhow::Result<()> {
         f.render_widget(Clear, rect);
 
+        if !focused {
+            self.state.select(None)
+        }
+        if focused && self.selected().is_none() {
+            self.state.select(Some(0))
+        }
+
         let title = "Components";
         let ticket = match selected_ticket {
             None => return Ok(()),
@@ -52,8 +59,7 @@ impl ComponentsWidget {
 
 impl ComponentsWidget {
     pub fn new(key_config: KeyConfig) -> Self {
-        let mut state = ListState::default();
-        state.select(Some(0));
+        let state = ListState::default();
 
         Self {
             key_config,

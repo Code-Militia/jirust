@@ -13,7 +13,7 @@ use crate::{
     jira::projects::{JiraProjects, Project},
 };
 
-use super::{draw_block_style, draw_highlight_style, Component, EventState, commands::CommandInfo};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 pub struct ProjectsWidget {
     projects: Vec<Project>,
@@ -68,20 +68,6 @@ impl ProjectsWidget {
         }
         self.select(Some(self.projects.len() - 1));
     }
-
-    // pub fn open_browser(&self) {
-    //     if self.selected().is_some() {
-    //         let ticket = self.selected().unwrap();
-    //         let url = self.jira_domain.clone() + "/browse/" + &ticket.key.clone();
-    //         match open::that(url.clone()) {
-    //             Ok(()) => {},
-    //             Err(e) => {
-    //                 // todo!("Add error condition");
-    //                 panic!("{:?} url: {:?}", e, url);
-    //             }
-    //         }
-    //     }
-    // }
 
     pub fn selected(&self) -> Option<&Project> {
         match self.state.selected() {

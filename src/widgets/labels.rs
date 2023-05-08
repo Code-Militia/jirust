@@ -33,6 +33,13 @@ impl LabelsWidget {
             Some(ticket_data) => ticket_data,
         };
 
+        if !focused {
+            self.state.select(None)
+        }
+        if focused && self.selected().is_none() {
+            self.state.select(Some(0))
+        }
+
         let list_items: Vec<_> = ticket
             .fields
             .labels
@@ -52,8 +59,7 @@ impl LabelsWidget {
 
 impl LabelsWidget {
     pub fn new(key_config: KeyConfig) -> Self {
-        let mut state = ListState::default();
-        state.select(Some(0));
+        let state = ListState::default();
 
         Self {
             key_config,
