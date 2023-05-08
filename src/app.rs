@@ -1,6 +1,6 @@
 use crate::jira::tickets::{PostTicketTransition, TicketTransition};
 use crate::widgets::commands::{self, CommandInfo};
-use crate::widgets::comments::{CommentContents, CommentsList};
+use crate::widgets::comments::CommentsList;
 use crate::widgets::comments_add::CommentAdd;
 use crate::widgets::components::ComponentsWidget;
 use crate::widgets::description::DescriptionWidget;
@@ -34,7 +34,7 @@ use tui::{
 
 pub enum Focus {
     CommentsList,
-    CommentView,
+    // CommentView,
     CommentsAdd,
     Components,
     Description,
@@ -49,7 +49,7 @@ pub enum Focus {
 
 pub struct App {
     comments_list: CommentsList,
-    comment_contents: CommentContents,
+    // comment_contents: CommentContents,
     comment_add: CommentAdd,
     components: ComponentsWidget,
     description: DescriptionWidget,
@@ -82,7 +82,7 @@ impl App {
 
         Ok(Self {
             comments_list: CommentsList::new(config.key_config.clone()),
-            comment_contents: CommentContents::new(config.key_config.clone()),
+            // comment_contents: CommentContents::new(config.key_config.clone()),
             comment_add: CommentAdd::new(),
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
@@ -223,15 +223,6 @@ impl App {
             self.comments_list
                 .draw(f, matches!(self.focus, Focus::Projects), f.size())?;
             self.help.draw(f, Rect::default(), false)?;
-            return Ok(());
-        }
-
-        if let Focus::CommentView = self.focus {
-            self.comment_contents.draw(
-                f,
-                self.comments_list.selected(),
-                matches!(self.focus, Focus::CommentView),
-            )?;
             return Ok(());
         }
 
@@ -465,11 +456,6 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
             }
-            Focus::CommentView => {
-                if self.comment_contents.event(key)?.is_consumed() {
-                    return Ok(EventState::Consumed);
-                }
-            }
             Focus::CommentsAdd => {
                 if self.comment_add.event(key)?.is_consumed() {
                     self.add_jira_comment().await?;
@@ -544,16 +530,6 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
-                if key == self.config.key_config.enter {
-                    self.focus = Focus::CommentView;
-                    return Ok(EventState::Consumed);
-                }
-            }
-            Focus::CommentView => {
-                if key == self.config.key_config.esc {
-                    self.focus = Focus::CommentsList;
-                    return Ok(EventState::Consumed);
-                }
             }
             Focus::CommentsAdd => {
                 if key == self.config.key_config.esc {

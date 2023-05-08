@@ -5,7 +5,7 @@ use crate::{
 use html2md::parse_html;
 use tui::{
     backend::Backend,
-    layout::{Alignment, Constraint, Layout, Rect},
+    layout::{Alignment, Constraint, Layout, Rect, Direction},
     style::Style,
     text::Span,
     widgets::{Cell, Clear, Paragraph, Row, Table, TableState, Wrap},
@@ -17,80 +17,11 @@ use crate::config::KeyConfig;
 use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug)]
-pub struct CommentContents {
-    key_config: KeyConfig,
-    scroll: u16,
-}
-impl CommentContents {
-    pub fn draw<B: Backend>(
-        &mut self,
-        f: &mut Frame<B>,
-        comment: Option<&CommentBody>,
-        focused: bool,
-    ) -> anyhow::Result<()> {
-        let comment = match comment {
-            None => return Ok(()),
-            Some(ticket_data) => ticket_data,
-        };
-        let size = f.size();
-        let title = &comment.author.display_name;
-        let chunks = Layout::default()
-            .constraints([Constraint::Percentage(100)].as_ref())
-            .split(size);
-
-        let text = parse_html(&comment.rendered_body.clone());
-        let paragraph = Paragraph::new(Span::styled(text, Style::default()))
-            .alignment(Alignment::Left)
-            .block(draw_block_style(focused, title))
-            .wrap(Wrap { trim: true });
-
-        f.render_widget(Clear, size);
-        f.render_widget(paragraph, chunks[0]);
-        Ok(())
-    }
-}
-
-impl CommentContents {
-    pub fn new(key_config: KeyConfig) -> Self {
-        Self {
-            key_config,
-            scroll: 0,
-        }
-    }
-
-    pub fn down(&mut self, lines: u16) {
-        self.scroll = self.scroll.saturating_add(lines);
-        if self.scroll >= 100 {
-            self.scroll = 0
-        }
-    }
-
-    pub fn up(&mut self, lines: u16) {
-        self.scroll = self.scroll.saturating_sub(lines);
-    }
-    pub fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        if key == self.key_config.scroll_down {
-            self.down(1);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_up {
-            self.up(1);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_down_multiple_lines {
-            self.down(10);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_up_multiple_lines {
-            self.up(10);
-            return Ok(EventState::Consumed);
-        }
-        Ok(EventState::NotConsumed)
-    }
-}
-
-#[derive(Debug)]
 pub struct CommentsList {
     pub comments: Option<Comments>,
     state: TableState,
     key_config: KeyConfig,
+    scroll: u16,
 }
 
 impl CommentsList {
@@ -100,6 +31,17 @@ impl CommentsList {
         focused: bool,
         rect: Rect,
     ) -> anyhow::Result<()> {
+        f.render_widget(Clear, rect);
+        let chunk_constrains = [
+            Constraint::Length(10),
+            Constraint::Min(1),
+        ]
+        .as_ref();
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            // .margin(2)
+            .constraints(chunk_constrains)
+            .split(f.size());
         let title = "Comments";
 
         let header_cells = ["Author", "Updated Author", "Created by", "Updated by"];
@@ -134,8 +76,19 @@ impl CommentsList {
                 Constraint::Percentage(25),
             ]);
 
-        f.render_widget(Clear, rect);
-        f.render_stateful_widget(table, rect, &mut self.state);
+        f.render_stateful_widget(table, chunks[0], &mut self.state);
+
+        let comment = match self.selected() {
+            None => return Ok(()),
+            Some(ticket_data) => ticket_data,
+        };
+        let text = parse_html(&comment.rendered_body.clone());
+        let paragraph = Paragraph::new(Span::styled(text, Style::default()))
+            .alignment(Alignment::Left)
+            .block(draw_block_style(focused, title))
+            .wrap(Wrap { trim: true });
+
+        f.render_widget(paragraph, chunks[1]);
 
         Ok(())
     }
@@ -149,6 +102,7 @@ impl CommentsList {
             comments: None,
             key_config,
             state,
+            scroll: 0,
         }
     }
 
@@ -210,6 +164,17 @@ impl CommentsList {
         }
     }
 
+    pub fn comment_contents_down(&mut self, lines: u16) {
+        self.scroll = self.scroll.saturating_add(lines);
+        if self.scroll >= 100 {
+            self.scroll = 0
+        }
+    }
+
+    pub fn comment_contents_up(&mut self, lines: u16) {
+        self.scroll = self.scroll.saturating_sub(lines);
+    }
+
     pub async fn update(&mut self, comments: Comments) -> anyhow::Result<()> {
         self.comments = Some(comments);
         Ok(())
@@ -238,6 +203,10 @@ impl Component for CommentsList {
         } else if key == self.key_config.scroll_to_top {
             self.go_to_top();
             return Ok(EventState::Consumed);
+        } else if key == self.key_config.move_down {
+            self.comment_contents_down(1)
+        } else if key == self.key_config.move_up {
+            self.comment_contents_up(1)
         }
         Ok(EventState::NotConsumed)
     }
