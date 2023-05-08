@@ -11,6 +11,7 @@ use tui::{
 use super::{EventState, InputMode};
 
 // CommentPopup holds the state of the application
+#[derive(Debug)]
 pub struct CommentAdd {
     /// Current value of the input box
     input: String,

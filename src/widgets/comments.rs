@@ -39,7 +39,7 @@ impl CommentsList {
         .as_ref();
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            // .margin(2)
+            .margin(2)
             .constraints(chunk_constrains)
             .split(f.size());
         let title = "Comments";

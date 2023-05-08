@@ -249,7 +249,6 @@ impl App {
             )),
             CommandInfo::new(commands::move_focus(&self.config.key_config)),
             CommandInfo::new(commands::move_focus_with_tab(&self.config.key_config)),
-            CommandInfo::new(commands::ticket_add_comments(&self.config.key_config)),
             CommandInfo::new(commands::ticket_open_browser(&self.config.key_config)),
             CommandInfo::new(commands::ticket_transition(&self.config.key_config)),
             CommandInfo::new(commands::ticket_view_comments(&self.config.key_config)),
@@ -273,6 +272,7 @@ impl App {
             CommandInfo::new(commands::scroll_up_down_multiple_lines(
                 &self.config.key_config,
             )),
+            CommandInfo::new(commands::ticket_add_comments(&self.config.key_config)),
         ];
 
         self.comments_list.commands(&mut res);
@@ -529,11 +529,15 @@ impl App {
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
-
+                
+                if key == self.config.key_config.ticket_add_comments {
+                    self.focus = Focus::CommentsAdd;
+                    return Ok(EventState::Consumed)
+                }
             }
             Focus::CommentsAdd => {
                 if key == self.config.key_config.esc {
-                    self.focus = Focus::Tickets;
+                    self.focus = Focus::CommentsList;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -755,11 +759,6 @@ impl App {
                 if key == self.config.key_config.ticket_view_comments {
                     self.update_comments_view().await?;
                     self.focus = Focus::CommentsList;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.ticket_add_comments {
-                    self.focus = Focus::CommentsAdd;
                     return Ok(EventState::Consumed);
                 }
 
