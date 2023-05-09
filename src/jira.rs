@@ -285,7 +285,7 @@ impl Jira {
             .projects
             .search_jira_project_api(project_key, &self.client)
             .await?;
-        let _create_ticket_record: TicketData = self
+        let _create_ticket_record: Project = self
             .db
             .create(("projects", project_key))
             .content(project)
