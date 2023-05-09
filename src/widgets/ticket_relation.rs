@@ -58,11 +58,15 @@ impl RelationWidget {
                 }
                 _ => unreachable!("If there is a link, this should always return"),
             };
+            let priority = match &link_relation.fields.priority {
+                Some(i) => i.name.as_str(),
+                _ => "",
+            };
             let item = [
                 link_relation_detail,
                 link_relation.key.as_str(),
                 link_relation.fields.summary.as_str(),
-                link_relation.fields.priority.name.as_str(),
+                priority,
                 link_relation.fields.issuetype.name.as_str(),
                 link_relation.fields.status.name.as_str(),
             ];

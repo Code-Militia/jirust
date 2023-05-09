@@ -53,12 +53,16 @@ impl TicketParentWidget {
             Some(i) => i,
             // _ => unreachable!("If there is a link it should be present")
         };
+        let priority = match &ticket.fields.priority {
+            Some(i) => i.name.as_str(),
+            _ => "",
+        };
         let item = [
             ticket_parent.key.as_str(),
             ticket_parent.fields.summary.as_str(),
-            ticket_parent.fields.priority.name.as_str(),
-            ticket_parent.fields.issuetype.name.as_str(),
-            ticket_parent.fields.status.name.as_str(),
+            priority,
+            ticket.fields.issuetype.name.as_str(),
+            ticket.fields.status.name.as_str(),
         ];
         let height = item
             .iter()
