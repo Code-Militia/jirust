@@ -63,6 +63,11 @@ impl Jira {
         })
     }
 
+    pub async fn clear_projects_table(&mut self) -> anyhow::Result<()> {
+        let _delete_projects: Vec<Project> = self.db.delete("projects").await?;
+        Ok(())
+    }
+
     pub async fn get_next_project_page(&mut self) -> anyhow::Result<&Vec<Project>, anyhow::Error> {
         self.project_start_at += self.project_max_results;
         let mut query = self
@@ -145,6 +150,11 @@ impl Jira {
         }
         self.projects.values = projects;
         Ok(self.projects.values.clone())
+    }
+
+    pub async fn clear_tickets_table(&mut self) -> anyhow::Result<()> {
+        let _delete_projects: Vec<TicketData> = self.db.delete("tickets").await?;
+        Ok(())
     }
 
     pub async fn update_ticket(&mut self, ticket_key: &str) -> anyhow::Result<(), anyhow::Error> {
