@@ -5,7 +5,7 @@ use crate::{
 use html2md::parse_html;
 use tui::{
     backend::Backend,
-    layout::{Alignment, Constraint, Layout, Rect, Direction},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::Style,
     text::Span,
     widgets::{Cell, Clear, Paragraph, Row, Table, TableState, Wrap},
@@ -32,11 +32,7 @@ impl CommentsList {
         rect: Rect,
     ) -> anyhow::Result<()> {
         f.render_widget(Clear, rect);
-        let chunk_constrains = [
-            Constraint::Length(10),
-            Constraint::Min(1),
-        ]
-        .as_ref();
+        let chunk_constrains = [Constraint::Length(10), Constraint::Min(1)].as_ref();
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)

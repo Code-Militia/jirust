@@ -38,9 +38,6 @@ impl JiraClient {
     pub fn get_domain(&self) -> &String {
         &self.jira_url
     }
-    pub fn get_api_version(&self) -> &String {
-        &self.jira_api_version
-    }
 
     pub async fn post_to_jira_api(&self, api_url: &str, data: String) -> anyhow::Result<String> {
         let headers = self.get_basic_auth();
@@ -88,10 +85,11 @@ pub fn jira_authentication(
 ) -> JiraClient {
     let jira_encoded_auth: String =
         general_purpose::STANDARD_NO_PAD.encode(format!("{jira_user_email}:{jira_api_key}"));
+    let jira_rest_domain = jira_domain.to_string() + "/rest/api/" + jira_api_version;
     JiraClient::new(
         jira_api_version.to_string(),
         jira_encoded_auth,
         jira_user_email.to_string(),
-        jira_domain.to_string(),
+        jira_rest_domain,
     )
 }

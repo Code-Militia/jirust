@@ -101,12 +101,7 @@ impl Default for JiraConfig {
             }
         };
 
-        let jira_api_version = match env::var("JIRA_API_VERSION") {
-            Ok(v) => v,
-            Err(_e) => {
-                panic!("Environment variable JIRA_API_VERSION is not set")
-            }
-        };
+        let jira_api_version = "3".to_string();
 
         let jira_domain = match env::var("JIRA_DOMAIN") {
             Ok(v) => v,
