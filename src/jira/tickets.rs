@@ -55,7 +55,7 @@ pub struct Components {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Project {
+pub struct ProjectDetails {
     key: String,
     name: String,
 }
@@ -108,7 +108,7 @@ pub struct Fields {
     pub labels: Vec<String>,
     pub parent: Option<LinkInwardOutwardParent>,
     pub priority: Option<Priority>,
-    pub project: Project,
+    pub project: ProjectDetails,
     pub reporter: Option<CreatorReporter>,
     pub status: Status,
     pub summary: String,
@@ -142,12 +142,12 @@ pub struct PostTicketTransition {
 }
 
 impl TicketData {
-    pub async fn save_ticket_comments_from_api(
+    async fn save_ticket_comments_from_api(
         &self,
         db: &SurrealAny,
         jira_client: &JiraClient,
     ) -> anyhow::Result<Comments> {
-        let url = format!("/rest/api/3/issue/{}/comment?expand=renderedBody", self.key);
+        let url = format!("/issue/{}/comment?expand=renderedBody", self.key);
         let response = jira_client.get_from_jira_api(&url).await?;
 
         let comments: Comments =
@@ -177,7 +177,7 @@ impl TicketData {
         comment: &str,
         jira_client: &JiraClient,
     ) -> anyhow::Result<CommentBody> {
-        let url = format!("/rest/api/3/issue/{}/comment?expand=renderedBody", self.key);
+        let url = format!("/issue/{}/comment?expand=renderedBody", self.key);
         let html = markdown::to_html(comment);
         let adf = convert_html_str_to_adf_str(html);
         let adf = format!("{{ \"body\": {} }}", adf);
@@ -196,7 +196,7 @@ impl TicketData {
         &self,
         jira_client: &JiraClient,
     ) -> anyhow::Result<TicketTransitions> {
-        let url = format!("/rest/api/3/issue/{}/transitions", self.key);
+        let url = format!("/issue/{}/transitions", self.key);
         let response = jira_client.get_from_jira_api(&url).await?;
         let obj: TicketTransitions = serde_json::from_str(&response)?;
         Ok(obj)
@@ -207,7 +207,7 @@ impl TicketData {
         transition: PostTicketTransition,
         jira_client: &JiraClient,
     ) -> anyhow::Result<()> {
-        let url = format!("/rest/api/3/issue/{}/transitions", self.key);
+        let url = format!("/issue/{}/transitions", self.key);
         let data = serde_json::to_string(&transition)?;
         jira_client.post_to_jira_api(&url, data).await?;
         Ok(())
@@ -252,7 +252,7 @@ impl JiraTickets {
         ticket_key: &str,
         jira_client: &JiraClient,
     ) -> anyhow::Result<TicketData> {
-        let url = format!("rest/api/3/issue/{}?expand=renderedFields", ticket_key);
+        let url = format!("/issue/{}?expand=renderedFields", ticket_key);
         let response = jira_client.get_from_jira_api(&url).await?;
         let obj: TicketData = serde_json::from_str(&response)?;
         Ok(obj)

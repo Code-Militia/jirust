@@ -166,17 +166,16 @@ impl TicketWidget {
     }
 
     pub fn select_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
-        for (index, ticket_data) in self.tickets.iter().enumerate() {
-            if ticket_data.key == ticket_key {
-                self.select(Some(index));
-                return Ok(());
-            }
-        }
-
+        let ticket_index = self
+            .tickets
+            .iter()
+            .position(|ticket| ticket.key == ticket_key);
+        self.select(ticket_index);
         Ok(())
     }
 
     pub async fn update(&mut self, tickets: &[TicketData]) -> anyhow::Result<()> {
+        self.tickets.clear();
         self.tickets = tickets.to_vec();
         Ok(())
     }

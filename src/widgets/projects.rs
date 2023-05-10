@@ -82,19 +82,18 @@ impl ProjectsWidget {
         }
     }
 
-    pub fn select_project(&mut self, project_key: &str) -> anyhow::Result<()> {
-        for (index, project_data) in self.projects.iter().enumerate() {
-            if project_data.key == project_key {
-                self.select(Some(index));
-                return Ok(());
-            }
-        }
-
+    pub fn select_project(&mut self, ticket_key: &str) -> anyhow::Result<()> {
+        let ticket_index = self
+            .projects
+            .iter()
+            .position(|ticket| ticket.key == ticket_key);
+        self.select(ticket_index);
         Ok(())
     }
 
-    pub fn update(&mut self, jira_projects: &JiraProjects) {
-        self.projects = jira_projects.values.clone()
+    pub async fn update(&mut self, jira_projects: &Vec<Project>) -> anyhow::Result<()> {
+        self.projects = jira_projects.clone();
+        Ok(())
     }
 }
 
