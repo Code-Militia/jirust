@@ -10,13 +10,13 @@ use tui::{
 use crate::{
     config::KeyConfig,
     event::key::Key,
-    jira::projects::{JiraProjects, Project},
+    jira::projects::Project,
 };
 
 use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 pub struct ProjectsWidget {
-    projects: Vec<Project>,
+    pub projects: Vec<Project>,
     state: ListState,
     key_config: KeyConfig,
 }

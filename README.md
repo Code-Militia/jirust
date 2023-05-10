@@ -7,7 +7,7 @@ An application with developers and engineers in mind.  It is solely focused on u
 ## Install
 make sure you have Rust installed.  See https://www.rust-lang.org/tools/install
 
-Run `cargo install jirust --version 0.1.0-alpha.15`
+Run `cargo install jirust --version 0.1.0-alpha.16`
 
 ## Important notices
 * This is currently tested with JIRA cloud.

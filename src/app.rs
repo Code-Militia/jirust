@@ -1,5 +1,5 @@
 use crate::jira::projects::Project;
-use crate::jira::tickets::{PostTicketTransition, TicketData, TicketTransition, ProjectDetails};
+use crate::jira::tickets::{PostTicketTransition, TicketData, TicketTransition};
 use crate::widgets::commands::{self, CommandInfo};
 use crate::widgets::comments::CommentsList;
 use crate::widgets::comments_add::CommentAdd;
@@ -21,7 +21,6 @@ use crate::{
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
-use log::info;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
@@ -305,7 +304,7 @@ impl App {
     }
 
     pub async fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        if self.component_event(key).await?.is_consumed() {
+        if self.widget_event(key).await?.is_consumed() {
             return Ok(EventState::Consumed);
         }
 
@@ -451,7 +450,7 @@ impl App {
         Ok(())
     }
 
-    pub async fn component_event(&mut self, key: Key) -> anyhow::Result<EventState> {
+    pub async fn widget_event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if self.error.event(key)?.is_consumed() {
             return Ok(EventState::Consumed);
         }
@@ -488,6 +487,16 @@ impl App {
                 }
             }
             Focus::Projects => {
+                if key == self.config.key_config.reset {
+                    self.projects.projects.clear();
+                    self.tickets.tickets.clear();
+                    self.jira.clear_projects_table().await?;
+                    self.jira.clear_tickets_table().await?;
+                    let projects = &self.jira.get_jira_projects().await?;
+                    self.projects = ProjectsWidget::new(projects, self.config.key_config.clone());
+                    return Ok(EventState::Consumed);
+                }
+
                 if self.help.event(key)?.is_consumed() {
                     self.update_project_commands();
                     return Ok(EventState::Consumed);
@@ -512,6 +521,13 @@ impl App {
                 }
             }
             Focus::Tickets => {
+                if key == self.config.key_config.reset {
+                    self.tickets.tickets.clear();
+                    self.jira.clear_tickets_table().await?;
+                    self.update_tickets().await?;
+                    return Ok(EventState::Consumed);
+                }
+
                 if self.help.event(key)?.is_consumed() {
                     self.update_tickets_commands();
                     return Ok(EventState::Consumed);
