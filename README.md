@@ -7,7 +7,7 @@ An application with developers and engineers in mind.  It is solely focused on u
 ## Install
 make sure you have Rust installed.  See https://www.rust-lang.org/tools/install
 
-Run `cargo install jirust --version 0.1.0-alpha.16`
+Run `cargo install jirust --version 0.1.0-alpha.17`
 
 ## Important notices
 * This is currently tested with JIRA cloud.
@@ -20,6 +20,8 @@ These are environment variables required to use this tool.
 * JIRA_USER_EMAIL: "example@examplerserver.com" 
 * JIRA_API_KEY: "abcdefghijklmnopqrstuvwxyz1234567890"
 * JIRA_DOMAIN: "https://mycompany.atlassian.net"
+
+You will also need a config file in `$HOME/.config/jirust/config.toml`.  Please look at the sample.toml for its contents.
 
 ## Current capabilities
 * List projects

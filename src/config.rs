@@ -1,4 +1,5 @@
-use std::env;
+use std::{env, process::exit, fs};
+use toml;
 
 // use crate::{event::key::Key, log::LogLevel};
 use crate::event::key::Key;
@@ -7,6 +8,26 @@ use serde::Deserialize;
 
 #[cfg(test)] // TODO: What does this do?
 use serde::Serialize;
+
+#[derive(Debug, Deserialize, Clone, Default)]
+pub struct JiraConfigFile {
+    jira_domain: String,
+    jira_user_email: String,
+    projects: JiraConfigProjects,
+    tickets: JiraConfigTickets,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+pub struct JiraConfigTickets {
+    show_unassgiend: Option<bool>,
+    specified_ticket_status: Option<Vec<String>>,
+    tickets_current_user_only: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+pub struct JiraConfigProjects {
+    default_project_key: Option<String>,
+}
 
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct Config {
@@ -96,6 +117,41 @@ impl Default for KeyConfig {
 
 impl Default for JiraConfig {
     fn default() -> Self {
+        let home_directory = env!("HOME");
+        let filename = format!("{}/.config/jirust/config.toml", home_directory);
+        let contents = match fs::read_to_string(filename.clone()) {
+            // If successful return the files text as `contents`.
+            // `c` is a local variable.
+            Ok(c) => c,
+            // Handle the `error` case.
+            Err(_) => {
+                // Write `msg` to `stderr`.
+                eprintln!("Could not read file `{}`", filename);
+                // Exit the program with exit code `1`.
+                exit(1);
+            }
+        };
+
+
+        // Use a `match` block to return the 
+        // file `contents` as a `Data struct: Ok(d)`
+        // or handle any `errors: Err(_)`.
+        let data: JiraConfigFile = match toml::from_str(&contents) {
+            // If successful, return data as `Data` struct.
+            // `d` is a local variable.
+            Ok(d) => d,
+            // Handle the `error` case.
+            Err(e) => {
+                // Write `msg` to `stderr`.
+                eprintln!("Unable to load data from `{}` - {}", filename, e);
+                // Exit the program with exit code `1`.
+                exit(1);
+            }
+        };
+
+        let jira_domain = data.jira_domain;
+        let jira_user_email = data.jira_user_email;
+
         let jira_api_key = match env::var("JIRA_API_KEY") {
             Ok(v) => v,
             Err(_e) => {
@@ -105,19 +161,6 @@ impl Default for JiraConfig {
 
         let jira_api_version = "3".to_string();
 
-        let jira_domain = match env::var("JIRA_DOMAIN") {
-            Ok(v) => v,
-            Err(_e) => {
-                panic!("Environment variable JIRA_DOMAIN is not set")
-            }
-        };
-
-        let jira_user_email = match env::var("JIRA_USER_EMAIL") {
-            Ok(v) => v,
-            Err(_e) => {
-                panic!("Environment variable JIRA_USER_EMAIL is not set")
-            }
-        };
         Self {
             api_key: jira_api_key,
             api_version: jira_api_version,
@@ -126,15 +169,6 @@ impl Default for JiraConfig {
         }
     }
 }
-
-// impl Default for Config {
-//     fn default() -> Self {
-//         Self {
-//             key_config: KeyConfig::default(),
-//             jira_config: JiraConfig::default(),
-//         }
-//     }
-// }
 
 impl Config {
     pub fn new() -> anyhow::Result<Self> {
