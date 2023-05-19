@@ -1,5 +1,5 @@
 use crate::jira::projects::Project;
-use crate::jira::tickets::{PostTicketTransition, TicketData, TicketTransition};
+use crate::jira::tickets::{PostTicketTransition, TicketTransition};
 use crate::widgets::commands::{self, CommandInfo};
 use crate::widgets::comments::CommentsList;
 use crate::widgets::comments_add::CommentAdd;
@@ -21,6 +21,7 @@ use crate::{
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
+use log::info;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
@@ -35,7 +36,6 @@ use tui::{
 
 pub enum Focus {
     CommentsList,
-    // CommentView,
     CommentsAdd,
     Components,
     Description,
@@ -50,7 +50,6 @@ pub enum Focus {
 
 pub struct App {
     comments_list: CommentsList,
-    // comment_contents: CommentContents,
     comment_add: CommentAdd,
     components: ComponentsWidget,
     description: DescriptionWidget,
@@ -74,16 +73,17 @@ impl App {
     pub async fn new(config: Config) -> anyhow::Result<App> {
         let mut jira = Jira::new(
             &config.jira_config.domain,
-            &config.jira_config.api_key,
-            &config.jira_config.api_version,
+            &config.jira_config.api_key.clone().unwrap(),
+            &config.jira_config.api_version.clone().unwrap(),
             &config.jira_config.user_email,
+            &config.jira_config.projects,
+            &config.jira_config.tickets
         )
         .await?;
         let projects = &jira.get_jira_projects().await?;
 
         Ok(Self {
             comments_list: CommentsList::new(config.key_config.clone()),
-            // comment_contents: CommentContents::new(config.key_config.clone()),
             comment_add: CommentAdd::new(),
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
@@ -137,6 +137,7 @@ impl App {
                 matches!(self.focus, Focus::TicketTransition),
                 f.size(),
             )?;
+            return Ok(());
         }
 
         if let Focus::CommentsAdd = self.focus {
@@ -338,26 +339,28 @@ impl App {
     pub async fn next_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected().unwrap();
         self.jira.get_next_ticket_page(&project.key).await?;
-        self.tickets.update(&self.jira.tickets.issues).await?;
+        self.tickets.update(self.jira.tickets.issues.clone()).await?;
         Ok(())
     }
 
     pub async fn previous_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected().unwrap();
         self.jira.get_previous_tickets_page(&project.key).await?;
-        self.tickets.update(&self.jira.tickets.issues).await?;
+        self.tickets.update(self.jira.tickets.issues.clone()).await?;
         Ok(())
     }
 
-    pub async fn update_tickets(&mut self) -> anyhow::Result<()> {
+    pub async fn update_all_tickets(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected().unwrap();
         self.jira.get_jira_tickets(&project.key).await?;
-        self.tickets.update(&self.jira.tickets.issues).await?;
+        self.tickets.update(self.jira.tickets.issues.clone()).await?;
         Ok(())
     }
 
-    pub async fn single_ticket_update(&mut self, ticket: TicketData) -> anyhow::Result<()> {
-        self.tickets.update(&[ticket]).await
+    pub async fn update_single_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
+        let ticket = self.jira.search_cache_ticket(ticket_key).await?;
+        info!("app4 -- update single ticket {:?}", ticket);
+        self.tickets.update(vec![ticket]).await
     }
 
     pub async fn update_search_tickets(&mut self) -> anyhow::Result<()> {
@@ -430,23 +433,20 @@ impl App {
     }
 
     pub async fn move_ticket(&mut self) -> anyhow::Result<()> {
-        if self.ticket_transition.push_transition {
-            let ticket = match self.tickets.selected() {
-                None => return Ok(()),
-                Some(t) => t,
-            };
-            let transition = self.ticket_transition.selected_transition().unwrap();
-            let data = PostTicketTransition {
-                transition: TicketTransition {
-                    id: transition.id.clone(),
-                    name: transition.name.clone(),
-                },
-            };
-            ticket.transition(data, &self.jira.client).await?;
-            self.focus = Focus::Tickets;
-            self.ticket_transition.push_transition = false;
-            self.jira.update_ticket(&ticket.key).await?;
-        }
+        let ticket = match self.tickets.selected() {
+            Some(t) => t,
+            None => return Ok(())
+        };
+        let transition = self.ticket_transition.selected_transition().unwrap();
+        let data = PostTicketTransition {
+            transition: TicketTransition {
+                id: transition.id.clone(),
+                name: transition.name.clone(),
+            },
+        };
+        ticket.transition(data, &self.jira.client).await?;
+        self.ticket_transition.push_transition = false;
+        self.jira.jira_ticket_api(&ticket.key).await?;
         Ok(())
     }
 
@@ -524,7 +524,7 @@ impl App {
                 if key == self.config.key_config.reset {
                     self.tickets.tickets.clear();
                     self.jira.clear_tickets_table().await?;
-                    self.update_tickets().await?;
+                    self.update_all_tickets().await?;
                     return Ok(EventState::Consumed);
                 }
 
@@ -538,8 +538,17 @@ impl App {
             }
             Focus::TicketTransition => {
                 if self.ticket_transition.event(key)?.is_consumed() {
-                    self.move_ticket().await?;
-                    self.update_tickets().await?;
+                    if self.ticket_transition.push_transition {
+                        self.move_ticket().await?;
+                        match self.tickets.selected() {
+                            Some(t) => {
+                                let ticket = t.clone();
+                                self.update_single_ticket(&ticket.key).await?;
+                            }
+                            None => {}
+                        }
+                        self.focus = Focus::Tickets;
+                    }
                     return Ok(EventState::Consumed);
                 }
             }
@@ -644,7 +653,7 @@ impl App {
             }
             Focus::Projects => {
                 if key == self.config.key_config.enter {
-                    self.update_tickets().await?;
+                    self.update_all_tickets().await?;
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
@@ -675,23 +684,25 @@ impl App {
                     if self.search_projects.selected().is_some() {
                         let project = self.search_projects.selected().unwrap();
                         if self.projects.select_project(project).is_ok() {
-                            self.update_tickets().await?;
+                            self.update_all_tickets().await?;
                             self.focus = Focus::Tickets;
                             return Ok(EventState::Consumed);
                         }
                     }
-                    if self.jira.search_jira_projects(project_input).await.is_err()
-                        && self.jira.jira_project_api(project_input).await.is_err()
-                    {
-                        self.error.set("Unable to locate project in cache and in JIRA \n You may not have access to view project".to_string())?;
-                        return Ok(EventState::NotConsumed);
+
+                    match self.jira.search_cache_projects(project_input).await {
+                        Ok(p) => {
+                            self.single_project_update(p).await?;
+                            self.projects.select_project(project_input)?;
+                            self.update_all_tickets().await?;
+                            self.focus = Focus::Tickets;
+                            return Ok(EventState::Consumed);
+                        }
+                        Err(_) => {
+                            self.error.set("Unable to locate project in cache and in JIRA \n You may not have access to view project".to_string())?;
+                            return Ok(EventState::NotConsumed);
+                        }
                     }
-                    let project = self.jira.search_jira_projects(project_input).await?;
-                    self.single_project_update(project).await?;
-                    self.projects.select_project(project_input)?;
-                    self.update_tickets().await?;
-                    self.focus = Focus::Tickets;
-                    return Ok(EventState::Consumed);
                 }
 
                 if key == self.config.key_config.esc {
@@ -710,24 +721,24 @@ impl App {
                         }
                     }
 
-                    if self.jira.search_jira_tickets(ticket_input).await.is_err()
-                        && self.jira.jira_ticket_api(ticket_input).await.is_err()
-                    {
-                        self.error.set("Unable to locate ticket in cache and in JIRA \n You may not have access to view ticket".to_string())?;
-                        return Ok(EventState::NotConsumed);
-                    }
+                    match self.jira.search_cache_ticket(ticket_input.clone().as_ref()).await {
+                        Ok(t) => {
+                            self.update_single_ticket(&t.key).await?;
+                            self.focus = Focus::Description;
 
-                    let ticket = self.jira.search_jira_tickets(ticket_input).await?;
-                    self.single_ticket_update(ticket).await?;
-                    self.focus = Focus::Description;
-
-                    if self
-                        .tickets
-                        .select_ticket(&self.search_tickets.input)
-                        .is_ok()
-                    {
-                        self.focus = Focus::Description;
-                        return Ok(EventState::Consumed);
+                            if self
+                                .tickets
+                                .select_ticket(&self.search_tickets.input)
+                                .is_ok()
+                            {
+                                self.focus = Focus::Description;
+                                return Ok(EventState::Consumed);
+                            }
+                        }
+                        Err(_) => {
+                            self.error.set("Unable to locate ticket in cache and in JIRA \n You may not have access to view ticket".to_string())?;
+                            return Ok(EventState::NotConsumed);
+                        }
                     }
                 }
                 if key == self.config.key_config.esc {

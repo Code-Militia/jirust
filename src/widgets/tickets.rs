@@ -138,10 +138,10 @@ impl TicketWidget {
         self.select(Some(self.tickets.len() - 1))
     }
 
-    pub fn open_browser(&self) {
+    pub fn open_browser(&mut self) {
         if self.selected().is_some() {
-            let ticket = self.selected().unwrap();
-            let url = self.jira_domain.clone() + "/browse/" + &ticket.key.clone();
+            let ticket = self.selected().unwrap().clone();
+            let url = self.jira_domain.clone() + "/browse/" + &ticket.key;
             match open::that(url.clone()) {
                 Ok(()) => {}
                 Err(e) => {
@@ -152,9 +152,12 @@ impl TicketWidget {
         }
     }
 
-    pub fn selected(&self) -> Option<&TicketData> {
+    pub fn selected(&mut self) -> Option<&TicketData> {
         match self.state.selected() {
-            Some(i) => self.tickets.get(i),
+            Some(i) => {
+                let get = self.tickets.get(i);
+                get
+            }
             None => None,
         }
     }
@@ -174,9 +177,9 @@ impl TicketWidget {
         Ok(())
     }
 
-    pub async fn update(&mut self, tickets: &[TicketData]) -> anyhow::Result<()> {
+    pub async fn update(&mut self, tickets: Vec<TicketData>) -> anyhow::Result<()> {
         self.tickets.clear();
-        self.tickets = tickets.to_vec();
+        self.tickets = tickets;
         Ok(())
     }
 }

@@ -9,31 +9,33 @@ use serde::Deserialize;
 #[cfg(test)] // TODO: What does this do?
 use serde::Serialize;
 
-#[derive(Debug, Deserialize, Clone, Default)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct JiraConfigFile {
-    jira_domain: String,
-    jira_user_email: String,
-    projects: JiraConfigProjects,
-    tickets: JiraConfigTickets,
+    pub api_key: Option<String>,
+    pub api_version: Option<String>,
+    pub domain: String,
+    pub user_email: String,
+    pub projects: Option<JiraConfigProjects>,
+    pub tickets: Option<JiraConfigTickets>,
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct JiraConfigTickets {
-    show_unassgiend: Option<bool>,
-    specified_ticket_status: Option<Vec<String>>,
-    tickets_current_user_only: Option<bool>,
+    pub current_user_tickets_only: Option<bool>,
+    pub show_unassgined: Option<bool>,
+    pub show_ticket_status: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct JiraConfigProjects {
-    default_project_key: Option<String>,
+    pub default_projects: String,
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct Config {
     #[serde(default)]
     pub key_config: KeyConfig,
-    pub jira_config: JiraConfig,
+    pub jira_config: JiraConfigFile,
     // #[serde(default)]
     // pub log_level: LogLevel,
 }
@@ -115,7 +117,7 @@ impl Default for KeyConfig {
     }
 }
 
-impl Default for JiraConfig {
+impl Default for JiraConfigFile {
     fn default() -> Self {
         let home_directory = env!("HOME");
         let filename = format!("{}/.config/jirust/config.toml", home_directory);
@@ -131,7 +133,6 @@ impl Default for JiraConfig {
                 exit(1);
             }
         };
-
 
         // Use a `match` block to return the 
         // file `contents` as a `Data struct: Ok(d)`
@@ -149,8 +150,8 @@ impl Default for JiraConfig {
             }
         };
 
-        let jira_domain = data.jira_domain;
-        let jira_user_email = data.jira_user_email;
+        let domain = data.domain;
+        let jira_user_email = data.user_email;
 
         let jira_api_key = match env::var("JIRA_API_KEY") {
             Ok(v) => v,
@@ -162,9 +163,11 @@ impl Default for JiraConfig {
         let jira_api_version = "3".to_string();
 
         Self {
-            api_key: jira_api_key,
-            api_version: jira_api_version,
-            domain: jira_domain,
+            api_key: Some(jira_api_key),
+            api_version: Some(jira_api_version),
+            domain,
+            projects: data.projects,
+            tickets: data.tickets,
             user_email: jira_user_email,
         }
     }
