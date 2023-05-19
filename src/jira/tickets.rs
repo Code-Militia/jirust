@@ -237,6 +237,7 @@ impl JiraTickets {
     pub async fn get_tickets_from_jira_api(
         &self,
         jira_auth: &JiraClient,
+        params: Vec<(&str, &str)>,
         url: &str,
     ) -> Result<String, reqwest::Error> {
         let headers = jira_auth.get_basic_auth();
@@ -244,7 +245,13 @@ impl JiraTickets {
             .default_headers(headers)
             .https_only(true)
             .build()?;
-        client.get(url).send().await?.text().await
+        client
+            .get(url)
+            .query(&params)
+            .send()
+            .await?
+            .text().
+            await
     }
 
     pub async fn search_jira_ticket_api(

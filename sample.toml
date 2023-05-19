@@ -1,15 +1,12 @@
 # These two properties are required
-jira_domain = "https://YOUR_DOMAIN.atlassian.net"
-jira_user_email = "YOUR_JIRA_EMAIL"
+domain = "https://YOUR_DOMAIN.atlassian.net"
+user_email = "YOUR_JIRA_EMAIL"
 
 [tickets]
-# Show tickets that are not assigned to anyone
-show_unassigned = true
 # Show tickets assigned to you only.  Can include unassigned.
 current_user_tickets_only = true
 # Show tickets in these status only
 show_ticket_status = ["Done", "In Progress"]
 
 [projects]
-default_project = "YOUR_JIRA_PROJECT"
-
+default_projects = "YOUR_JIRA_PROJECT" # Can be multiple per jira API -  For example, keys=PA&keys=PB. Up to 50 project keys can be provided.
