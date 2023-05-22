@@ -358,6 +358,7 @@ impl App {
 
     pub async fn update_single_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
         let ticket = self.jira.search_cache_ticket(ticket_key).await?;
+        self.tickets.remove_ticket(ticket_key);
         self.tickets.update(vec![ticket], false).await?;
         self.tickets.select_ticket(ticket_key)
     }

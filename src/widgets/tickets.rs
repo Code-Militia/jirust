@@ -152,6 +152,20 @@ impl TicketWidget {
         }
     }
 
+    pub fn remove_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
+        let ticket_index = self
+            .tickets
+            .iter()
+            .position(|ticket| ticket.key == ticket_key);
+        match ticket_index {
+            Some(ti) => {
+                self.tickets.swap_remove(ti);
+            }
+            None => {}
+        }
+        Ok(())
+    }
+
     pub fn selected(&mut self) -> Option<&TicketData> {
         match self.state.selected() {
             Some(i) => {
