@@ -7,7 +7,7 @@ An application with developers and engineers in mind.  It is solely focused on u
 ## Install
 make sure you have Rust installed.  See https://www.rust-lang.org/tools/install
 
-Run `cargo install jirust --version 0.1.0-alpha.20`
+Run `cargo install jirust --version 0.1.0-alpha.21`
 
 ## Important notices
 * This is currently tested with JIRA cloud.
@@ -45,10 +45,10 @@ You will also need a config file in `$HOME/.config/jirust/config.toml`.  Please 
 - [X] UI to list all issues/tasks on selected project
 - [X] Pagination list issues greater than the max limit returned by JIRA rest API
 - [X] UI to view selected issue details
-- [ ] POC support for JIRA data types such as tables, list, and code blocks using atlassian document format
-- [ ] Add functionality to support ticket sorting by sprint
 - [X] Only view specified ticket status
 - [X] Only view tickets assigned to specific user
+- [ ] POC support for JIRA data types such as tables, list, and code blocks using atlassian document format
+- [ ] Add functionality to support ticket sorting by sprint
 
 ## Credit
 I've been copying a lot of [gobang](https://github.com/TaKO8Ki/gobang/tree/main) project.  This wouldn't have been possible if it wasn't for that project.  Thank you.

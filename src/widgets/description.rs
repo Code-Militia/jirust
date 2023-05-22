@@ -2,7 +2,7 @@ use crate::event::key::Key;
 use html2md::parse_html;
 use tui::{
     backend::Backend,
-    layout::{Alignment, Rect},
+    layout::{Alignment, Rect, Layout, Direction, Constraint},
     widgets::{Clear, Paragraph, Wrap},
     Frame,
 };
@@ -26,6 +26,7 @@ impl DescriptionWidget {
         selected_ticket: Option<&TicketData>,
     ) -> anyhow::Result<()> {
         f.render_widget(Clear, rect);
+        let summary_title = "Summary";
         let title = "Description";
 
         let ticket = match selected_ticket {
@@ -33,16 +34,27 @@ impl DescriptionWidget {
             Some(ticket_data) => ticket_data,
         };
 
+        let summary_text = ticket.fields.summary.clone();
         let mut text = ticket.rendered_fields.description.clone();
         text = parse_html(&text);
 
+        let summary_paragraph = Paragraph::new(summary_text)
+            .block(draw_block_style(focused, summary_title))
+            .wrap(Wrap { trim: true })
+            .alignment(Alignment::Center);
         let paragraph = Paragraph::new(text)
             .block(draw_block_style(focused, title))
             .alignment(Alignment::Left)
             .wrap(Wrap { trim: true })
             .scroll((self.scroll, 0));
 
-        f.render_widget(paragraph, rect);
+        let main_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(5), Constraint::Percentage(85)])
+            .split(rect);
+
+        f.render_widget(summary_paragraph, main_chunks[0]);
+        f.render_widget(paragraph, main_chunks[1]);
 
         Ok(())
     }
