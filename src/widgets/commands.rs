@@ -105,6 +105,26 @@ pub fn ticket_view_comments(key: &KeyConfig) -> CommandText {
     )
 }
 
+pub fn tickets_reset(key: &KeyConfig) -> CommandText {
+    CommandText::new(
+        format!(
+            "Clear out tickets cache table and pull from Jira [{}]",
+            key.reset
+        ),
+        CMD_GROUP_GENERAL,
+    )
+}
+
+pub fn projects_reset(key: &KeyConfig) -> CommandText {
+    CommandText::new(
+        format!(
+            "Clear out projects cache table and pull from Jira [{}]",
+            key.reset
+        ),
+        CMD_GROUP_GENERAL,
+    )
+}
+
 pub fn ticket_transition(key: &KeyConfig) -> CommandText {
     CommandText::new(
         format!(

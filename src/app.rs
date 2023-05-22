@@ -253,6 +253,7 @@ impl App {
             CommandInfo::new(commands::ticket_open_browser(&self.config.key_config)),
             CommandInfo::new(commands::ticket_transition(&self.config.key_config)),
             CommandInfo::new(commands::ticket_view_comments(&self.config.key_config)),
+            CommandInfo::new(commands::tickets_reset(&self.config.key_config)),
         ];
 
         self.tickets.commands(&mut res);
@@ -296,6 +297,7 @@ impl App {
             CommandInfo::new(commands::scroll_up_down_multiple_lines(
                 &self.config.key_config,
             )),
+            CommandInfo::new(commands::projects_reset(&self.config.key_config)),
         ];
 
         self.tickets.commands(&mut res);
