@@ -21,7 +21,6 @@ use crate::{
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
-use log::info;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
@@ -339,28 +338,28 @@ impl App {
     pub async fn next_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected().unwrap();
         self.jira.get_next_ticket_page(&project.key).await?;
-        self.tickets.update(self.jira.tickets.issues.clone()).await?;
+        self.tickets.update(self.jira.tickets.issues.clone(), true).await?;
         Ok(())
     }
 
     pub async fn previous_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected().unwrap();
         self.jira.get_previous_tickets_page(&project.key).await?;
-        self.tickets.update(self.jira.tickets.issues.clone()).await?;
+        self.tickets.update(self.jira.tickets.issues.clone(), true).await?;
         Ok(())
     }
 
     pub async fn update_all_tickets(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected().unwrap();
         self.jira.get_jira_tickets(&project.key).await?;
-        self.tickets.update(self.jira.tickets.issues.clone()).await?;
+        self.tickets.update(self.jira.tickets.issues.clone(), true).await?;
         Ok(())
     }
 
     pub async fn update_single_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
         let ticket = self.jira.search_cache_ticket(ticket_key).await?;
-        info!("app4 -- update single ticket {:?}", ticket);
-        self.tickets.update(vec![ticket]).await
+        self.tickets.update(vec![ticket], false).await?;
+        self.tickets.select_ticket(ticket_key)
     }
 
     pub async fn update_search_tickets(&mut self) -> anyhow::Result<()> {

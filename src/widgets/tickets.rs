@@ -177,9 +177,11 @@ impl TicketWidget {
         Ok(())
     }
 
-    pub async fn update(&mut self, tickets: Vec<TicketData>) -> anyhow::Result<()> {
-        self.tickets.clear();
-        self.tickets = tickets;
+    pub async fn update(&mut self, mut tickets: Vec<TicketData>, clear: bool) -> anyhow::Result<()> {
+        if clear {
+            self.tickets.clear();
+        }
+        self.tickets.append(&mut tickets);
         Ok(())
     }
 }
