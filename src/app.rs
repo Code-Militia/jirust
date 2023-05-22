@@ -253,6 +253,7 @@ impl App {
             CommandInfo::new(commands::ticket_open_browser(&self.config.key_config)),
             CommandInfo::new(commands::ticket_transition(&self.config.key_config)),
             CommandInfo::new(commands::ticket_view_comments(&self.config.key_config)),
+            CommandInfo::new(commands::tickets_reset(&self.config.key_config)),
         ];
 
         self.tickets.commands(&mut res);
@@ -296,6 +297,7 @@ impl App {
             CommandInfo::new(commands::scroll_up_down_multiple_lines(
                 &self.config.key_config,
             )),
+            CommandInfo::new(commands::projects_reset(&self.config.key_config)),
         ];
 
         self.tickets.commands(&mut res);
@@ -358,6 +360,7 @@ impl App {
 
     pub async fn update_single_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
         let ticket = self.jira.search_cache_ticket(ticket_key).await?;
+        self.tickets.remove_ticket(ticket_key)?;
         self.tickets.update(vec![ticket], false).await?;
         self.tickets.select_ticket(ticket_key)
     }
