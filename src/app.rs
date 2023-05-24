@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::jira::projects::Project;
 use crate::jira::tickets::{PostTicketTransition, TicketTransition};
 use crate::widgets::commands::{self, CommandInfo};
@@ -14,6 +15,7 @@ use crate::widgets::search_tickets::SearchTicketsWidget;
 use crate::widgets::ticket_relation::RelationWidget;
 use crate::widgets::ticket_transition::TransitionWidget;
 use crate::widgets::tickets::TicketWidget;
+use crate::widgets::commands::CommandText;
 use crate::widgets::{DrawableComponent, InputMode};
 use crate::{
     config::Config,
@@ -47,6 +49,30 @@ pub enum Focus {
     TicketTransition,
 }
 
+#[derive(Debug, Clone, Copy)]
+enum ProjectsAction {
+    OpenHelp,
+    SelectProject,
+    SearchProjects,
+    NextPage,
+    PreviousPage,
+    Reset,
+}
+
+impl ProjectsAction {
+    fn to_command_text(self, key: Key) -> CommandText {
+        const CMD_GROUP_GENERAL: &str = "-- General --";
+        match self {
+            Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
+            Self::SelectProject => CommandText::new(format!("Select project [{key}]"), CMD_GROUP_GENERAL),
+            Self::SearchProjects => CommandText::new(format!("Filter [{key}]"), CMD_GROUP_GENERAL),
+            Self::NextPage => CommandText::new(format!("Next page [{key}]"), CMD_GROUP_GENERAL),
+            Self::PreviousPage => CommandText::new(format!("Previous page [{key}]"), CMD_GROUP_GENERAL),
+            Self::Reset => CommandText::new(format!("Clear out tickets cache table and pull from Jira [{key}]"), CMD_GROUP_GENERAL),
+        }
+    }
+}
+
 pub struct App {
     comments_list: CommentsList,
     comment_add: CommentAdd,
@@ -58,7 +84,10 @@ pub struct App {
     labels: LabelsWidget,
     // load_state: LoadState,
     parent: TicketParentWidget,
+
     projects: ProjectsWidget,
+    projects_key_mappings: HashMap<Key, ProjectsAction>,
+
     relation: RelationWidget,
     search_projects: SearchProjectsWidget,
     search_tickets: SearchTicketsWidget,
@@ -95,7 +124,19 @@ impl App {
             labels: LabelsWidget::new(config.key_config.clone()),
             // load_state: LoadState::Complete,
             parent: TicketParentWidget::new(),
+
             projects: ProjectsWidget::new(projects, config.key_config.clone()),
+            projects_key_mappings: {
+                let mut map = HashMap::new();
+                map.insert(config.key_config.open_help, ProjectsAction::OpenHelp);
+                map.insert(config.key_config.enter, ProjectsAction::SelectProject);
+                map.insert(config.key_config.filter, ProjectsAction::SearchProjects);
+                map.insert(config.key_config.next_page, ProjectsAction::NextPage);
+                map.insert(config.key_config.previous_page, ProjectsAction::PreviousPage);
+                map.insert(config.key_config.reset, ProjectsAction::Reset);
+                map
+            },
+
             relation: RelationWidget::new(config.key_config.clone()),
             search_projects: SearchProjectsWidget::new(projects),
             search_tickets: SearchTicketsWidget::new(),
@@ -279,29 +320,6 @@ impl App {
         ];
 
         self.comments_list.commands(&mut res);
-
-        res
-    }
-
-    fn update_project_commands(&mut self) {
-        self.help.set_cmds(self.project_commands());
-    }
-
-    fn project_commands(&self) -> Vec<CommandInfo> {
-        let mut res = vec![
-            CommandInfo::new(commands::go_back(&self.config.key_config)),
-            CommandInfo::new(commands::exit_pop_up(&self.config.key_config)),
-            CommandInfo::new(commands::filter(&self.config.key_config)),
-            CommandInfo::new(commands::help(&self.config.key_config)),
-            CommandInfo::new(commands::scroll(&self.config.key_config)),
-            CommandInfo::new(commands::scroll_to_top_bottom(&self.config.key_config)),
-            CommandInfo::new(commands::scroll_up_down_multiple_lines(
-                &self.config.key_config,
-            )),
-            CommandInfo::new(commands::projects_reset(&self.config.key_config)),
-        ];
-
-        self.tickets.commands(&mut res);
 
         res
     }
@@ -490,18 +508,7 @@ impl App {
                 }
             }
             Focus::Projects => {
-                if key == self.config.key_config.reset {
-                    self.projects.projects.clear();
-                    self.tickets.tickets.clear();
-                    self.jira.clear_projects_table().await?;
-                    self.jira.clear_tickets_table().await?;
-                    let projects = &self.jira.get_jira_projects().await?;
-                    self.projects = ProjectsWidget::new(projects, self.config.key_config.clone());
-                    return Ok(EventState::Consumed);
-                }
-
                 if self.help.event(key)?.is_consumed() {
-                    self.update_project_commands();
                     return Ok(EventState::Consumed);
                 }
                 if self.projects.event(key)?.is_consumed() {
@@ -655,29 +662,54 @@ impl App {
                 }
             }
             Focus::Projects => {
-                if key == self.config.key_config.enter {
-                    self.update_all_tickets().await?;
-                    self.focus = Focus::Tickets;
-                    return Ok(EventState::Consumed);
-                }
+                if let Some(action) = self.projects_key_mappings.get(&key) {
+                    log::debug!("got projects focus event: {key:?}");
+                    use ProjectsAction::*;
+                    match *action {
+                        OpenHelp => {
+                            let mut commands = Vec::with_capacity(
+                                self.projects_key_mappings.len()
+                                + self.projects.key_mappings.len()
+                            );
+                            for (&key, action) in &self.projects_key_mappings {
+                                let command_text = action.to_command_text(key);
+                                commands.push(CommandInfo::new(command_text));
+                            }
+                            for (&key, action) in &self.projects.key_mappings {
+                                let command_text = action.to_command_text(key);
+                                commands.push(CommandInfo::new(command_text));
+                            }
 
-                if key == self.config.key_config.filter {
-                    self.focus = Focus::SearchProjects;
-                    self.search_projects.input_mode = InputMode::Editing;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.next_page {
-                    self.next_project_page().await?;
-                    self.update_projects().await?;
-                    self.focus = Focus::Projects;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.previous_page {
-                    self.previous_project_page().await?;
-                    self.update_projects().await?;
-                    self.focus = Focus::Projects;
+                            self.help.set_cmds(commands);
+                            self.help.show()?;
+                        }
+                        SelectProject => {
+                            self.update_all_tickets().await?;
+                            self.focus = Focus::Tickets;
+                        }
+                        SearchProjects => {
+                            self.focus = Focus::SearchProjects;
+                            self.search_projects.input_mode = InputMode::Editing;
+                        }
+                        NextPage => {
+                            self.next_project_page().await?;
+                            self.update_projects().await?;
+                            self.focus = Focus::Projects;
+                        }
+                        PreviousPage => {
+                            self.previous_project_page().await?;
+                            self.update_projects().await?;
+                            self.focus = Focus::Projects;
+                        }
+                        Reset => {
+                            self.projects.projects.clear();
+                            self.tickets.tickets.clear();
+                            self.jira.clear_projects_table().await?;
+                            self.jira.clear_tickets_table().await?;
+                            let projects = &self.jira.get_jira_projects().await?;
+                            self.projects = ProjectsWidget::new(projects, self.config.key_config.clone());
+                        }
+                    }
                     return Ok(EventState::Consumed);
                 }
             }
