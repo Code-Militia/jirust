@@ -13,6 +13,7 @@ use serde::Serialize;
 pub struct JiraConfigFile {
     pub api_key: Option<String>,
     pub api_version: Option<String>,
+    pub db_file: Option<bool>,
     pub domain: String,
     pub user_email: String,
     pub projects: Option<JiraConfigProjects>,
@@ -150,6 +151,7 @@ impl Default for JiraConfigFile {
             }
         };
 
+        let db_file = data.db_file;
         let domain = data.domain;
         let jira_user_email = data.user_email;
 
@@ -165,6 +167,7 @@ impl Default for JiraConfigFile {
         Self {
             api_key: Some(jira_api_key),
             api_version: Some(jira_api_version),
+            db_file: db_file,
             domain,
             projects: data.projects,
             tickets: data.tickets,

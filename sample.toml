@@ -1,6 +1,7 @@
 # These two properties are required
 domain = "https://YOUR_DOMAIN.atlassian.net"
 user_email = "YOUR_JIRA_EMAIL"
+db_file = true # If true, it will create a cached db in the /tmp directory.  Which can live for 10 days.
 
 [tickets]
 # Show tickets assigned to you only.  Can include unassigned.
@@ -10,3 +11,4 @@ show_ticket_status = ["Done", "In Progress"]
 
 [projects]
 default_projects = "YOUR_JIRA_PROJECT" # Can be multiple per jira API -  For example, keys=PA&keys=PB. Up to 50 project keys can be provided.
+
