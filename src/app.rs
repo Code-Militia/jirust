@@ -75,6 +75,7 @@ impl App {
             &config.jira_config.api_key.clone().unwrap(),
             &config.jira_config.api_version.clone().unwrap(),
             &config.jira_config.user_email,
+            &config.jira_config.db_file,
             &config.jira_config.projects,
             &config.jira_config.tickets
         )

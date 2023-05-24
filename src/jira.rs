@@ -1,4 +1,3 @@
-use log::info;
 use serde::Deserialize;
 use serde::Serialize;
 use surrealdb::engine::any::connect;
@@ -49,15 +48,19 @@ impl Jira {
         api_key: &str,
         api_version: &str,
         current_user_email: &str,
+        user_config_cache: &Option<bool>,
         user_config_project: &Option<JiraConfigProjects>,
         user_config_tickets: &Option<JiraConfigTickets>
     ) -> anyhow::Result<Jira, anyhow::Error> {
         let auth =
             jira_authentication(domain, api_key, api_version, current_user_email);
-        let db = connect("mem://").await?;
-        db.use_ns("noc").use_db("database").await?;
         let projects: JiraProjects = JiraProjects::new().await?;
         let tickets: JiraTickets = JiraTickets::new().await?;
+        let db = match user_config_cache {
+            Some(_) => connect("file:///tmp/jirust.db").await?,
+            None => connect("mem://").await?
+        };
+        db.use_ns("noc").use_db("database").await?;
 
         Ok(Self {
             client: auth,
