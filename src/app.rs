@@ -36,27 +36,27 @@ use tui::{
 // }
 
 pub enum Focus {
-    CommentsList,
     CommentsAdd,
+    CommentsList,
     Components,
     Description,
     Labels,
     Projects,
     SearchProjects,
     SearchTickets,
-    Tickets,
     TicketRelation,
     TicketTransition,
+    Tickets,
 }
 
 #[derive(Debug, Clone, Copy)]
 enum ProjectsAction {
-    OpenHelp,
-    SelectProject,
-    SearchProjects,
     NextPage,
+    OpenHelp,
     PreviousPage,
     Reset,
+    SearchProjects,
+    SelectProject,
 }
 
 impl ProjectsAction {
@@ -76,25 +76,31 @@ impl ProjectsAction {
 
 #[derive(Debug, Clone, Copy)]
 enum TicketsAction {
-    OpenHelp,
-    Comment,
-    SelectTicket,
-    SearchTickets,
+    FocusDescription,
+    FocusLabels,
     NextPage,
+    OpenComments,
+    OpenHelp,
+    OpenProjects,
+    OpenTicketTransition,
     PreviousPage,
     Reset,
+    SearchTickets,
 }
 
 impl TicketsAction {
     fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- Tickets Help --";
         match self {
+            Self::FocusDescription => CommandText::new(format!("Focus on Description pane [{key}]"), CMD_GROUP_GENERAL),
+            Self::FocusLabels => CommandText::new(format!("Focus on Labels pane [{key}]"), CMD_GROUP_GENERAL),
             Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
-            Self::Comment => CommandText::new(format!("Open Comments View [{key}]"), CMD_GROUP_GENERAL),
-            Self::SelectTicket => CommandText::new(format!("Select project [{key}]"), CMD_GROUP_GENERAL),
+            Self::OpenComments => CommandText::new(format!("Open Comments View [{key}]"), CMD_GROUP_GENERAL),
             Self::SearchTickets => CommandText::new(format!("Filter [{key}]"), CMD_GROUP_GENERAL),
             Self::NextPage => CommandText::new(format!("Next page [{key}]"), CMD_GROUP_GENERAL),
             Self::PreviousPage => CommandText::new(format!("Previous page [{key}]"), CMD_GROUP_GENERAL),
+            Self::OpenProjects => CommandText::new(format!("Go back to projects [{key}]"), CMD_GROUP_GENERAL),
+            Self::OpenTicketTransition => CommandText::new(format!("Open Ticket transition view [{key}]"), CMD_GROUP_GENERAL),
             Self::Reset => CommandText::new(format!("Clear out tickets cache table and pull from Jira [{key}]"), CMD_GROUP_GENERAL),
         }
     }
@@ -102,26 +108,24 @@ impl TicketsAction {
 
 
 pub struct App {
-    comments_list: CommentsList,
+    // load_state: LoadState,
     comment_add: CommentAdd,
+    comments_list: CommentsList,
     components: ComponentsWidget,
     description: DescriptionWidget,
     focus: Focus,
     help: HelpWidget,
     jira: Jira,
     labels: LabelsWidget,
-    // load_state: LoadState,
     parent: TicketParentWidget,
-
     projects: ProjectsWidget,
     projects_key_mappings: HashMap<Key, ProjectsAction>,
-
     relation: RelationWidget,
     search_projects: SearchProjectsWidget,
     search_tickets: SearchTicketsWidget,
+    ticket_transition: TransitionWidget,
     tickets: TicketWidget,
     tickets_key_mappings: HashMap<Key, TicketsAction>,
-    ticket_transition: TransitionWidget,
     pub config: Config,
     pub error: ErrorComponent,
 }
@@ -175,8 +179,12 @@ impl App {
             ),
             tickets_key_mappings: {
                 let mut map = HashMap::new();
+                map.insert(config.key_config.previous, TicketsAction::FocusDescription);
+                map.insert(config.key_config.next, TicketsAction::FocusLabels);
+                map.insert(config.key_config.ticket_view_comments, TicketsAction::OpenComments);
+                map.insert(config.key_config.esc, TicketsAction::OpenProjects);
+                map.insert(config.key_config.ticket_transition, TicketsAction::OpenTicketTransition);
                 map.insert(config.key_config.open_help, TicketsAction::OpenHelp);
-                map.insert(config.key_config.enter, TicketsAction::SelectTicket);
                 map.insert(config.key_config.filter, TicketsAction::SearchTickets);
                 map.insert(config.key_config.next_page, TicketsAction::NextPage);
                 map.insert(config.key_config.previous_page, TicketsAction::PreviousPage);
@@ -818,6 +826,15 @@ impl App {
                     log::debug!("got tickets focus event: {key:?}");
                     use TicketsAction::*;
                     match *action {
+                        FocusDescription => {
+                            self.focus = Focus::Description;
+                            return Ok(EventState::Consumed);
+                        }
+                        FocusLabels => {
+                            self.update_labels().await?;
+                            self.focus = Focus::Labels;
+                            return Ok(EventState::Consumed);
+                        }
                         OpenHelp => {
                             let mut commands = Vec::with_capacity(
                                 self.tickets_key_mappings.len()
@@ -835,26 +852,35 @@ impl App {
                             self.help.set_cmds(commands);
                             self.help.show()?;
                         }
-                        Comment => {
-                            todo!("Add comment move action here");
+                        OpenComments => {
+                            self.update_comments_view().await?;
+                            self.focus = Focus::CommentsList;
+                            return Ok(EventState::Consumed);
                         }
-                        SelectTicket => {
-                            self.update_all_tickets().await?;
-                            self.focus = Focus::Tickets;
+                        OpenProjects => {
+                            self.focus = Focus::Projects;
+                            return Ok(EventState::Consumed);
+                        }
+                        OpenTicketTransition => {
+                            self.update_ticket_transitions().await?;
+                            self.focus = Focus::TicketTransition;
+                            return Ok(EventState::Consumed);
                         }
                         SearchTickets => {
-                            self.focus = Focus::SearchProjects;
-                            self.search_projects.input_mode = InputMode::Editing;
+                            self.focus = Focus::SearchTickets;
+                            self.search_tickets.input_mode = InputMode::Editing;
+                            self.update_search_tickets().await?;
+                            return Ok(EventState::Consumed);
                         }
                         NextPage => {
-                            self.next_project_page().await?;
-                            self.update_projects().await?;
-                            self.focus = Focus::Projects;
+                            self.next_ticket_page().await?;
+                            self.focus = Focus::Tickets;
+                            return Ok(EventState::Consumed);
                         }
                         PreviousPage => {
-                            self.previous_project_page().await?;
-                            self.update_projects().await?;
-                            self.focus = Focus::Projects;
+                            self.previous_ticket_page().await?;
+                            self.focus = Focus::Tickets;
+                            return Ok(EventState::Consumed);
                         }
                         Reset => {
                             self.projects.projects.clear();
@@ -865,54 +891,6 @@ impl App {
                             self.projects = ProjectsWidget::new(projects, self.config.key_config.clone());
                         }
                     }
-                    return Ok(EventState::Consumed);
-                }
-                if key == self.config.key_config.esc {
-                    self.focus = Focus::Projects;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.next || key == self.config.key_config.move_down {
-                    self.update_labels().await?;
-                    self.focus = Focus::Labels;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.previous
-                    || key == self.config.key_config.move_right
-                {
-                    self.focus = Focus::Description;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.ticket_view_comments {
-                    self.update_comments_view().await?;
-                    self.focus = Focus::CommentsList;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.next_page {
-                    self.next_ticket_page().await?;
-                    self.focus = Focus::Tickets;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.previous_page {
-                    self.previous_ticket_page().await?;
-                    self.focus = Focus::Tickets;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.ticket_transition {
-                    self.update_ticket_transitions().await?;
-                    self.focus = Focus::TicketTransition;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.filter {
-                    self.focus = Focus::SearchTickets;
-                    self.search_tickets.input_mode = InputMode::Editing;
-                    self.update_search_tickets().await?;
                     return Ok(EventState::Consumed);
                 }
             }
