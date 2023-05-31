@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use tui::{
     backend::Backend,
     layout::{Constraint, Rect},
@@ -7,7 +9,7 @@ use tui::{
 
 use crate::{config::KeyConfig, event::key::Key, jira::tickets::TicketData};
 
-use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState, projects::Action};
 
 #[derive(Debug)]
 pub struct TicketWidget {
@@ -15,6 +17,7 @@ pub struct TicketWidget {
     key_config: KeyConfig,
     state: TableState,
     pub tickets: Vec<TicketData>,
+    pub key_mappings: HashMap<Key, Action>,
 }
 
 impl TicketWidget {
@@ -95,11 +98,26 @@ impl TicketWidget {
         labels_state.select(Some(0));
         state.select(Some(0));
 
+        let key_mappings = {
+            let mut map = HashMap::new();
+            map.insert(Key::Down, Action::ScrollDown(1));
+            map.insert(Key::Up, Action::ScrollUp(1));
+
+            map.insert(key_config.scroll_down, Action::ScrollDown(1));
+            map.insert(key_config.scroll_up, Action::ScrollUp(1));
+            map.insert(key_config.scroll_down_multiple_lines, Action::ScrollDown(10));
+            map.insert(key_config.scroll_up_multiple_lines, Action::ScrollUp(10));
+            map.insert(key_config.scroll_to_bottom, Action::ScrollToBottom);
+            map.insert(key_config.scroll_to_top, Action::ScrollToTop);
+            map
+        };
+
         Self {
             jira_domain,
             key_config,
             tickets: vec![],
             state,
+            key_mappings,
         }
     }
 
