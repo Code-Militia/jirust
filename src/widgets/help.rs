@@ -77,9 +77,9 @@ impl Component for HelpWidget {
                 return Ok(EventState::Consumed);
             }
             return Ok(EventState::NotConsumed);
-        } else if key == self.key_config.open_help {
-            self.show()?;
-            return Ok(EventState::Consumed);
+        // } else if key == self.key_config.open_help {
+        //     self.show()?;
+        //     return Ok(EventState::Consumed);
         }
         Ok(EventState::NotConsumed)
     }

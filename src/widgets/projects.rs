@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use tui::{
     backend::Backend,
     layout::Rect,
@@ -12,13 +13,38 @@ use crate::{
     event::key::Key,
     jira::projects::Project,
 };
+use crate::widgets::commands::CommandText;
 
 use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
+
+#[derive(Debug, Clone, Copy)]
+pub enum Action {
+    ScrollDown(usize),
+    ScrollUp(usize),
+    ScrollToBottom,
+    ScrollToTop,
+}
+
+impl Action {
+    pub fn to_command_text(self, key: Key) -> CommandText {
+        const CMD_GROUP_GENERAL: &str = "-- General --";
+        match self {
+            Self::ScrollDown(line) =>
+                CommandText::new(format!("Scroll down {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::ScrollUp(line) =>
+                CommandText::new(format!("Scroll up {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::ScrollToBottom =>
+                CommandText::new(format!("Scroll to bottom [{key}]"), CMD_GROUP_GENERAL),
+            Self::ScrollToTop =>
+                CommandText::new(format!("Scroll to top [{key}]"), CMD_GROUP_GENERAL),
+        }
+    }
+}
 
 pub struct ProjectsWidget {
     pub projects: Vec<Project>,
     state: ListState,
-    key_config: KeyConfig,
+    pub key_mappings: HashMap<Key, Action>,
 }
 
 impl ProjectsWidget {
@@ -28,10 +54,24 @@ impl ProjectsWidget {
             state.select(Some(0));
         }
 
+        let key_mappings = {
+            let mut map = HashMap::new();
+            map.insert(Key::Down, Action::ScrollDown(1));
+            map.insert(Key::Up, Action::ScrollUp(1));
+
+            map.insert(key_config.scroll_down, Action::ScrollDown(1));
+            map.insert(key_config.scroll_up, Action::ScrollUp(1));
+            map.insert(key_config.scroll_down_multiple_lines, Action::ScrollDown(10));
+            map.insert(key_config.scroll_up_multiple_lines, Action::ScrollUp(10));
+            map.insert(key_config.scroll_to_bottom, Action::ScrollToBottom);
+            map.insert(key_config.scroll_to_top, Action::ScrollToTop);
+            map
+        };
+
         Self {
             state,
             projects: projects.to_vec(),
-            key_config,
+            key_mappings,
         }
     }
 
@@ -136,25 +176,17 @@ impl Component for ProjectsWidget {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        if key == self.key_config.scroll_down {
-            self.next(1);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_up {
-            self.previous(1);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_down_multiple_lines {
-            self.next(10);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_up_multiple_lines {
-            self.previous(10);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_to_bottom {
-            self.go_to_bottom();
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_to_top {
-            self.go_to_top();
-            return Ok(EventState::Consumed);
+        if let Some(action) = self.key_mappings.get(&key) {
+            use Action::*;
+            match *action {
+                ScrollDown(line) => self.next(line),
+                ScrollUp(line) => self.previous(line),
+                ScrollToBottom => self.go_to_bottom(),
+                ScrollToTop => self.go_to_top(),
+            }
+            Ok(EventState::Consumed)
+        } else {
+            Ok(EventState::NotConsumed)
         }
-        Ok(EventState::NotConsumed)
     }
 }
