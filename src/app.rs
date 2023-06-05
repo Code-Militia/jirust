@@ -106,11 +106,31 @@ impl TicketsAction {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+enum CommentsAction {
+    OpenHelp,
+    AddComment,
+    FocusTickets,
+}
+
+impl CommentsAction{
+    fn to_command_text(self, key: Key) -> CommandText {
+        const CMD_GROUP_GENERAL: &str = "-- Comments Help --";
+        match self {
+            Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
+            Self::AddComment => CommandText::new(format!("Add comment to ticket [{key}]"), CMD_GROUP_GENERAL),
+            Self::FocusTickets => CommandText::new(format!("Go back to tickets [{key}]"), CMD_GROUP_GENERAL)
+        }
+    }
+}
+
+
 
 pub struct App {
     // load_state: LoadState,
     comment_add: CommentAdd,
     comments_list: CommentsList,
+    comments_key_mappings: HashMap<Key, CommentsAction>,
     components: ComponentsWidget,
     description: DescriptionWidget,
     focus: Focus,
@@ -147,6 +167,13 @@ impl App {
         Ok(Self {
             comments_list: CommentsList::new(config.key_config.clone()),
             comment_add: CommentAdd::new(),
+            comments_key_mappings: {
+                let mut map = HashMap::new();
+                map.insert(config.key_config.open_help, CommentsAction::OpenHelp);
+                map.insert(config.key_config.ticket_add_comments, CommentsAction::AddComment);
+                map.insert(config.key_config.esc, CommentsAction::FocusTickets);
+                map
+            },
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
             description: DescriptionWidget::new(config.key_config.clone()),
@@ -588,14 +615,36 @@ impl App {
     async fn move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
         match self.focus {
             Focus::CommentsList => {
-                if key == self.config.key_config.esc {
-                    self.focus = Focus::Tickets;
-                    return Ok(EventState::Consumed);
-                }
+                if let Some(action) = self.comments_key_mappings.get(&key) {
+                    log::debug!("got comments focus event: {key:?}");
+                    use CommentsAction::*;
+                    match *action {
+                        OpenHelp => {
+                            let mut commands = Vec::with_capacity(
+                                self.comments_key_mappings.len()
+                                + self.comments_list.key_mappings.len()
+                            );
+                            for (&key, action) in &self.comments_key_mappings {
+                                let command_text = action.to_command_text(key);
+                                commands.push(CommandInfo::new(command_text));
+                            }
+                            for (&key, action) in &self.comments_list.key_mappings {
+                                let command_text = action.to_command_text(key);
+                                commands.push(CommandInfo::new(command_text));
+                            }
 
-                if key == self.config.key_config.ticket_add_comments {
-                    self.focus = Focus::CommentsAdd;
-                    return Ok(EventState::Consumed);
+                            self.help.set_cmds(commands);
+                            self.help.show()?;
+                        }
+                        AddComment => {
+                            self.focus = Focus::CommentsAdd;
+                            return Ok(EventState::Consumed);
+                        }
+                        FocusTickets => {
+                            self.focus = Focus::Tickets;
+                            return Ok(EventState::Consumed);
+                        }
+                    }
                 }
             }
             Focus::CommentsAdd => {

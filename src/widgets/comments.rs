@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     event::key::Key,
     jira::tickets::{CommentBody, Comments},
@@ -14,14 +16,38 @@ use tui::{
 
 use crate::config::KeyConfig;
 
-use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
+use super::{commands::{CommandInfo, CommandText}, draw_block_style, draw_highlight_style, Component, EventState};
+
+#[derive(Debug, Clone, Copy)]
+pub enum Action {
+    ScrollDown(usize),
+    ScrollUp(usize),
+    ScrollToBottom,
+    ScrollToTop,
+}
+
+impl Action {
+    pub fn to_command_text(self, key: Key) -> CommandText {
+        const CMD_GROUP_GENERAL: &str = "-- General --";
+        match self {
+            Self::ScrollDown(line) =>
+                CommandText::new(format!("Scroll down {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::ScrollUp(line) =>
+                CommandText::new(format!("Scroll up {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::ScrollToBottom =>
+                CommandText::new(format!("Scroll to bottom [{key}]"), CMD_GROUP_GENERAL),
+            Self::ScrollToTop =>
+                CommandText::new(format!("Scroll to top [{key}]"), CMD_GROUP_GENERAL),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct CommentsList {
-    pub comments: Option<Comments>,
     state: TableState,
-    key_config: KeyConfig,
     scroll: u16,
+    pub comments: Option<Comments>,
+    pub key_mappings: HashMap<Key, Action>,
 }
 
 impl CommentsList {
@@ -94,9 +120,20 @@ impl CommentsList {
     pub fn new(key_config: KeyConfig) -> Self {
         let mut state = TableState::default();
         state.select(Some(0));
+
+        let key_mappings = {
+            let mut map = HashMap::new();
+            map.insert(key_config.scroll_down, Action::ScrollDown(1));
+            map.insert(key_config.scroll_up, Action::ScrollUp(1));
+            map.insert(key_config.scroll_down_multiple_lines, Action::ScrollDown(10));
+            map.insert(key_config.scroll_up_multiple_lines, Action::ScrollUp(10));
+            map.insert(key_config.scroll_to_bottom, Action::ScrollToBottom);
+            map.insert(key_config.scroll_to_top, Action::ScrollToTop);
+            map
+        };
         Self {
             comments: None,
-            key_config,
+            key_mappings,
             state,
             scroll: 0,
         }
@@ -181,29 +218,17 @@ impl Component for CommentsList {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        if key == self.key_config.scroll_down {
-            self.next(1);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_up {
-            self.previous(1);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_down_multiple_lines {
-            self.next(10);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_up_multiple_lines {
-            self.previous(10);
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_to_bottom {
-            self.go_to_bottom();
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.scroll_to_top {
-            self.go_to_top();
-            return Ok(EventState::Consumed);
-        } else if key == self.key_config.move_down {
-            self.comment_contents_down(1)
-        } else if key == self.key_config.move_up {
-            self.comment_contents_up(1)
+        if let Some(action) = self.key_mappings.get(&key) {
+            use Action::*;
+            match *action {
+                ScrollDown(line) => self.next(line),
+                ScrollUp(line) => self.previous(line),
+                ScrollToBottom => self.go_to_bottom(),
+                ScrollToTop => self.go_to_top(),
+            }
+            Ok(EventState::Consumed)
+        } else {
+            Ok(EventState::NotConsumed)
         }
-        Ok(EventState::NotConsumed)
     }
 }
