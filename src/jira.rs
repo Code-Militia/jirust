@@ -226,7 +226,7 @@ impl Jira {
         for ticket in self.tickets.issues.clone() {
             match &ticket.fields.parent {
                 Some(t) => {
-                    self.jira_ticket_api(&t.key.clone());
+                    self.jira_ticket_api(&t.key.clone()).await?;
                 }
                 None => {}
             }
@@ -320,7 +320,7 @@ impl Jira {
             .tickets
             .search_jira_ticket_api(ticket_key, &self.client)
             .await?;
-        self.jira_project_api(&ticket.fields.project.key);
+        self.jira_project_api(&ticket.fields.project.key).await?;
         let update_ticket_record: TicketData = self
             .db
             .update(("tickets", ticket_key))
