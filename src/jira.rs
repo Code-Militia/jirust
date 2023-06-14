@@ -223,7 +223,13 @@ impl Jira {
             .get_tickets_from_jira_api(&self.client, params, &url)
             .await?;
         self.tickets = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
-        for ticket in &self.tickets.issues {
+        for ticket in self.tickets.issues.clone() {
+            match &ticket.fields.parent {
+                Some(t) => {
+                    self.jira_ticket_api(&t.key.clone()).await?;
+                }
+                None => {}
+            }
             let db = self.db.clone();
             let tkt = ticket.clone();
             spawn(async move {
@@ -314,6 +320,7 @@ impl Jira {
             .tickets
             .search_jira_ticket_api(ticket_key, &self.client)
             .await?;
+        self.jira_project_api(&ticket.fields.project.key).await?;
         let update_ticket_record: TicketData = self
             .db
             .update(("tickets", ticket_key))
@@ -344,12 +351,12 @@ impl Jira {
             .projects
             .search_jira_project_api(project_key, &self.client)
             .await?;
-        let create_project_record: Project = self
+        let update_project_record: Project = self
             .db
             .create(("projects", project_key))
             .content(project)
             .await?;
 
-        Ok(create_project_record)
+        Ok(update_project_record)
     }
 }

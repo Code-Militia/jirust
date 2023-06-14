@@ -15,6 +15,7 @@ use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Compo
 
 #[derive(Debug)]
 pub struct RelationWidget {
+    jira_domain: String,
     key_config: KeyConfig,
     state: TableState,
     pub ticket_links: Vec<Links>,
@@ -100,10 +101,11 @@ impl RelationWidget {
 }
 
 impl RelationWidget {
-    pub fn new(key_config: KeyConfig) -> Self {
+    pub fn new(key_config: KeyConfig, jira_domain: &str) -> Self {
         let state = TableState::default();
 
         Self {
+            jira_domain: jira_domain.to_string(),
             key_config,
             ticket_links: vec![],
             state,
@@ -151,6 +153,29 @@ impl RelationWidget {
             None => None,
         }
     }
+
+    pub fn open_browser(&mut self) {
+        if self.selected().is_some() {
+            let link_details  = self.selected().unwrap().clone();
+            let link_relation = match (&link_details.outward_issue, &link_details.inward_issue) {
+                (Some(outward), None) => {
+                    outward
+                }
+                (None, Some(inward)) => {
+                    inward
+                }
+                _ => unreachable!("If there is a link, this should always return"),
+            };
+            let url = self.jira_domain.clone() + "/browse/" + &link_relation.key;
+            match open::that(url.clone()) {
+                Ok(()) => {}
+                Err(e) => {
+                    // todo!("Add error condition");
+                    panic!("{:?} url: {:?}", e, url);
+                }
+            }
+        }
+    }
 }
 
 impl Component for RelationWidget {
@@ -171,6 +196,9 @@ impl Component for RelationWidget {
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_bottom {
             self.go_to_bottom();
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.open_browser {
+            self.open_browser();
             return Ok(EventState::Consumed);
         } else if key == self.key_config.scroll_to_top {
             self.go_to_top();

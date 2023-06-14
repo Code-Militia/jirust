@@ -21,6 +21,8 @@ pub struct LinkType {
 pub struct LinkInwardOutwardParent {
     pub fields: LinkFields,
     pub key: String,
+    // #[serde(alias = "self")]
+    // pub parent_self: String
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -56,8 +58,8 @@ pub struct Components {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ProjectDetails {
-    key: String,
-    name: String,
+    pub key: String,
+    pub name: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Status {

@@ -1,3 +1,4 @@
+use crate::{config::KeyConfig, event::key::Key, jira::tickets::TicketData};
 use std::collections::HashMap;
 
 use tui::{
@@ -6,8 +7,6 @@ use tui::{
     widgets::{Cell, Clear, ListState, Row, Table, TableState},
     Frame,
 };
-
-use crate::{config::KeyConfig, event::key::Key, jira::tickets::TicketData};
 
 use super::{commands::{CommandInfo, CommandText}, draw_block_style, draw_highlight_style, Component, EventState};
 
