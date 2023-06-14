@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use crate::{config::KeyConfig, event::key::Key, jira::tickets::{TicketData, LinkInwardOutwardParent}, widgets::commands::CommandText};
-use log::info;
 use tui::{
     backend::Backend,
     layout::{Constraint, Rect},
@@ -13,7 +12,7 @@ use super::{draw_block_style, draw_highlight_style, commands::CommandInfo, Compo
 
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
-    OpenBrowser,
+    OpenBrowser
 }
 
 impl Action {
@@ -46,6 +45,9 @@ impl TicketParentWidget {
             None => return Ok(()),
             Some(ticket_data) => ticket_data,
         };
+        if !focused {
+            self.state.select(None)
+        }
         if focused && self.selected().is_some() {
             self.state.select(Some(0))
         }

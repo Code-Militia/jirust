@@ -76,6 +76,24 @@ impl ProjectsAction {
 
 
 #[derive(Debug, Clone, Copy)]
+enum ParentAction {
+    FocusComponent,
+    FocusRelation,
+    OpenHelp
+}
+
+impl ParentAction {
+    fn to_command_text(self, key: Key) -> CommandText {
+        const CMD_GROUP_GENERAL: &str = "-- Tickets Help --";
+        match self {
+            Self::FocusComponent => CommandText::new(format!("Move to Component pane [{key}]"), CMD_GROUP_GENERAL),
+            Self::FocusRelation => CommandText::new(format!("Move to Relation pane [{key}]"), CMD_GROUP_GENERAL),
+            Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 enum TicketsAction {
     FocusDescription,
     FocusLabels,
@@ -139,6 +157,7 @@ pub struct App {
     jira: Jira,
     labels: LabelsWidget,
     parent: TicketParentWidget,
+    parent_key_mappings: HashMap<Key, ParentAction>,
     projects: ProjectsWidget,
     projects_key_mappings: HashMap<Key, ProjectsAction>,
     relation: RelationWidget,
@@ -184,6 +203,13 @@ impl App {
             jira,
             labels: LabelsWidget::new(config.key_config.clone()),
             // load_state: LoadState::Complete,
+            parent_key_mappings: {
+                let mut map = HashMap::new();
+                map.insert(config.key_config.open_help, ParentAction::OpenHelp);
+                map.insert(config.key_config.previous, ParentAction::FocusComponent);
+                map.insert(config.key_config.next, ParentAction::FocusRelation);
+                map
+            },
             parent: TicketParentWidget::new(config.key_config.clone(), &config.jira_config.domain),
 
             projects: ProjectsWidget::new(projects, config.key_config.clone()),
@@ -596,6 +622,9 @@ impl App {
                 if self.parent.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
                 }
+                if self.help.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
             }
             Focus::TicketTransition => {
                 if self.ticket_transition.event(key)?.is_consumed() {
@@ -855,6 +884,37 @@ impl App {
                 }
             }
             Focus::TicketParent => {
+                if let Some(action) = self.parent_key_mappings.get(&key) {
+                    log::debug!("got tickets focus event: {key:?}");
+                    use ParentAction::*;
+                    match *action {
+                        FocusComponent => {
+                            self.focus = Focus::Components;
+                            return Ok(EventState::Consumed);
+                        }
+                        FocusRelation => {
+                            self.focus = Focus::TicketRelation;
+                            return Ok(EventState::Consumed);
+                        }
+                        OpenHelp => {
+                            let mut commands = Vec::with_capacity(
+                                self.parent_key_mappings.len()
+                                + self.parent.key_mappings.len()
+                            );
+                            for (&key, action) in &self.parent_key_mappings{
+                                let command_text = action.to_command_text(key);
+                                commands.push(CommandInfo::new(command_text));
+                            }
+                            for (&key, action) in &self.parent.key_mappings {
+                                let command_text = action.to_command_text(key);
+                                commands.push(CommandInfo::new(command_text));
+                            }
+
+                            self.help.set_cmds(commands);
+                            self.help.show()?;
+                        }
+                    }
+                }
                 if key == self.config.key_config.previous || key == self.config.key_config.move_up {
                     self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
