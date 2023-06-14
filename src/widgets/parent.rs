@@ -1,3 +1,7 @@
+use std::collections::HashMap;
+
+use crate::{config::KeyConfig, event::key::Key, jira::tickets::{TicketData, LinkInwardOutwardParent}, widgets::commands::CommandText};
+use log::info;
 use tui::{
     backend::Backend,
     layout::{Constraint, Rect},
@@ -5,12 +9,29 @@ use tui::{
     Frame,
 };
 
-use crate::jira::tickets::TicketData;
+use super::{draw_block_style, draw_highlight_style, commands::CommandInfo, Component, EventState};
 
-use super::{draw_block_style, draw_highlight_style};
+#[derive(Debug, Clone, Copy)]
+pub enum Action {
+    OpenBrowser,
+}
+
+impl Action {
+    pub fn to_command_text(self, key: Key) -> CommandText {
+        const CMD_GROUP_GENERAL: &str = "-- General --";
+        match self {
+            Self::OpenBrowser => CommandText::new(format!("Open Ticket in browser [{key}]"), CMD_GROUP_GENERAL),
+        }
+    }
+}
 
 #[derive(Debug)]
-pub struct TicketParentWidget {}
+pub struct TicketParentWidget {
+    jira_domain: String,
+    state: TableState,
+    parent_ticket: Option<LinkInwardOutwardParent>,
+    pub key_mappings: HashMap<Key, Action>,
+}
 
 impl TicketParentWidget {
     pub fn draw<B: Backend>(
@@ -25,6 +46,9 @@ impl TicketParentWidget {
             None => return Ok(()),
             Some(ticket_data) => ticket_data,
         };
+        if focused && self.selected().is_some() {
+            self.state.select(Some(0))
+        }
 
         let mut rows = Vec::new();
 
@@ -50,10 +74,13 @@ impl TicketParentWidget {
                 f.render_widget(table, rect);
                 return Ok(());
             }
-            Some(i) => i,
+            Some(i) => {
+                self.parent_ticket = Some(i.clone());
+                i
+            },
             // _ => unreachable!("If there is a link it should be present")
         };
-        let priority = match &ticket.fields.priority {
+        let priority = match &ticket_parent.fields.priority {
             Some(i) => i.name.as_str(),
             _ => "",
         };
@@ -87,17 +114,64 @@ impl TicketParentWidget {
             ]);
 
         f.render_widget(Clear, rect);
-        f.render_widget(table, rect);
+        f.render_stateful_widget(table, rect, &mut self.state);
 
         Ok(())
     }
 }
 
 impl TicketParentWidget {
-    pub fn new() -> Self {
-        let mut state = TableState::default();
-        state.select(Some(0));
+    pub fn new(key_config: KeyConfig, jira_domain: &str) -> Self {
+        let state = TableState::default();
 
-        Self {}
+        let key_mappings = {
+            let mut map = HashMap::new();
+            map.insert(key_config.open_browser, Action::OpenBrowser);
+            map
+        };
+        Self {
+            jira_domain: jira_domain.to_string(),
+            key_mappings,
+            state,
+            parent_ticket: None
+        }
+    }
+
+    pub fn selected(&self) -> Option<LinkInwardOutwardParent> {
+        if !self.parent_ticket.is_none() {
+            return self.parent_ticket.clone()
+        }
+
+        None
+    }
+
+    pub fn open_browser(&mut self) {
+        if self.selected().is_some() {
+            let parent_details  = self.selected().unwrap().clone();
+            let url = self.jira_domain.clone() + "/browse/" + &parent_details.key;
+            match open::that(url.clone()) {
+                Ok(()) => {}
+                Err(e) => {
+                    // todo!("Add error condition");
+                    panic!("{:?} url: {:?}", e, url);
+                }
+            }
+        }
+    }
+}
+
+impl Component for TicketParentWidget {
+    fn commands(&self, _out: &mut Vec<CommandInfo>) {}
+
+    fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if let Some(action) = self.key_mappings.get(&key) {
+            use Action::*;
+            match *action {
+                OpenBrowser => self.open_browser(),
+            }
+            Ok(EventState::Consumed)
+        } else {
+            Ok(EventState::NotConsumed)
+        }
     }
 }

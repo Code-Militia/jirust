@@ -44,6 +44,7 @@ pub enum Focus {
     Projects,
     SearchProjects,
     SearchTickets,
+    TicketParent,
     TicketRelation,
     TicketTransition,
     Tickets,
@@ -183,7 +184,7 @@ impl App {
             jira,
             labels: LabelsWidget::new(config.key_config.clone()),
             // load_state: LoadState::Complete,
-            parent: TicketParentWidget::new(),
+            parent: TicketParentWidget::new(config.key_config.clone(), &config.jira_config.domain),
 
             projects: ProjectsWidget::new(projects, config.key_config.clone()),
             projects_key_mappings: {
@@ -197,7 +198,7 @@ impl App {
                 map
             },
 
-            relation: RelationWidget::new(config.key_config.clone()),
+            relation: RelationWidget::new(config.key_config.clone(), &config.jira_config.domain),
             search_projects: SearchProjectsWidget::new(projects),
             search_tickets: SearchTicketsWidget::new(),
             tickets: TicketWidget::new(
@@ -327,7 +328,7 @@ impl App {
         )?;
 
         self.parent
-            .draw(f, false, ticket_parent, self.tickets.selected())?;
+            .draw(f, matches!(self.focus, Focus::TicketParent), ticket_parent, self.tickets.selected())?;
 
         self.relation.draw(
             f,
@@ -591,6 +592,11 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
             }
+            Focus::TicketParent => {
+                if self.parent.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+            }
             Focus::TicketTransition => {
                 if self.ticket_transition.event(key)?.is_consumed() {
                     if self.ticket_transition.push_transition {
@@ -665,7 +671,7 @@ impl App {
                 }
 
                 if key == self.config.key_config.next || key == self.config.key_config.move_down {
-                    self.focus = Focus::TicketRelation;
+                    self.focus = Focus::TicketParent;
                     return Ok(EventState::Consumed);
                 }
 
@@ -848,6 +854,16 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
             }
+            Focus::TicketParent => {
+                if key == self.config.key_config.previous || key == self.config.key_config.move_up {
+                    self.focus = Focus::Components;
+                    return Ok(EventState::Consumed);
+                }
+                if key == self.config.key_config.next || key == self.config.key_config.move_right {
+                    self.focus = Focus::TicketRelation;
+                    return Ok(EventState::Consumed);
+                }
+            }
             Focus::TicketRelation => {
                 if key == self.config.key_config.esc {
                     self.focus = Focus::Projects;
@@ -855,7 +871,7 @@ impl App {
                 }
 
                 if key == self.config.key_config.previous || key == self.config.key_config.move_up {
-                    self.focus = Focus::Components;
+                    self.focus = Focus::TicketParent;
                     return Ok(EventState::Consumed);
                 }
 
