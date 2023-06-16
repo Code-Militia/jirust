@@ -20,24 +20,30 @@ use super::{commands::{CommandInfo, CommandText}, draw_block_style, draw_highlig
 
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
-    ScrollDown(usize),
-    ScrollUp(usize),
-    ScrollToBottom,
-    ScrollToTop,
+    PageDown(u16),
+    PageUp(u16),
+    NextComment(usize),
+    PreviousComment(usize),
+    LastComment,
+    FirstComment,
 }
 
 impl Action {
     pub fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- General --";
         match self {
-            Self::ScrollDown(line) =>
+            Self::PageDown(line) =>
                 CommandText::new(format!("Scroll down {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollUp(line) =>
+            Self::PageUp(line) =>
                 CommandText::new(format!("Scroll up {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollToBottom =>
-                CommandText::new(format!("Scroll to bottom [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollToTop =>
-                CommandText::new(format!("Scroll to top [{key}]"), CMD_GROUP_GENERAL),
+            Self::NextComment(line) =>
+                CommandText::new(format!("Next {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::PreviousComment(line) =>
+                CommandText::new(format!("Previous {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::LastComment =>
+                CommandText::new(format!("Go to last [{key}]"), CMD_GROUP_GENERAL),
+            Self::FirstComment =>
+                CommandText::new(format!("Go to first [{key}]"), CMD_GROUP_GENERAL),
         }
     }
 }
@@ -123,12 +129,14 @@ impl CommentsList {
 
         let key_mappings = {
             let mut map = HashMap::new();
-            map.insert(key_config.scroll_down, Action::ScrollDown(1));
-            map.insert(key_config.scroll_up, Action::ScrollUp(1));
-            map.insert(key_config.scroll_down_multiple_lines, Action::ScrollDown(10));
-            map.insert(key_config.scroll_up_multiple_lines, Action::ScrollUp(10));
-            map.insert(key_config.scroll_to_bottom, Action::ScrollToBottom);
-            map.insert(key_config.scroll_to_top, Action::ScrollToTop);
+            map.insert(key_config.page_down, Action::PageDown(10));
+            map.insert(key_config.page_up, Action::PageUp(10));
+            map.insert(key_config.scroll_down, Action::NextComment(1));
+            map.insert(key_config.scroll_up, Action::PreviousComment(1));
+            map.insert(key_config.scroll_down_multiple_lines, Action::NextComment(10));
+            map.insert(key_config.scroll_up_multiple_lines, Action::PreviousComment(10));
+            map.insert(key_config.scroll_to_bottom, Action::LastComment);
+            map.insert(key_config.scroll_to_top, Action::FirstComment);
             map
         };
         Self {
@@ -221,10 +229,12 @@ impl Component for CommentsList {
         if let Some(action) = self.key_mappings.get(&key) {
             use Action::*;
             match *action {
-                ScrollDown(line) => self.next(line),
-                ScrollUp(line) => self.previous(line),
-                ScrollToBottom => self.go_to_bottom(),
-                ScrollToTop => self.go_to_top(),
+                PageDown(line) => self.comment_contents_down(line),
+                PageUp(line) => self.comment_contents_up(line),
+                NextComment(line) => self.next(line),
+                PreviousComment(line) => self.previous(line),
+                LastComment => self.go_to_bottom(),
+                FirstComment => self.go_to_top(),
             }
             Ok(EventState::Consumed)
         } else {

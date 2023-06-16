@@ -63,27 +63,6 @@ pub fn scroll_to_top_bottom(key: &KeyConfig) -> CommandText {
     )
 }
 
-pub fn filter(key: &KeyConfig) -> CommandText {
-    CommandText::new(format!("Filter [{}]", key.filter), CMD_GROUP_GENERAL)
-}
-
-pub fn move_focus(key: &KeyConfig) -> CommandText {
-    CommandText::new(
-        format!(
-            "Move focus to left/right [{},{}] up/down [{}, {}]",
-            key.move_right, key.move_left, key.move_up, key.move_down
-        ),
-        CMD_GROUP_GENERAL,
-    )
-}
-
-pub fn move_focus_with_tab(key: &KeyConfig) -> CommandText {
-    CommandText::new(
-        format!("Move focus [{}, {}]", key.next, "<S-Tab>"),
-        CMD_GROUP_GENERAL,
-    )
-}
-
 pub fn ticket_add_comments(key: &KeyConfig) -> CommandText {
     CommandText::new(
         format!("Add comments to ticket [{}]", key.ticket_add_comments),
@@ -91,60 +70,9 @@ pub fn ticket_add_comments(key: &KeyConfig) -> CommandText {
     )
 }
 
-pub fn ticket_open_browser(key: &KeyConfig) -> CommandText {
-    CommandText::new(
-        format!("View ticket in browser [{}]", key.open_browser),
-        CMD_GROUP_GENERAL,
-    )
-}
-
-pub fn ticket_view_comments(key: &KeyConfig) -> CommandText {
-    CommandText::new(
-        format!("View comments on ticket [{}]", key.ticket_view_comments),
-        CMD_GROUP_GENERAL,
-    )
-}
-
-pub fn tickets_reset(key: &KeyConfig) -> CommandText {
-    CommandText::new(
-        format!(
-            "Clear out tickets cache table and pull from Jira [{}]",
-            key.reset
-        ),
-        CMD_GROUP_GENERAL,
-    )
-}
-
-pub fn projects_reset(key: &KeyConfig) -> CommandText {
-    CommandText::new(
-        format!(
-            "Clear out projects cache table and pull from Jira [{}]",
-            key.reset
-        ),
-        CMD_GROUP_GENERAL,
-    )
-}
-
-pub fn ticket_transition(key: &KeyConfig) -> CommandText {
-    CommandText::new(
-        format!(
-            "Transition ticket to another status [{}]",
-            key.ticket_transition
-        ),
-        CMD_GROUP_GENERAL,
-    )
-}
-
 pub fn help(key_config: &KeyConfig) -> CommandText {
     CommandText::new(
         format!("Help [{}]", key_config.open_help),
-        CMD_GROUP_GENERAL,
-    )
-}
-
-pub fn exit_pop_up(key_config: &KeyConfig) -> CommandText {
-    CommandText::new(
-        format!("Exit pop up [{}]", key_config.esc),
         CMD_GROUP_GENERAL,
     )
 }

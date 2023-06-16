@@ -2,7 +2,6 @@ pub mod commands;
 pub mod comments;
 pub mod comments_add;
 pub mod components;
-pub mod description;
 pub mod error;
 pub mod help;
 pub mod labels;
