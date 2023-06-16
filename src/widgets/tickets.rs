@@ -1,10 +1,11 @@
 use crate::{config::KeyConfig, event::key::Key, jira::tickets::TicketData};
 use std::collections::HashMap;
 
+use html2md::parse_html;
 use tui::{
     backend::Backend,
-    layout::{Constraint, Rect},
-    widgets::{Cell, Clear, ListState, Row, Table, TableState},
+    layout::{Constraint, Rect, Alignment, Layout, Direction},
+    widgets::{Cell, Clear, ListState, Row, Table, TableState, Paragraph, Wrap},
     Frame,
 };
 
@@ -13,10 +14,12 @@ use super::{commands::{CommandInfo, CommandText}, draw_block_style, draw_highlig
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
     OpenBrowser,
-    ScrollDown(usize),
-    ScrollUp(usize),
-    ScrollToBottom,
-    ScrollToTop,
+    Next(usize),
+    Previous(usize),
+    Last,
+    First,
+    ScrollDownDescription(u16),
+    ScrollUpDescription(u16),
 }
 
 impl Action {
@@ -24,14 +27,18 @@ impl Action {
         const CMD_GROUP_GENERAL: &str = "-- General --";
         match self {
             Self::OpenBrowser => CommandText::new(format!("Open Ticket in browser [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollDown(line) =>
-                CommandText::new(format!("Scroll down {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollUp(line) =>
-                CommandText::new(format!("Scroll up {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollToBottom =>
-                CommandText::new(format!("Scroll to bottom [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollToTop =>
-                CommandText::new(format!("Scroll to top [{key}]"), CMD_GROUP_GENERAL),
+            Self::Next(line) =>
+                CommandText::new(format!("Next {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::Previous(line) =>
+                CommandText::new(format!("Previous {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::Last =>
+                CommandText::new(format!("Last [{key}]"), CMD_GROUP_GENERAL),
+            Self::First =>
+                CommandText::new(format!("First [{key}]"), CMD_GROUP_GENERAL),
+            Self::ScrollDownDescription(line) =>
+                CommandText::new(format!("Scroll down description {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::ScrollUpDescription(line) =>
+                CommandText::new(format!("Scroll up description {line} [{key}]"), CMD_GROUP_GENERAL),
         }
     }
 }
@@ -40,6 +47,7 @@ impl Action {
 pub struct TicketWidget {
     jira_domain: String,
     state: TableState,
+    scroll: u16,
     pub tickets: Vec<TicketData>,
     pub key_mappings: HashMap<Key, Action>,
 }
@@ -48,6 +56,7 @@ impl TicketWidget {
     pub fn draw<B: Backend>(
         &mut self,
         f: &mut Frame<B>,
+        description_frame: Rect,
         focused: bool,
         rect: Rect,
     ) -> anyhow::Result<()> {
@@ -57,7 +66,7 @@ impl TicketWidget {
             "Key", "Priority", "Type", "Status", "Assignee", "Creator", "Reporter",
         ];
         let headers = Row::new(header_cells);
-        let tickets = &self.tickets;
+        let tickets = self.tickets.clone();
         let rows = tickets.iter().map(|ticket| {
             let assignee = match &ticket.fields.assignee {
                 Some(i) => i.display_name.as_str(),
@@ -106,8 +115,54 @@ impl TicketWidget {
                 Constraint::Percentage(20),
             ]);
 
+        match self.selected() {
+            Some(ticket) => {
+                let summary = ticket.fields.summary.clone();
+                let description = ticket.rendered_fields.description.clone();
+                self.draw_description(f, focused, description_frame, summary, description)
+            }
+            None => {
+                self.draw_description(f, focused, description_frame, String::new(), String::new())
+            }
+        }?;
+
         f.render_widget(Clear, rect);
         f.render_stateful_widget(table, rect, &mut self.state);
+
+        Ok(())
+    }
+
+    fn draw_description<B: Backend>(
+        &mut self,
+        f: &mut Frame<B>,
+        focused: bool,
+        rect: Rect,
+        summary: String,
+        description: String,
+    ) -> anyhow::Result<()> {
+        f.render_widget(Clear, rect);
+        let summary_title = "Summary";
+        let title = "Description";
+
+        let text = parse_html(&description);
+
+        let summary_paragraph = Paragraph::new(summary)
+            .block(draw_block_style(focused, summary_title))
+            .wrap(Wrap { trim: true })
+            .alignment(Alignment::Center);
+        let paragraph = Paragraph::new(text)
+            .block(draw_block_style(focused, title))
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true })
+            .scroll((self.scroll, 0));
+
+        let main_chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(5), Constraint::Percentage(85)])
+            .split(rect);
+
+        f.render_widget(summary_paragraph, main_chunks[0]);
+        f.render_widget(paragraph, main_chunks[1]);
 
         Ok(())
     }
@@ -124,22 +179,22 @@ impl TicketWidget {
 
         let key_mappings = {
             let mut map = HashMap::new();
-            map.insert(Key::Down, Action::ScrollDown(1));
-            map.insert(Key::Up, Action::ScrollUp(1));
-
             map.insert(key_config.open_browser, Action::OpenBrowser);
-            map.insert(key_config.scroll_down, Action::ScrollDown(1));
-            map.insert(key_config.scroll_up, Action::ScrollUp(1));
-            map.insert(key_config.scroll_down_multiple_lines, Action::ScrollDown(10));
-            map.insert(key_config.scroll_up_multiple_lines, Action::ScrollUp(10));
-            map.insert(key_config.scroll_to_bottom, Action::ScrollToBottom);
-            map.insert(key_config.scroll_to_top, Action::ScrollToTop);
+            map.insert(key_config.scroll_down, Action::Next(1));
+            map.insert(key_config.scroll_up, Action::Previous(1));
+            map.insert(key_config.scroll_down_multiple_lines, Action::Next(10));
+            map.insert(key_config.scroll_up_multiple_lines, Action::Previous(10));
+            map.insert(key_config.scroll_to_bottom, Action::Last);
+            map.insert(key_config.scroll_to_top, Action::First);
+            map.insert(key_config.page_down, Action::ScrollDownDescription(1));
+            map.insert(key_config.page_up, Action::ScrollUpDescription(1));
             map
         };
 
         Self {
             jira_domain,
             tickets: vec![],
+            scroll: 0,
             state,
             key_mappings,
         }
@@ -233,6 +288,23 @@ impl TicketWidget {
         Ok(())
     }
 
+    pub fn scroll_down_description(&mut self, lines: u16) {
+        match self.selected() {
+            Some(..) => {
+                self.scroll = self.scroll.saturating_add(lines);
+                if self.scroll >= 100 {
+                    self.scroll = 0
+                }
+            }
+            None => {}
+        }
+
+    }
+
+    pub fn scroll_up_description(&mut self, lines: u16) {
+        self.scroll = self.scroll.saturating_sub(lines);
+    }
+
     pub async fn update(&mut self, mut tickets: Vec<TicketData>, clear: bool) -> anyhow::Result<()> {
         if clear {
             self.tickets.clear();
@@ -250,10 +322,12 @@ impl Component for TicketWidget {
             use Action::*;
             match *action {
                 OpenBrowser => self.open_browser(),
-                ScrollDown(line) => self.next(line),
-                ScrollUp(line) => self.previous(line),
-                ScrollToBottom => self.go_to_bottom(),
-                ScrollToTop => self.go_to_top(),
+                Next(line) => self.next(line),
+                Previous(line) => self.previous(line),
+                Last => self.go_to_bottom(),
+                First => self.go_to_top(),
+                ScrollDownDescription(line) => self.scroll_down_description(line),
+                ScrollUpDescription(line) => self.scroll_up_description(line)
             }
             Ok(EventState::Consumed)
         } else {

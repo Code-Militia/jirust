@@ -5,7 +5,6 @@ use crate::widgets::commands::{self, CommandInfo};
 use crate::widgets::comments::CommentsList;
 use crate::widgets::comments_add::CommentAdd;
 use crate::widgets::components::ComponentsWidget;
-use crate::widgets::description::DescriptionWidget;
 use crate::widgets::error::ErrorComponent;
 use crate::widgets::help::HelpWidget;
 use crate::widgets::labels::LabelsWidget;
@@ -39,7 +38,6 @@ pub enum Focus {
     CommentsAdd,
     CommentsList,
     Components,
-    Description,
     Labels,
     Projects,
     SearchProjects,
@@ -95,7 +93,8 @@ impl ParentAction {
 
 #[derive(Debug, Clone, Copy)]
 enum TicketsAction {
-    FocusDescription,
+    // FocusDescription,
+    FocusRelation,
     FocusLabels,
     NextPage,
     OpenComments,
@@ -111,7 +110,7 @@ impl TicketsAction {
     fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- Tickets Help --";
         match self {
-            Self::FocusDescription => CommandText::new(format!("Focus on Description pane [{key}]"), CMD_GROUP_GENERAL),
+            Self::FocusRelation => CommandText::new(format!("Focus on Relation pane [{key}]"), CMD_GROUP_GENERAL),
             Self::FocusLabels => CommandText::new(format!("Focus on Labels pane [{key}]"), CMD_GROUP_GENERAL),
             Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
             Self::OpenComments => CommandText::new(format!("Open Comments View [{key}]"), CMD_GROUP_GENERAL),
@@ -151,7 +150,6 @@ pub struct App {
     comments_list: CommentsList,
     comments_key_mappings: HashMap<Key, CommentsAction>,
     components: ComponentsWidget,
-    description: DescriptionWidget,
     focus: Focus,
     help: HelpWidget,
     jira: Jira,
@@ -196,7 +194,6 @@ impl App {
             },
             components: ComponentsWidget::new(config.key_config.clone()),
             config: config.clone(),
-            description: DescriptionWidget::new(config.key_config.clone()),
             error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,
             help: HelpWidget::new(config.key_config.clone()),
@@ -233,7 +230,7 @@ impl App {
             ),
             tickets_key_mappings: {
                 let mut map = HashMap::new();
-                map.insert(config.key_config.previous, TicketsAction::FocusDescription);
+                map.insert(config.key_config.previous, TicketsAction::FocusRelation);
                 map.insert(config.key_config.next, TicketsAction::FocusLabels);
                 map.insert(config.key_config.ticket_view_comments, TicketsAction::OpenComments);
                 map.insert(config.key_config.esc, TicketsAction::OpenProjects);
@@ -330,7 +327,7 @@ impl App {
         let ticket_description = ticket_right_chunks[0];
 
         self.tickets
-            .draw(f, matches!(self.focus, Focus::Tickets), ticket_list)?;
+            .draw(f, ticket_description, matches!(self.focus, Focus::Tickets), ticket_list)?;
 
         self.labels.draw(
             f,
@@ -343,13 +340,6 @@ impl App {
             f,
             matches!(self.focus, Focus::Components),
             ticket_component,
-            self.tickets.selected(),
-        )?;
-
-        self.description.draw(
-            f,
-            matches!(self.focus, Focus::Description),
-            ticket_description,
             self.tickets.selected(),
         )?;
 
@@ -570,11 +560,6 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
             }
-            Focus::Description => {
-                if self.description.event(key)?.is_consumed() {
-                    return Ok(EventState::Consumed);
-                }
-            }
             Focus::Labels => {
                 if self.labels.event(key)?.is_consumed() {
                     return Ok(EventState::Consumed);
@@ -704,10 +689,10 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
-                if key == self.config.key_config.move_right {
-                    self.focus = Focus::Description;
-                    return Ok(EventState::Consumed);
-                }
+                // if key == self.config.key_config.move_right {
+                //     self.focus = Focus::Description;
+                //     return Ok(EventState::Consumed);
+                // }
 
                 if key == self.config.key_config.ticket_view_comments {
                     self.update_comments_view().await?;
@@ -715,33 +700,33 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
             }
-            Focus::Description => {
-                if key == self.config.key_config.esc {
-                    self.focus = Focus::Projects;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.move_left {
-                    self.focus = Focus::Tickets;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.previous {
-                    self.focus = Focus::TicketRelation;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.next {
-                    self.focus = Focus::Tickets;
-                    return Ok(EventState::Consumed);
-                }
-
-                if key == self.config.key_config.ticket_view_comments {
-                    self.update_comments_view().await?;
-                    self.focus = Focus::CommentsList;
-                    return Ok(EventState::Consumed);
-                }
-            }
+            // Focus::Description => {
+            //     if key == self.config.key_config.esc {
+            //         self.focus = Focus::Projects;
+            //         return Ok(EventState::Consumed);
+            //     }
+            //
+            //     if key == self.config.key_config.move_left {
+            //         self.focus = Focus::Tickets;
+            //         return Ok(EventState::Consumed);
+            //     }
+            //
+            //     if key == self.config.key_config.previous {
+            //         self.focus = Focus::TicketRelation;
+            //         return Ok(EventState::Consumed);
+            //     }
+            //
+            //     if key == self.config.key_config.next {
+            //         self.focus = Focus::Tickets;
+            //         return Ok(EventState::Consumed);
+            //     }
+            //
+            //     if key == self.config.key_config.ticket_view_comments {
+            //         self.update_comments_view().await?;
+            //         self.focus = Focus::CommentsList;
+            //         return Ok(EventState::Consumed);
+            //     }
+            // }
             Focus::Labels => {
                 if key == self.config.key_config.previous || key == self.config.key_config.move_up {
                     self.focus = Focus::Tickets;
@@ -752,10 +737,10 @@ impl App {
                     self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
                 }
-                if key == self.config.key_config.move_right {
-                    self.focus = Focus::Description;
-                    return Ok(EventState::Consumed);
-                }
+                // if key == self.config.key_config.move_right {
+                //     self.focus = Focus::Description;
+                //     return Ok(EventState::Consumed);
+                // }
 
                 if key == self.config.key_config.ticket_view_comments {
                     self.update_comments_view().await?;
@@ -853,7 +838,7 @@ impl App {
                     if self.search_tickets.selected().is_some() {
                         let ticket = self.search_tickets.selected().unwrap();
                         if self.tickets.select_ticket(ticket).is_ok() {
-                            self.focus = Focus::Description;
+                            self.focus = Focus::Tickets;
                             return Ok(EventState::Consumed);
                         }
                     }
@@ -861,14 +846,14 @@ impl App {
                     match self.jira.search_cache_ticket(ticket_input.clone().as_ref()).await {
                         Ok(t) => {
                             self.update_single_ticket(&t.key).await?;
-                            self.focus = Focus::Description;
+                            self.focus = Focus::Tickets;
 
                             if self
                                 .tickets
                                 .select_ticket(&self.search_tickets.input)
                                 .is_ok()
                             {
-                                self.focus = Focus::Description;
+                                self.focus = Focus::Tickets;
                                 return Ok(EventState::Consumed);
                             }
                         }
@@ -936,7 +921,8 @@ impl App {
                 }
 
                 if key == self.config.key_config.next || key == self.config.key_config.move_right {
-                    self.focus = Focus::Description;
+                    self.focus = Focus::Tickets;
+                    // self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
 
@@ -951,8 +937,12 @@ impl App {
                     log::debug!("got tickets focus event: {key:?}");
                     use TicketsAction::*;
                     match *action {
-                        FocusDescription => {
-                            self.focus = Focus::Description;
+                        // FocusDescription => {
+                        //     self.focus = Focus::Description;
+                        //     return Ok(EventState::Consumed);
+                        // }
+                        FocusRelation => {
+                            self.focus = Focus::TicketRelation;
                             return Ok(EventState::Consumed);
                         }
                         FocusLabels => {
