@@ -26,7 +26,7 @@ futures = "0.3.26"
 
 tokio = { version = "1.12.0", features = ["full"] }
 serde-aux = "4.1.2"
-surrealdb = { version = "1.0.0-beta.9+20230402", features = ["kv-mem", "kv-rocksdb"] }
+surrealdb = { version = "1.0.0-beta.9", features = ["kv-mem", "kv-rocksdb"] }
 log = "0.4.17"
 fern = "0.6.1"
 chrono = "0.4.23"
