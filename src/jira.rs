@@ -1,3 +1,4 @@
+use log::debug;
 use serde::Deserialize;
 use serde::Serialize;
 use surrealdb::engine::any::connect;
@@ -104,7 +105,7 @@ impl Jira {
             let prj = project.clone();
             spawn(async move {
                 let _projects_insert: Project = db
-                    .create(("projects", &prj.key))
+                    .update(("projects", &prj.key))
                     .content(prj)
                     .await
                     .expect("projects inserted into db");
@@ -134,6 +135,7 @@ impl Jira {
             .await
             .expect("projects selected");
         let projects: Vec<Project> = query.take(0)?;
+        debug!("Projects found on cache {:?}", projects);
 
         // Get initial projects request
         if projects.is_empty() {
@@ -151,12 +153,14 @@ impl Jira {
                 .get_projects_from_jira_api(&self.client, url)
                 .await?;
             self.projects = serde_json::from_str(resp.as_str()).expect("projects deserialized");
+
+            debug!("Projects found from JIRA {:?}", self.projects);
             for project in &self.projects.values {
                 let db = self.db.clone();
                 let prj = project.clone();
                 spawn(async move {
                     let _projects_insert: Project = db
-                        .create(("projects", &prj.key))
+                        .update(("projects", &prj.key))
                         .content(prj)
                         .await
                         .expect("projects inserted into db");
