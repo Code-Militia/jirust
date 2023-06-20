@@ -357,7 +357,7 @@ impl Jira {
             .await?;
         let update_project_record: Project = self
             .db
-            .create(("projects", project_key))
+            .update(("projects", project_key))
             .content(project)
             .await?;
 

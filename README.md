@@ -7,11 +7,11 @@ An application with developers and engineers in mind.  It is solely focused on u
 ## Install
 make sure you have Rust installed.  See https://www.rust-lang.org/tools/install
 
-Run `cargo install jirust --version 0.1.0-alpha.28`
+Run `cargo install jirust --version 0.1.0-alpha.29`
 
 ## Important notices
 * This is currently tested with JIRA cloud.
-* I'm (Author: Mo Ali) am an infrastructure engineer by trade.  This is my first programming project that I'm sharing out.  This is also my first rust project and am using it to learn rust.  You can watch my development on [twitch](https://www.twitch.tv/mo_ali141)
+* I (Author: Mo Ali) am an infrastructure engineer by trade.  This is my first programming project that I'm sharing out.  This is also my first rust project and am using it to learn rust.  You can watch my development on [twitch](https://www.twitch.tv/mo_ali141)
 
 ## Current requirements
 
