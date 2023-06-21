@@ -689,44 +689,12 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
 
-                // if key == self.config.key_config.move_right {
-                //     self.focus = Focus::Description;
-                //     return Ok(EventState::Consumed);
-                // }
-
                 if key == self.config.key_config.ticket_view_comments {
                     self.update_comments_view().await?;
                     self.focus = Focus::CommentsList;
                     return Ok(EventState::Consumed);
                 }
             }
-            // Focus::Description => {
-            //     if key == self.config.key_config.esc {
-            //         self.focus = Focus::Projects;
-            //         return Ok(EventState::Consumed);
-            //     }
-            //
-            //     if key == self.config.key_config.move_left {
-            //         self.focus = Focus::Tickets;
-            //         return Ok(EventState::Consumed);
-            //     }
-            //
-            //     if key == self.config.key_config.previous {
-            //         self.focus = Focus::TicketRelation;
-            //         return Ok(EventState::Consumed);
-            //     }
-            //
-            //     if key == self.config.key_config.next {
-            //         self.focus = Focus::Tickets;
-            //         return Ok(EventState::Consumed);
-            //     }
-            //
-            //     if key == self.config.key_config.ticket_view_comments {
-            //         self.update_comments_view().await?;
-            //         self.focus = Focus::CommentsList;
-            //         return Ok(EventState::Consumed);
-            //     }
-            // }
             Focus::Labels => {
                 if key == self.config.key_config.previous || key == self.config.key_config.move_up {
                     self.focus = Focus::Tickets;
@@ -737,11 +705,6 @@ impl App {
                     self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
                 }
-                // if key == self.config.key_config.move_right {
-                //     self.focus = Focus::Description;
-                //     return Ok(EventState::Consumed);
-                // }
-
                 if key == self.config.key_config.ticket_view_comments {
                     self.update_comments_view().await?;
                     self.focus = Focus::CommentsList;
@@ -937,10 +900,6 @@ impl App {
                     log::debug!("got tickets focus event: {key:?}");
                     use TicketsAction::*;
                     match *action {
-                        // FocusDescription => {
-                        //     self.focus = Focus::Description;
-                        //     return Ok(EventState::Consumed);
-                        // }
                         FocusRelation => {
                             self.focus = Focus::TicketRelation;
                             return Ok(EventState::Consumed);

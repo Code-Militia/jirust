@@ -48,6 +48,7 @@ pub struct TicketWidget {
     jira_domain: String,
     state: TableState,
     scroll: u16,
+    ticket_description: Option<String>,
     pub tickets: Vec<TicketData>,
     pub key_mappings: HashMap<Key, Action>,
 }
@@ -144,7 +145,13 @@ impl TicketWidget {
         let summary_title = "Summary";
         let title = "Description";
 
-        let text = parse_html(&description);
+        let text = match &self.ticket_description {
+            Some(d) => d.clone(),
+            None => {
+                self.ticket_description = Some(parse_html(&description));
+                parse_html(&description)
+            }
+        };
 
         let summary_paragraph = Paragraph::new(summary)
             .block(draw_block_style(focused, summary_title))
@@ -193,10 +200,11 @@ impl TicketWidget {
 
         Self {
             jira_domain,
-            tickets: vec![],
+            key_mappings,
             scroll: 0,
             state,
-            key_mappings,
+            ticket_description: None,
+            tickets: vec![],
         }
     }
 
@@ -204,6 +212,7 @@ impl TicketWidget {
         if self.tickets.is_empty() {
             return;
         }
+        self.ticket_description = None;
         let i = self
             .state
             .selected()
@@ -213,6 +222,7 @@ impl TicketWidget {
     }
 
     pub fn previous(&mut self, line: usize) {
+        self.ticket_description = None;
         let i = self
             .state
             .selected()
