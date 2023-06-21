@@ -228,14 +228,9 @@ impl Jira {
             .tickets
             .get_tickets_from_jira_api(&self.client, params, &url)
             .await?;
+        debug!("{resp}");
         self.tickets = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
         for ticket in self.tickets.issues.clone() {
-            // match &ticket.fields.parent {
-            //     Some(t) => {
-            //         self.jira_ticket_api(&t.key.clone()).await?;
-            //     }
-            //     None => {}
-            // }
             let db = self.db.clone();
             let tkt = ticket.clone();
             spawn(async move {
