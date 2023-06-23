@@ -19,23 +19,23 @@ use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Compo
 
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
-    ScrollDown(usize),
-    ScrollUp(usize),
-    ScrollToBottom,
-    ScrollToTop,
+    Down(usize),
+    Up(usize),
+    Bottom,
+    Top,
 }
 
 impl Action {
     pub fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- General --";
         match self {
-            Self::ScrollDown(line) =>
+            Self::Down(line) =>
                 CommandText::new(format!("Scroll down {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollUp(line) =>
+            Self::Up(line) =>
                 CommandText::new(format!("Scroll up {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollToBottom =>
+            Self::Bottom =>
                 CommandText::new(format!("Scroll to bottom [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollToTop =>
+            Self::Top =>
                 CommandText::new(format!("Scroll to top [{key}]"), CMD_GROUP_GENERAL),
         }
     }
@@ -56,15 +56,15 @@ impl ProjectsWidget {
 
         let key_mappings = {
             let mut map = HashMap::new();
-            map.insert(Key::Down, Action::ScrollDown(1));
-            map.insert(Key::Up, Action::ScrollUp(1));
+            map.insert(Key::Down, Action::Down(1));
+            map.insert(Key::Up, Action::Up(1));
 
-            map.insert(key_config.scroll_down, Action::ScrollDown(1));
-            map.insert(key_config.scroll_up, Action::ScrollUp(1));
-            map.insert(key_config.scroll_down_multiple_lines, Action::ScrollDown(10));
-            map.insert(key_config.scroll_up_multiple_lines, Action::ScrollUp(10));
-            map.insert(key_config.scroll_to_bottom, Action::ScrollToBottom);
-            map.insert(key_config.scroll_to_top, Action::ScrollToTop);
+            map.insert(key_config.scroll_down, Action::Down(1));
+            map.insert(key_config.scroll_up, Action::Up(1));
+            map.insert(key_config.scroll_down_multiple_lines, Action::Down(10));
+            map.insert(key_config.scroll_up_multiple_lines, Action::Up(10));
+            map.insert(key_config.scroll_to_bottom, Action::Bottom);
+            map.insert(key_config.scroll_to_top, Action::Top);
             map
         };
 
@@ -131,8 +131,8 @@ impl ProjectsWidget {
         Ok(())
     }
 
-    pub async fn update(&mut self, jira_projects: &Vec<Project>) -> anyhow::Result<()> {
-        self.projects = jira_projects.clone();
+    pub async fn update(&mut self, jira_projects: &[Project]) -> anyhow::Result<()> {
+        self.projects = jira_projects.to_owned();
         Ok(())
     }
 }
@@ -179,10 +179,10 @@ impl Component for ProjectsWidget {
         if let Some(action) = self.key_mappings.get(&key) {
             use Action::*;
             match *action {
-                ScrollDown(line) => self.next(line),
-                ScrollUp(line) => self.previous(line),
-                ScrollToBottom => self.go_to_bottom(),
-                ScrollToTop => self.go_to_top(),
+                Down(line) => self.next(line),
+                Up(line) => self.previous(line),
+                Bottom => self.go_to_bottom(),
+                Top => self.go_to_top(),
             }
             Ok(EventState::Consumed)
         } else {

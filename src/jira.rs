@@ -190,23 +190,17 @@ impl Jira {
         let mut jql = format!("project = {}", project_key);
         if self.user_config_tickets.is_some() {
             let config_tickets = self.user_config_tickets.clone().unwrap(); 
-            match config_tickets.current_user_tickets_only {
-                Some(current_user_tickets) => {
-                    if current_user_tickets {
-                        jql = format!("{jql} AND assignee = currentuser()")
-                    }
+            if let Some(current_user_tickets) = config_tickets.current_user_tickets_only {
+                if current_user_tickets {
+                    jql = format!("{jql} AND assignee = currentuser()")
                 }
-                None => {}
             }
 
             let mut ticket_status: Vec<String>  = vec![];
-            match config_tickets.show_ticket_status {
-                Some(specified_ticket_status) => {
-                    ticket_status = specified_ticket_status
-                }
-                None => {}
+            if let Some(specified_ticket_status) = config_tickets.show_ticket_status {
+                ticket_status = specified_ticket_status
             }
-            if ticket_status.len() > 0 {
+            if !ticket_status.is_empty() {
                 for (index, status) in ticket_status.iter().enumerate() {
                     if index == 0 {
                         jql = format!("{jql} AND (Status = \"{status}\"");
@@ -312,7 +306,7 @@ impl Jira {
             }
             None => {
                 let ticket = self.jira_ticket_api(ticket_key).await?;
-                return Ok(ticket)
+                Ok(ticket)
             }
         }
     }
@@ -343,10 +337,10 @@ impl Jira {
         match project {
             Some(p) => {
                 self.projects.values.push(p.clone()); 
-                return Ok(p)
+                Ok(p)
             }
             None => {
-                return self.jira_project_api(project_key).await
+                self.jira_project_api(project_key).await
             }
         }
     }
