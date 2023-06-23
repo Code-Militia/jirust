@@ -615,12 +615,9 @@ impl App {
                 if self.ticket_transition.event(key)?.is_consumed() {
                     if self.ticket_transition.push_transition {
                         self.move_ticket().await?;
-                        match self.tickets.selected() {
-                            Some(t) => {
-                                let ticket = t.clone();
-                                self.update_single_ticket(&ticket.key).await?;
-                            }
-                            None => {}
+                        if let Some(t) = self.tickets.selected() {
+                            let ticket = t.clone();
+                            self.update_single_ticket(&ticket.key).await?;
                         }
                         self.focus = Focus::Tickets;
                     }

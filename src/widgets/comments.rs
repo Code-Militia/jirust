@@ -114,8 +114,8 @@ impl CommentsList {
         let text = match &self.comments_parsed {
             Some(c) => c.clone(),
             None => {
-                self.comments_parsed = Some(parse_html(&comment.rendered_body.clone()));
-                parse_html(&comment.rendered_body.clone())
+                self.comments_parsed = Some(parse_html(&comment.rendered_body));
+                parse_html(&comment.rendered_body)
             }
         };
         // let text = parse_html(&comment.rendered_body.clone());

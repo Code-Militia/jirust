@@ -266,11 +266,8 @@ impl TicketWidget {
             .tickets
             .iter()
             .position(|ticket| ticket.key == ticket_key);
-        match ticket_index {
-            Some(ti) => {
-                self.tickets.swap_remove(ti);
-            }
-            None => {}
+        if let Some(ti) = ticket_index {
+            self.tickets.swap_remove(ti);
         }
         Ok(())
     }
@@ -301,16 +298,12 @@ impl TicketWidget {
     }
 
     pub fn scroll_down_description(&mut self, lines: u16) {
-        match self.selected() {
-            Some(..) => {
-                self.scroll = self.scroll.saturating_add(lines);
-                if self.scroll >= 100 {
-                    self.scroll = 0
-                }
+        if let Some(..) = self.selected() {
+            self.scroll = self.scroll.saturating_add(lines);
+            if self.scroll >= 100 {
+                self.scroll = 0
             }
-            None => {}
         }
-
     }
 
     pub fn scroll_up_description(&mut self, lines: u16) {

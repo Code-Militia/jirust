@@ -1,5 +1,4 @@
 use std::{env, process::exit, fs};
-use toml;
 
 // use crate::{event::key::Key, log::LogLevel};
 use crate::event::key::Key;

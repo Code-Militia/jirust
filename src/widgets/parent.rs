@@ -140,7 +140,7 @@ impl TicketParentWidget {
     }
 
     pub fn selected(&self) -> Option<LinkInwardOutwardParent> {
-        if !self.parent_ticket.is_none() {
+        if self.parent_ticket.is_some() {
             return self.parent_ticket.clone()
         }
 
@@ -149,7 +149,7 @@ impl TicketParentWidget {
 
     pub fn open_browser(&mut self) {
         if self.selected().is_some() {
-            let parent_details  = self.selected().unwrap().clone();
+            let parent_details  = self.selected().unwrap();
             let url = self.jira_domain.clone() + "/browse/" + &parent_details.key;
             match open::that(url.clone()) {
                 Ok(()) => {}
