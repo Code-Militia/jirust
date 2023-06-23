@@ -232,6 +232,7 @@ impl TicketWidget {
     }
 
     pub fn go_to_top(&mut self) {
+        self.ticket_description = None;
         if self.tickets.is_empty() {
             return;
         }
@@ -239,6 +240,7 @@ impl TicketWidget {
     }
 
     pub fn go_to_bottom(&mut self) {
+        self.ticket_description = None;
         if self.tickets.is_empty() {
             return;
         }

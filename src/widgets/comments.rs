@@ -50,8 +50,9 @@ impl Action {
 
 #[derive(Debug)]
 pub struct CommentsList {
-    state: TableState,
+    comments_parsed: Option<String>,
     scroll: u16,
+    state: TableState,
     pub comments: Option<Comments>,
     pub key_mappings: HashMap<Key, Action>,
 }
@@ -106,11 +107,18 @@ impl CommentsList {
 
         f.render_stateful_widget(table, chunks[0], &mut self.state);
 
-        let comment = match self.selected() {
-            None => return Ok(()),
-            Some(ticket_data) => ticket_data,
+        if self.selected().is_none() {
+            return Ok(())
+        }
+        let comment = self.selected().unwrap().clone();
+        let text = match &self.comments_parsed {
+            Some(c) => c.clone(),
+            None => {
+                self.comments_parsed = Some(parse_html(&comment.rendered_body.clone()));
+                parse_html(&comment.rendered_body.clone())
+            }
         };
-        let text = parse_html(&comment.rendered_body.clone());
+        // let text = parse_html(&comment.rendered_body.clone());
         let paragraph = Paragraph::new(Span::styled(text, Style::default()))
             .alignment(Alignment::Left)
             .block(draw_block_style(focused, title))
@@ -141,13 +149,15 @@ impl CommentsList {
         };
         Self {
             comments: None,
+            comments_parsed: None,
             key_mappings,
-            state,
             scroll: 0,
+            state,
         }
     }
 
     pub fn next(&mut self, line: usize) {
+        self.comments_parsed = None;
         let comments = match &self.comments {
             None => return,
             Some(c) => c,
@@ -164,6 +174,7 @@ impl CommentsList {
     }
 
     pub fn previous(&mut self, line: usize) {
+        self.comments_parsed = None;
         let i = self
             .state
             .selected()
@@ -173,6 +184,7 @@ impl CommentsList {
     }
 
     pub fn go_to_top(&mut self) {
+        self.comments_parsed = None;
         let comments = match &self.comments {
             None => return,
             Some(c) => c,
@@ -184,6 +196,7 @@ impl CommentsList {
     }
 
     pub fn go_to_bottom(&mut self) {
+        self.comments_parsed = None;
         let comments = match &self.comments {
             None => return,
             Some(c) => c,
