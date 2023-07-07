@@ -8,12 +8,8 @@ use tui::{
     Frame,
 };
 
-use crate::{
-    config::KeyConfig,
-    event::key::Key,
-    jira::projects::Project,
-};
 use crate::widgets::commands::CommandText;
+use crate::{config::KeyConfig, event::key::Key, jira::projects::Project};
 
 use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
@@ -29,14 +25,16 @@ impl Action {
     pub fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- General --";
         match self {
-            Self::Down(line) =>
-                CommandText::new(format!("Scroll down {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::Up(line) =>
-                CommandText::new(format!("Scroll up {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::Bottom =>
-                CommandText::new(format!("Scroll to bottom [{key}]"), CMD_GROUP_GENERAL),
-            Self::Top =>
-                CommandText::new(format!("Scroll to top [{key}]"), CMD_GROUP_GENERAL),
+            Self::Down(line) => {
+                CommandText::new(format!("Scroll down {line} [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::Up(line) => {
+                CommandText::new(format!("Scroll up {line} [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::Bottom => {
+                CommandText::new(format!("Scroll to bottom [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::Top => CommandText::new(format!("Scroll to top [{key}]"), CMD_GROUP_GENERAL),
         }
     }
 }

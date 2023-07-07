@@ -1,4 +1,4 @@
-use std::{env, process::exit, fs};
+use std::{env, fs, process::exit};
 
 // use crate::{event::key::Key, log::LogLevel};
 use crate::event::key::Key;
@@ -138,7 +138,7 @@ impl Default for JiraConfigFile {
             }
         };
 
-        // Use a `match` block to return the 
+        // Use a `match` block to return the
         // file `contents` as a `Data struct: Ok(d)`
         // or handle any `errors: Err(_)`.
         let data: JiraConfigFile = match toml::from_str(&contents) {

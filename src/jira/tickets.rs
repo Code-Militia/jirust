@@ -126,9 +126,34 @@ pub struct TicketData {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct CustomFieldAllowedValues {
+    pub id: String,
+    pub value: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CustomFieldSchema {
+    pub custom: String,
+    pub custom_id: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CustomField {
+    pub name: String,
+    pub key: String,
+    pub schema: CustomFieldSchema,
+    pub allowed_values: Option<Vec<CustomFieldAllowedValues>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct TicketTransition {
     pub id: String,
     pub name: Option<String>,
+    pub fields: Option<CustomField>,
+    pub has_screen: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -198,13 +223,13 @@ impl TicketData {
         &self,
         jira_client: &JiraClient,
     ) -> anyhow::Result<TicketTransitions> {
-        let url = format!("/issue/{}/transitions", self.key);
+        let url = format!("/issue/{}/transitions?expand=transitions.fields", self.key);
         let response = jira_client.get_from_jira_api(&url).await?;
         let obj: TicketTransitions = serde_json::from_str(&response)?;
         Ok(obj)
     }
 
-    pub async fn transition(
+    pub async fn transition_ticket(
         &self,
         transition: PostTicketTransition,
         jira_client: &JiraClient,
@@ -247,13 +272,7 @@ impl JiraTickets {
             .default_headers(headers)
             .https_only(true)
             .build()?;
-        client
-            .get(url)
-            .query(&params)
-            .send()
-            .await?
-            .text().
-            await
+        client.get(url).query(&params).send().await?.text().await
     }
 
     pub async fn search_jira_ticket_api(

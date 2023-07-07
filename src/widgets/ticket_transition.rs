@@ -10,13 +10,16 @@ use tui::{
 use crate::{
     config::KeyConfig,
     event::key::Key,
-    jira::tickets::{TicketTransition, TicketTransitions},
+    jira::tickets::{CustomFieldAllowedValues, TicketTransition, TicketTransitions},
 };
 
 use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug)]
 pub struct TransitionWidget {
+    draw_list_float_screen: Option<bool>,
+    float_screen_list_state: ListState,
+    focus_float_screen: Option<bool>,
     key_config: KeyConfig,
     state: ListState,
     pub push_transition: bool,
@@ -55,20 +58,67 @@ impl TransitionWidget {
         f.render_widget(Clear, area);
         f.render_stateful_widget(list, area, &mut self.state);
 
+        if self.draw_list_float_screen == Some(true) {
+            // TODO: Draw floating screen from selected transition
+            // TODO: Set the push transition to true
+            let width = 80;
+            let height = 20;
+            let area = Rect::new(
+                (f.size().width.saturating_sub(width)) / 2,
+                (f.size().height.saturating_sub(height)) / 2,
+                width.min(f.size().width),
+                height.min(f.size().height),
+            );
+            let transition = self.selected_transition().unwrap();
+            let fields = transition.fields.as_ref().unwrap();
+            if fields.schema.custom.ends_with(":select") {
+                let values = fields.allowed_values.as_ref().unwrap().to_vec();
+                return self.draw_select_screen(f, area, values);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn draw_select_screen<B: Backend>(
+        &mut self,
+        f: &mut Frame<B>,
+        rect: Rect,
+        select_list: Vec<CustomFieldAllowedValues>,
+    ) -> anyhow::Result<()> {
+        self.focus_float_screen = Some(true);
+        let title = "Select Transition Reason";
+        let mut list_items: Vec<ListItem> = Vec::new();
+        for allowed_value in select_list {
+            let value = allowed_value.value;
+            list_items.push(ListItem::new(vec![Spans::from(Span::raw(value))]).style(Style::default()))
+        }
+        let list = List::new(list_items)
+            .block(draw_block_style(true, title))
+            .highlight_style(draw_highlight_style());
+
+        f.render_widget(Clear, rect);
+        f.render_stateful_widget(list, rect, &mut self.float_screen_list_state);
+
         Ok(())
     }
 }
 
 impl TransitionWidget {
     pub fn new(transitions: Vec<TicketTransition>, key_config: KeyConfig) -> Self {
+        let mut float_screen_list_state = ListState::default();
+        float_screen_list_state.select(Some(0));
         let mut state = ListState::default();
         if !transitions.is_empty() {
             state.select(Some(0));
         }
         Self {
-            state,
+            draw_list_float_screen: None,
+            float_screen_list_state,
+            focus_float_screen: None,
             key_config,
             push_transition: false,
+            state,
             transitions: Vec::new(),
         }
     }
@@ -120,6 +170,19 @@ impl TransitionWidget {
             self.state.select(Some(0));
         }
     }
+
+    pub fn check_transition_floating_screen(&mut self) -> bool {
+        match self.selected_transition() {
+            None => false,
+            Some(t) => {
+                if t.has_screen.unwrap_or_else(|| false) {
+                    return true;
+                }
+
+                false
+            }
+        }
+    }
 }
 
 impl Component for TransitionWidget {
@@ -145,7 +208,11 @@ impl Component for TransitionWidget {
             self.go_to_top();
             return Ok(EventState::Consumed);
         } else if key == self.key_config.enter {
-            self.push_transition = true;
+            if self.check_transition_floating_screen() {
+                self.draw_list_float_screen = Some(true);
+            } else {
+                self.push_transition = true;
+            }
             return Ok(EventState::Consumed);
         }
         Ok(EventState::NotConsumed)

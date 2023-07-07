@@ -1,6 +1,11 @@
 use std::collections::HashMap;
 
-use crate::{config::KeyConfig, event::key::Key, jira::tickets::{TicketData, LinkInwardOutwardParent}, widgets::commands::CommandText};
+use crate::{
+    config::KeyConfig,
+    event::key::Key,
+    jira::tickets::{LinkInwardOutwardParent, TicketData},
+    widgets::commands::CommandText,
+};
 use tui::{
     backend::Backend,
     layout::{Constraint, Rect},
@@ -8,18 +13,20 @@ use tui::{
     Frame,
 };
 
-use super::{draw_block_style, draw_highlight_style, commands::CommandInfo, Component, EventState};
+use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
-    OpenBrowser
+    OpenBrowser,
 }
 
 impl Action {
     pub fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- General --";
         match self {
-            Self::OpenBrowser => CommandText::new(format!("Open Ticket in browser [{key}]"), CMD_GROUP_GENERAL),
+            Self::OpenBrowser => {
+                CommandText::new(format!("Open Ticket in browser [{key}]"), CMD_GROUP_GENERAL)
+            }
         }
     }
 }
@@ -79,7 +86,7 @@ impl TicketParentWidget {
             Some(i) => {
                 self.parent_ticket = Some(i.clone());
                 i
-            },
+            }
             // _ => unreachable!("If there is a link it should be present")
         };
         let priority = match &ticket_parent.fields.priority {
@@ -135,13 +142,13 @@ impl TicketParentWidget {
             jira_domain: jira_domain.to_string(),
             key_mappings,
             state,
-            parent_ticket: None
+            parent_ticket: None,
         }
     }
 
     pub fn selected(&self) -> Option<LinkInwardOutwardParent> {
         if self.parent_ticket.is_some() {
-            return self.parent_ticket.clone()
+            return self.parent_ticket.clone();
         }
 
         None
@@ -149,7 +156,7 @@ impl TicketParentWidget {
 
     pub fn open_browser(&mut self) {
         if self.selected().is_some() {
-            let parent_details  = self.selected().unwrap();
+            let parent_details = self.selected().unwrap();
             let url = self.jira_domain.clone() + "/browse/" + &parent_details.key;
             match open::that(url.clone()) {
                 Ok(()) => {}

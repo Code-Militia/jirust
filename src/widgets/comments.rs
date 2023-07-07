@@ -16,7 +16,10 @@ use tui::{
 
 use crate::config::KeyConfig;
 
-use super::{commands::{CommandInfo, CommandText}, draw_block_style, draw_highlight_style, Component, EventState};
+use super::{
+    commands::{CommandInfo, CommandText},
+    draw_block_style, draw_highlight_style, Component, EventState,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
@@ -32,18 +35,22 @@ impl Action {
     pub fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- General --";
         match self {
-            Self::PageDown(line) =>
-                CommandText::new(format!("Scroll down {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::PageUp(line) =>
-                CommandText::new(format!("Scroll up {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::NextComment(line) =>
-                CommandText::new(format!("Next {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::PreviousComment(line) =>
-                CommandText::new(format!("Previous {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::LastComment =>
-                CommandText::new(format!("Go to last [{key}]"), CMD_GROUP_GENERAL),
-            Self::FirstComment =>
-                CommandText::new(format!("Go to first [{key}]"), CMD_GROUP_GENERAL),
+            Self::PageDown(line) => {
+                CommandText::new(format!("Scroll down {line} [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::PageUp(line) => {
+                CommandText::new(format!("Scroll up {line} [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::NextComment(line) => {
+                CommandText::new(format!("Next {line} [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::PreviousComment(line) => {
+                CommandText::new(format!("Previous {line} [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::LastComment => CommandText::new(format!("Go to last [{key}]"), CMD_GROUP_GENERAL),
+            Self::FirstComment => {
+                CommandText::new(format!("Go to first [{key}]"), CMD_GROUP_GENERAL)
+            }
         }
     }
 }
@@ -108,7 +115,7 @@ impl CommentsList {
         f.render_stateful_widget(table, chunks[0], &mut self.state);
 
         if self.selected().is_none() {
-            return Ok(())
+            return Ok(());
         }
         let comment = self.selected().unwrap().clone();
         let text = match &self.comments_parsed {
@@ -141,8 +148,14 @@ impl CommentsList {
             map.insert(key_config.page_up, Action::PageUp(10));
             map.insert(key_config.scroll_down, Action::NextComment(1));
             map.insert(key_config.scroll_up, Action::PreviousComment(1));
-            map.insert(key_config.scroll_down_multiple_lines, Action::NextComment(10));
-            map.insert(key_config.scroll_up_multiple_lines, Action::PreviousComment(10));
+            map.insert(
+                key_config.scroll_down_multiple_lines,
+                Action::NextComment(10),
+            );
+            map.insert(
+                key_config.scroll_up_multiple_lines,
+                Action::PreviousComment(10),
+            );
             map.insert(key_config.scroll_to_bottom, Action::LastComment);
             map.insert(key_config.scroll_to_top, Action::FirstComment);
             map
