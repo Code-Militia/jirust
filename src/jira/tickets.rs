@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+
 use super::auth::JiraClient;
 use super::SurrealAny;
 use htmltoadf::convert_html_str_to_adf_str;
+use log::debug;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -140,11 +143,24 @@ pub struct CustomFieldSchema {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct CustomField {
+pub struct CustomFieldValues {
+    // #[serde(skip_serializing_if = "Option::is_none")]
     pub name: String,
+    // #[serde(skip_serializing_if = "Option::is_none")]
     pub key: String,
+    // #[serde(skip_serializing_if = "Option::is_none")]
     pub schema: CustomFieldSchema,
+    // #[serde(skip_serializing_if = "Option::is_none")]
     pub allowed_values: Option<Vec<CustomFieldAllowedValues>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CustomField {
+    // pub is_looped: Option<bool>,
+    #[serde(flatten)]
+    pub values: HashMap<String, CustomFieldValues>,
+    // pub values: HashMap<String, CustomFieldValues>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -152,8 +168,10 @@ pub struct CustomField {
 pub struct TicketTransition {
     pub id: String,
     pub name: Option<String>,
-    pub fields: Option<CustomField>,
     pub has_screen: Option<bool>,
+    // #[serde(deserialize_with = "deserialize_fields")]
+    // pub fields: Option<CustomField>,
+    pub fields: Option<CustomField>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -226,6 +244,7 @@ impl TicketData {
         let url = format!("/issue/{}/transitions?expand=transitions.fields", self.key);
         let response = jira_client.get_from_jira_api(&url).await?;
         let obj: TicketTransitions = serde_json::from_str(&response)?;
+        debug!("Ticket transitions {:?}", obj);
         Ok(obj)
     }
 

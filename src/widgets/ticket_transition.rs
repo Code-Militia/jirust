@@ -1,3 +1,4 @@
+use log::{trace, debug};
 use tui::{
     backend::Backend,
     layout::Rect,
@@ -19,6 +20,7 @@ use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Compo
 pub struct TransitionWidget {
     draw_list_float_screen: Option<bool>,
     float_screen_list_state: ListState,
+    float_screen_list: Option<Vec<CustomFieldAllowedValues>>,
     focus_float_screen: Option<bool>,
     key_config: KeyConfig,
     state: ListState,
@@ -58,9 +60,8 @@ impl TransitionWidget {
         f.render_widget(Clear, area);
         f.render_stateful_widget(list, area, &mut self.state);
 
+        trace!("Switch to draw float screen is {:?}", self.draw_list_float_screen);
         if self.draw_list_float_screen == Some(true) {
-            // TODO: Draw floating screen from selected transition
-            // TODO: Set the push transition to true
             let width = 80;
             let height = 20;
             let area = Rect::new(
@@ -70,11 +71,16 @@ impl TransitionWidget {
                 height.min(f.size().height),
             );
             let transition = self.selected_transition().unwrap();
-            let fields = transition.fields.as_ref().unwrap();
-            if fields.schema.custom.ends_with(":select") {
-                let values = fields.allowed_values.as_ref().unwrap().to_vec();
-                return self.draw_select_screen(f, area, values);
+            debug!("{:?}", transition);
+            let fields = &transition.fields.as_ref().unwrap().values;
+            let mut allowed_values: Vec<CustomFieldAllowedValues> = Vec::new();
+            for f in &*fields {
+                let field = fields.get(&f.0.to_string()).unwrap();
+                if !field.schema.custom.ends_with(":select") { continue }
+                allowed_values = field.allowed_values.as_ref().unwrap().to_vec();
             }
+            self.float_screen_list = Some(allowed_values.clone());
+            return self.draw_select_screen(f, area)
         }
 
         Ok(())
@@ -84,11 +90,11 @@ impl TransitionWidget {
         &mut self,
         f: &mut Frame<B>,
         rect: Rect,
-        select_list: Vec<CustomFieldAllowedValues>,
     ) -> anyhow::Result<()> {
         self.focus_float_screen = Some(true);
         let title = "Select Transition Reason";
         let mut list_items: Vec<ListItem> = Vec::new();
+        let select_list = self.float_screen_list.clone().unwrap();
         for allowed_value in select_list {
             let value = allowed_value.value;
             list_items.push(ListItem::new(vec![Spans::from(Span::raw(value))]).style(Style::default()))
@@ -115,6 +121,7 @@ impl TransitionWidget {
         Self {
             draw_list_float_screen: None,
             float_screen_list_state,
+            float_screen_list: None,
             focus_float_screen: None,
             key_config,
             push_transition: false,
@@ -185,10 +192,92 @@ impl TransitionWidget {
     }
 }
 
+impl TransitionWidget {
+    pub fn next_reason(&mut self, line: usize) {
+        let i = match self.float_screen_list_state.selected() {
+            Some(i) if i + line >= self.float_screen_list.clone().unwrap().len() => Some(self.float_screen_list.clone().unwrap().len() - 1),
+            Some(i) => Some(i + line),
+            None => None,
+        };
+
+        self.float_screen_list_state.select(i);
+    }
+
+    pub fn previous_reason(&mut self, line: usize) {
+        let i = match self.float_screen_list_state.selected() {
+            Some(i) if i <= line => Some(0),
+            Some(i) => Some(i - line),
+            None => None,
+        };
+
+        self.float_screen_list_state.select(i);
+    }
+
+    pub fn go_to_top_reason(&mut self) {
+        if self.float_screen_list.clone().unwrap().is_empty() {
+            return;
+        }
+        self.float_screen_list_state.select(Some(0));
+    }
+
+    pub fn go_to_bottom_reason(&mut self) {
+        if self.float_screen_list.clone().unwrap().is_empty() {
+            return;
+        }
+        self.float_screen_list_state.select(Some(self.transitions.len() - 1));
+    }
+
+    pub fn selected_transition_reason(&self) -> Option<&TicketTransition> {
+        match self.float_screen_list_state.selected() {
+            Some(i) => self.transitions.get(i),
+            None => None,
+        }
+    }
+}
+
+impl TransitionWidget {
+    fn float_screen_event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if key == self.key_config.scroll_down {
+            self.next_reason(1);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_up {
+            self.previous_reason(1);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_down_multiple_lines {
+            self.next_reason(10);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_up_multiple_lines {
+            self.previous_reason(10);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_to_bottom {
+            self.go_to_bottom_reason();
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.scroll_to_top {
+            self.go_to_top_reason();
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.esc {
+            self.draw_list_float_screen = Some(false);
+            return Ok(EventState::Consumed);
+        } else if key == self.key_config.enter {
+            if self.check_transition_floating_screen() {
+                self.draw_list_float_screen = Some(true);
+            } else {
+                self.push_transition = true;
+            }
+            return Ok(EventState::Consumed);
+        }
+        Ok(EventState::NotConsumed)
+
+    }
+}
+
 impl Component for TransitionWidget {
     fn commands(&self, _out: &mut Vec<CommandInfo>) {}
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if self.draw_list_float_screen == Some(true) {
+            return self.float_screen_event(key) 
+        }
         if key == self.key_config.scroll_down {
             self.next(1);
             return Ok(EventState::Consumed);
