@@ -1,4 +1,4 @@
-use log::{trace, debug};
+use log::{debug, trace};
 use tui::{
     backend::Backend,
     layout::Rect,
@@ -25,6 +25,7 @@ pub struct TransitionWidget {
     key_config: KeyConfig,
     state: ListState,
     pub push_transition: bool,
+    pub push_transition_reason: Option<String>,
     pub transitions: Vec<TicketTransition>,
 }
 
@@ -60,7 +61,10 @@ impl TransitionWidget {
         f.render_widget(Clear, area);
         f.render_stateful_widget(list, area, &mut self.state);
 
-        trace!("Switch to draw float screen is {:?}", self.draw_list_float_screen);
+        trace!(
+            "Switch to draw float screen is {:?}",
+            self.draw_list_float_screen
+        );
         if self.draw_list_float_screen == Some(true) {
             let width = 80;
             let height = 20;
@@ -76,11 +80,13 @@ impl TransitionWidget {
             let mut allowed_values: Vec<CustomFieldAllowedValues> = Vec::new();
             for f in &*fields {
                 let field = fields.get(&f.0.to_string()).unwrap();
-                if !field.schema.custom.ends_with(":select") { continue }
+                if !field.schema.custom.ends_with(":select") {
+                    continue;
+                }
                 allowed_values = field.allowed_values.as_ref().unwrap().to_vec();
             }
             self.float_screen_list = Some(allowed_values.clone());
-            return self.draw_select_screen(f, area)
+            return self.draw_select_screen(f, area);
         }
 
         Ok(())
@@ -97,7 +103,8 @@ impl TransitionWidget {
         let select_list = self.float_screen_list.clone().unwrap();
         for allowed_value in select_list {
             let value = allowed_value.value;
-            list_items.push(ListItem::new(vec![Spans::from(Span::raw(value))]).style(Style::default()))
+            list_items
+                .push(ListItem::new(vec![Spans::from(Span::raw(value))]).style(Style::default()))
         }
         let list = List::new(list_items)
             .block(draw_block_style(true, title))
@@ -125,6 +132,7 @@ impl TransitionWidget {
             focus_float_screen: None,
             key_config,
             push_transition: false,
+            push_transition_reason: None,
             state,
             transitions: Vec::new(),
         }
@@ -183,9 +191,9 @@ impl TransitionWidget {
             None => false,
             Some(t) => {
                 if t.has_screen.unwrap_or_else(|| false) {
+                    self.draw_list_float_screen = Some(true);
                     return true;
                 }
-
                 false
             }
         }
@@ -195,7 +203,9 @@ impl TransitionWidget {
 impl TransitionWidget {
     pub fn next_reason(&mut self, line: usize) {
         let i = match self.float_screen_list_state.selected() {
-            Some(i) if i + line >= self.float_screen_list.clone().unwrap().len() => Some(self.float_screen_list.clone().unwrap().len() - 1),
+            Some(i) if i + line >= self.float_screen_list.clone().unwrap().len() => {
+                Some(self.float_screen_list.clone().unwrap().len() - 1)
+            }
             Some(i) => Some(i + line),
             None => None,
         };
@@ -224,12 +234,13 @@ impl TransitionWidget {
         if self.float_screen_list.clone().unwrap().is_empty() {
             return;
         }
-        self.float_screen_list_state.select(Some(self.transitions.len() - 1));
+        self.float_screen_list_state
+            .select(Some(self.transitions.len() - 1));
     }
 
-    pub fn selected_transition_reason(&self) -> Option<&TicketTransition> {
+    pub fn selected_transition_reason(&self) -> Option<&CustomFieldAllowedValues> {
         match self.float_screen_list_state.selected() {
-            Some(i) => self.transitions.get(i),
+            Some(i) => self.float_screen_list.as_ref().unwrap().get(i),
             None => None,
         }
     }
@@ -259,15 +270,14 @@ impl TransitionWidget {
             self.draw_list_float_screen = Some(false);
             return Ok(EventState::Consumed);
         } else if key == self.key_config.enter {
-            if self.check_transition_floating_screen() {
-                self.draw_list_float_screen = Some(true);
-            } else {
-                self.push_transition = true;
+            // TODO: Add comment push based on transition selection
+            match self.selected_transition_reason() {
+                Some(i) => self.push_transition_reason = Some(i.value.clone()),
+                None => {}
             }
             return Ok(EventState::Consumed);
         }
         Ok(EventState::NotConsumed)
-
     }
 }
 
@@ -276,7 +286,7 @@ impl Component for TransitionWidget {
 
     fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if self.draw_list_float_screen == Some(true) {
-            return self.float_screen_event(key) 
+            return self.float_screen_event(key);
         }
         if key == self.key_config.scroll_down {
             self.next(1);
@@ -297,9 +307,7 @@ impl Component for TransitionWidget {
             self.go_to_top();
             return Ok(EventState::Consumed);
         } else if key == self.key_config.enter {
-            if self.check_transition_floating_screen() {
-                self.draw_list_float_screen = Some(true);
-            } else {
+            if !self.check_transition_floating_screen() {
                 self.push_transition = true;
             }
             return Ok(EventState::Consumed);

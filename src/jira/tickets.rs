@@ -157,10 +157,8 @@ pub struct CustomFieldValues {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CustomField {
-    // pub is_looped: Option<bool>,
     #[serde(flatten)]
     pub values: HashMap<String, CustomFieldValues>,
-    // pub values: HashMap<String, CustomFieldValues>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -169,8 +167,6 @@ pub struct TicketTransition {
     pub id: String,
     pub name: Option<String>,
     pub has_screen: Option<bool>,
-    // #[serde(deserialize_with = "deserialize_fields")]
-    // pub fields: Option<CustomField>,
     pub fields: Option<CustomField>,
 }
 

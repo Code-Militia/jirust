@@ -541,17 +541,19 @@ impl App {
         Ok(())
     }
 
-    pub async fn add_jira_comment(&mut self) -> anyhow::Result<()> {
-        let comment = &self.comment_add.messages;
+    pub async fn add_comment(&mut self, comment: &Vec<String>) -> anyhow::Result<()> {
         let ticket = match self.tickets.selected() {
             None => return Ok(()),
             Some(t) => t,
         };
+        // TODO: We should not have to check if comment is empty here or if push_comment is true
         if !comment.is_empty() && self.comment_add.push_comment {
+            // TODO: This needs to be fixed, multiple comments show in the same line
             let comment = comment.join(" \n ");
             ticket
                 .add_comment(&self.jira.db, &comment, &self.jira.client)
                 .await?;
+            // TODO: This needs to move to the function caller
             self.comment_add.messages.clear();
             self.comment_add.push_comment = false;
             return Ok(());
@@ -607,7 +609,9 @@ impl App {
             }
             Focus::CommentsAdd => {
                 if self.comment_add.event(key)?.is_consumed() {
-                    self.add_jira_comment().await?;
+                    // TODO: Redo this condition to check if there are comments to be added to
+                    // self.add_jira_comment()
+                    self.add_comment().await?;
                     return Ok(EventState::Consumed);
                 }
             }
