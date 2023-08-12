@@ -272,7 +272,11 @@ impl TransitionWidget {
         } else if key == self.key_config.enter {
             // TODO: Add comment push based on transition selection
             match self.selected_transition_reason() {
-                Some(i) => self.push_transition_reason = Some(i.value.clone()),
+                Some(i) => {
+                    self.push_transition_reason = Some(i.value.clone());
+                    self.draw_list_float_screen = Some(false);
+                    self.push_transition = true
+                }
                 None => {}
             }
             return Ok(EventState::Consumed);

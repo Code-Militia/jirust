@@ -541,23 +541,15 @@ impl App {
         Ok(())
     }
 
-    pub async fn add_comment(&mut self, comment: &Vec<String>) -> anyhow::Result<()> {
+    pub async fn add_comment(&mut self, comments: &Vec<String>) -> anyhow::Result<()> {
         let ticket = match self.tickets.selected() {
             None => return Ok(()),
             Some(t) => t,
         };
-        // TODO: We should not have to check if comment is empty here or if push_comment is true
-        if !comment.is_empty() && self.comment_add.push_comment {
-            // TODO: This needs to be fixed, multiple comments show in the same line
-            let comment = comment.join(" \n ");
-            ticket
-                .add_comment(&self.jira.db, &comment, &self.jira.client)
-                .await?;
-            // TODO: This needs to move to the function caller
-            self.comment_add.messages.clear();
-            self.comment_add.push_comment = false;
-            return Ok(());
-        };
+        let comment = comments.join(" \n ");
+        ticket
+            .add_comment(&self.jira.db, &comment, &self.jira.client)
+            .await?;
         Ok(())
     }
 
@@ -609,9 +601,12 @@ impl App {
             }
             Focus::CommentsAdd => {
                 if self.comment_add.event(key)?.is_consumed() {
-                    // TODO: Redo this condition to check if there are comments to be added to
-                    // self.add_jira_comment()
-                    self.add_comment().await?;
+                    if self.comment_add.push_comment {
+                        let comments = &self.comment_add.messages.clone();
+                        self.add_comment(comments).await?;
+                        self.comment_add.messages.clear();
+                        self.comment_add.push_comment = false;
+                    }
                     return Ok(EventState::Consumed);
                 }
             }
@@ -679,6 +674,7 @@ impl App {
                             let ticket = t.clone();
                             self.update_single_ticket(&ticket.key).await?;
                         }
+                        self.ticket_transition.push_transition = false;
                         self.focus = Focus::Tickets;
                     }
                     return Ok(EventState::Consumed);
