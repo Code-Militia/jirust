@@ -156,14 +156,10 @@ impl RelationWidget {
 
     pub fn open_browser(&mut self) {
         if self.selected().is_some() {
-            let link_details  = self.selected().unwrap().clone();
+            let link_details = self.selected().unwrap().clone();
             let link_relation = match (&link_details.outward_issue, &link_details.inward_issue) {
-                (Some(outward), None) => {
-                    outward
-                }
-                (None, Some(inward)) => {
-                    inward
-                }
+                (Some(outward), None) => outward,
+                (None, Some(inward)) => inward,
                 _ => unreachable!("If there is a link, this should always return"),
             };
             let url = self.jira_domain.clone() + "/browse/" + &link_relation.key;

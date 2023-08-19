@@ -4,12 +4,15 @@ use std::collections::HashMap;
 use html2md::parse_html;
 use tui::{
     backend::Backend,
-    layout::{Constraint, Rect, Alignment, Layout, Direction},
-    widgets::{Cell, Clear, ListState, Row, Table, TableState, Paragraph, Wrap},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    widgets::{Cell, Clear, ListState, Paragraph, Row, Table, TableState, Wrap},
     Frame,
 };
 
-use super::{commands::{CommandInfo, CommandText}, draw_block_style, draw_highlight_style, Component, EventState};
+use super::{
+    commands::{CommandInfo, CommandText},
+    draw_block_style, draw_highlight_style, Component, EventState,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
@@ -26,19 +29,23 @@ impl Action {
     pub fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- General --";
         match self {
-            Self::OpenBrowser => CommandText::new(format!("Open Ticket in browser [{key}]"), CMD_GROUP_GENERAL),
-            Self::Next(line) =>
-                CommandText::new(format!("Next {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::Previous(line) =>
-                CommandText::new(format!("Previous {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::Last =>
-                CommandText::new(format!("Last [{key}]"), CMD_GROUP_GENERAL),
-            Self::First =>
-                CommandText::new(format!("First [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollDownDescription(line) =>
-                CommandText::new(format!("Scroll down description {line} [{key}]"), CMD_GROUP_GENERAL),
-            Self::ScrollUpDescription(line) =>
-                CommandText::new(format!("Scroll up description {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::OpenBrowser => {
+                CommandText::new(format!("Open Ticket in browser [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::Next(line) => CommandText::new(format!("Next {line} [{key}]"), CMD_GROUP_GENERAL),
+            Self::Previous(line) => {
+                CommandText::new(format!("Previous {line} [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::Last => CommandText::new(format!("Last [{key}]"), CMD_GROUP_GENERAL),
+            Self::First => CommandText::new(format!("First [{key}]"), CMD_GROUP_GENERAL),
+            Self::ScrollDownDescription(line) => CommandText::new(
+                format!("Scroll down description {line} [{key}]"),
+                CMD_GROUP_GENERAL,
+            ),
+            Self::ScrollUpDescription(line) => CommandText::new(
+                format!("Scroll up description {line} [{key}]"),
+                CMD_GROUP_GENERAL,
+            ),
         }
     }
 }
@@ -118,7 +125,8 @@ impl TicketWidget {
 
         match self.selected() {
             Some(ticket) => {
-                let summary = ticket.fields.summary.clone();
+                // let summary = ticket.fields.summary.clone();
+                let summary = format!("{:} - {:}", ticket.key, ticket.fields.summary.clone());
                 let description = ticket.rendered_fields.description.clone();
                 self.draw_description(f, focused, description_frame, summary, description)
             }
@@ -310,7 +318,11 @@ impl TicketWidget {
         self.scroll = self.scroll.saturating_sub(lines);
     }
 
-    pub async fn update(&mut self, mut tickets: Vec<TicketData>, clear: bool) -> anyhow::Result<()> {
+    pub async fn update(
+        &mut self,
+        mut tickets: Vec<TicketData>,
+        clear: bool,
+    ) -> anyhow::Result<()> {
         if clear {
             self.tickets.clear();
         }
@@ -332,7 +344,7 @@ impl Component for TicketWidget {
                 Last => self.go_to_bottom(),
                 First => self.go_to_top(),
                 ScrollDownDescription(line) => self.scroll_down_description(line),
-                ScrollUpDescription(line) => self.scroll_up_description(line)
+                ScrollUpDescription(line) => self.scroll_up_description(line),
             }
             Ok(EventState::Consumed)
         } else {

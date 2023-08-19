@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::jira::projects::Project;
 use crate::jira::tickets::{PostTicketTransition, TicketTransition};
+use crate::widgets::commands::CommandText;
 use crate::widgets::commands::{self, CommandInfo};
 use crate::widgets::comments::CommentsList;
 use crate::widgets::comments_add::CommentAdd;
@@ -14,7 +14,6 @@ use crate::widgets::search_tickets::SearchTicketsWidget;
 use crate::widgets::ticket_relation::RelationWidget;
 use crate::widgets::ticket_transition::TransitionWidget;
 use crate::widgets::tickets::TicketWidget;
-use crate::widgets::commands::CommandText;
 use crate::widgets::{DrawableComponent, InputMode};
 use crate::{
     config::Config,
@@ -22,6 +21,8 @@ use crate::{
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
+use std::collections::HashMap;
+use log::debug;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
@@ -63,29 +64,39 @@ impl ProjectsAction {
         const CMD_GROUP_GENERAL: &str = "-- Projects Help --";
         match self {
             Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
-            Self::SelectProject => CommandText::new(format!("Select project [{key}]"), CMD_GROUP_GENERAL),
+            Self::SelectProject => {
+                CommandText::new(format!("Select project [{key}]"), CMD_GROUP_GENERAL)
+            }
             Self::SearchProjects => CommandText::new(format!("Filter [{key}]"), CMD_GROUP_GENERAL),
             Self::NextPage => CommandText::new(format!("Next page [{key}]"), CMD_GROUP_GENERAL),
-            Self::PreviousPage => CommandText::new(format!("Previous page [{key}]"), CMD_GROUP_GENERAL),
-            Self::Reset => CommandText::new(format!("Clear out tickets cache table and pull from Jira [{key}]"), CMD_GROUP_GENERAL),
+            Self::PreviousPage => {
+                CommandText::new(format!("Previous page [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::Reset => CommandText::new(
+                format!("Clear out tickets cache table and pull from Jira [{key}]"),
+                CMD_GROUP_GENERAL,
+            ),
         }
     }
 }
-
 
 #[derive(Debug, Clone, Copy)]
 enum ParentAction {
     FocusComponent,
     FocusRelation,
-    OpenHelp
+    OpenHelp,
 }
 
 impl ParentAction {
     fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- Tickets Help --";
         match self {
-            Self::FocusComponent => CommandText::new(format!("Move to Component pane [{key}]"), CMD_GROUP_GENERAL),
-            Self::FocusRelation => CommandText::new(format!("Move to Relation pane [{key}]"), CMD_GROUP_GENERAL),
+            Self::FocusComponent => {
+                CommandText::new(format!("Move to Component pane [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::FocusRelation => {
+                CommandText::new(format!("Move to Relation pane [{key}]"), CMD_GROUP_GENERAL)
+            }
             Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
         }
     }
@@ -110,16 +121,32 @@ impl TicketsAction {
     fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- Tickets Help --";
         match self {
-            Self::FocusRelation => CommandText::new(format!("Focus on Relation pane [{key}]"), CMD_GROUP_GENERAL),
-            Self::FocusLabels => CommandText::new(format!("Focus on Labels pane [{key}]"), CMD_GROUP_GENERAL),
+            Self::FocusRelation => {
+                CommandText::new(format!("Focus on Relation pane [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::FocusLabels => {
+                CommandText::new(format!("Focus on Labels pane [{key}]"), CMD_GROUP_GENERAL)
+            }
             Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
-            Self::OpenComments => CommandText::new(format!("Open Comments View [{key}]"), CMD_GROUP_GENERAL),
+            Self::OpenComments => {
+                CommandText::new(format!("Open Comments View [{key}]"), CMD_GROUP_GENERAL)
+            }
             Self::SearchTickets => CommandText::new(format!("Filter [{key}]"), CMD_GROUP_GENERAL),
             Self::NextPage => CommandText::new(format!("Next page [{key}]"), CMD_GROUP_GENERAL),
-            Self::PreviousPage => CommandText::new(format!("Previous page [{key}]"), CMD_GROUP_GENERAL),
-            Self::OpenProjects => CommandText::new(format!("Go back to projects [{key}]"), CMD_GROUP_GENERAL),
-            Self::OpenTicketTransition => CommandText::new(format!("Open Ticket transition view [{key}]"), CMD_GROUP_GENERAL),
-            Self::Reset => CommandText::new(format!("Clear out tickets cache table and pull from Jira [{key}]"), CMD_GROUP_GENERAL),
+            Self::PreviousPage => {
+                CommandText::new(format!("Previous page [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::OpenProjects => {
+                CommandText::new(format!("Go back to projects [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::OpenTicketTransition => CommandText::new(
+                format!("Open Ticket transition view [{key}]"),
+                CMD_GROUP_GENERAL,
+            ),
+            Self::Reset => CommandText::new(
+                format!("Clear out tickets cache table and pull from Jira [{key}]"),
+                CMD_GROUP_GENERAL,
+            ),
         }
     }
 }
@@ -131,18 +158,20 @@ enum CommentsAction {
     FocusTickets,
 }
 
-impl CommentsAction{
+impl CommentsAction {
     fn to_command_text(self, key: Key) -> CommandText {
         const CMD_GROUP_GENERAL: &str = "-- Comments Help --";
         match self {
             Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
-            Self::AddComment => CommandText::new(format!("Add comment to ticket [{key}]"), CMD_GROUP_GENERAL),
-            Self::FocusTickets => CommandText::new(format!("Go back to tickets [{key}]"), CMD_GROUP_GENERAL)
+            Self::AddComment => {
+                CommandText::new(format!("Add comment to ticket [{key}]"), CMD_GROUP_GENERAL)
+            }
+            Self::FocusTickets => {
+                CommandText::new(format!("Go back to tickets [{key}]"), CMD_GROUP_GENERAL)
+            }
         }
     }
 }
-
-
 
 pub struct App {
     // load_state: LoadState,
@@ -177,7 +206,7 @@ impl App {
             &config.jira_config.user_email,
             &config.jira_config.db_file,
             &config.jira_config.projects,
-            &config.jira_config.tickets
+            &config.jira_config.tickets,
         )
         .await?;
         let projects = &jira.get_jira_projects().await?;
@@ -188,7 +217,10 @@ impl App {
             comments_key_mappings: {
                 let mut map = HashMap::new();
                 map.insert(config.key_config.open_help, CommentsAction::OpenHelp);
-                map.insert(config.key_config.ticket_add_comments, CommentsAction::AddComment);
+                map.insert(
+                    config.key_config.ticket_add_comments,
+                    CommentsAction::AddComment,
+                );
                 map.insert(config.key_config.esc, CommentsAction::FocusTickets);
                 map
             },
@@ -216,7 +248,10 @@ impl App {
                 map.insert(config.key_config.enter, ProjectsAction::SelectProject);
                 map.insert(config.key_config.filter, ProjectsAction::SearchProjects);
                 map.insert(config.key_config.next_page, ProjectsAction::NextPage);
-                map.insert(config.key_config.previous_page, ProjectsAction::PreviousPage);
+                map.insert(
+                    config.key_config.previous_page,
+                    ProjectsAction::PreviousPage,
+                );
                 map.insert(config.key_config.reset, ProjectsAction::Reset);
                 map
             },
@@ -232,9 +267,15 @@ impl App {
                 let mut map = HashMap::new();
                 map.insert(config.key_config.previous, TicketsAction::FocusRelation);
                 map.insert(config.key_config.next, TicketsAction::FocusLabels);
-                map.insert(config.key_config.ticket_view_comments, TicketsAction::OpenComments);
+                map.insert(
+                    config.key_config.ticket_view_comments,
+                    TicketsAction::OpenComments,
+                );
                 map.insert(config.key_config.esc, TicketsAction::OpenProjects);
-                map.insert(config.key_config.ticket_transition, TicketsAction::OpenTicketTransition);
+                map.insert(
+                    config.key_config.ticket_transition,
+                    TicketsAction::OpenTicketTransition,
+                );
                 map.insert(config.key_config.open_help, TicketsAction::OpenHelp);
                 map.insert(config.key_config.filter, TicketsAction::SearchTickets);
                 map.insert(config.key_config.next_page, TicketsAction::NextPage);
@@ -326,8 +367,12 @@ impl App {
 
         let ticket_description = ticket_right_chunks[0];
 
-        self.tickets
-            .draw(f, ticket_description, matches!(self.focus, Focus::Tickets), ticket_list)?;
+        self.tickets.draw(
+            f,
+            ticket_description,
+            matches!(self.focus, Focus::Tickets),
+            ticket_list,
+        )?;
 
         self.labels.draw(
             f,
@@ -343,8 +388,12 @@ impl App {
             self.tickets.selected(),
         )?;
 
-        self.parent
-            .draw(f, matches!(self.focus, Focus::TicketParent), ticket_parent, self.tickets.selected())?;
+        self.parent.draw(
+            f,
+            matches!(self.focus, Focus::TicketParent),
+            ticket_parent,
+            self.tickets.selected(),
+        )?;
 
         self.relation.draw(
             f,
@@ -422,21 +471,27 @@ impl App {
     pub async fn next_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected().unwrap();
         self.jira.get_next_ticket_page(&project.key).await?;
-        self.tickets.update(self.jira.tickets.issues.clone(), true).await?;
+        self.tickets
+            .update(self.jira.tickets.issues.clone(), true)
+            .await?;
         Ok(())
     }
 
     pub async fn previous_ticket_page(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected().unwrap();
         self.jira.get_previous_tickets_page(&project.key).await?;
-        self.tickets.update(self.jira.tickets.issues.clone(), true).await?;
+        self.tickets
+            .update(self.jira.tickets.issues.clone(), true)
+            .await?;
         Ok(())
     }
 
     pub async fn update_all_tickets(&mut self) -> anyhow::Result<()> {
         let project = self.projects.selected().unwrap();
         self.jira.get_jira_tickets(&project.key).await?;
-        self.tickets.update(self.jira.tickets.issues.clone(), true).await?;
+        self.tickets
+            .update(self.jira.tickets.issues.clone(), true)
+            .await?;
         Ok(())
     }
 
@@ -487,21 +542,15 @@ impl App {
         Ok(())
     }
 
-    pub async fn add_jira_comment(&mut self) -> anyhow::Result<()> {
-        let comment = &self.comment_add.messages;
+    pub async fn add_comment(&mut self, comments: &Vec<String>) -> anyhow::Result<()> {
         let ticket = match self.tickets.selected() {
             None => return Ok(()),
             Some(t) => t,
         };
-        if !comment.is_empty() && self.comment_add.push_comment {
-            let comment = comment.join(" \n ");
-            ticket
-                .add_comment(&self.jira.db, &comment, &self.jira.client)
-                .await?;
-            self.comment_add.messages.clear();
-            self.comment_add.push_comment = false;
-            return Ok(());
-        };
+        let comment = comments.join(" \n ");
+        ticket
+            .add_comment(&self.jira.db, &comment, &self.jira.client)
+            .await?;
         Ok(())
     }
 
@@ -519,17 +568,18 @@ impl App {
     pub async fn move_ticket(&mut self) -> anyhow::Result<()> {
         let ticket = match self.tickets.selected() {
             Some(t) => t,
-            None => return Ok(())
+            None => return Ok(()),
         };
         let transition = self.ticket_transition.selected_transition().unwrap();
         let data = PostTicketTransition {
             transition: TicketTransition {
+                fields: None,
+                has_screen: None,
                 id: transition.id.clone(),
                 name: transition.name.clone(),
             },
         };
-        ticket.transition(data, &self.jira.client).await?;
-        self.ticket_transition.push_transition = false;
+        ticket.transition_ticket(data, &self.jira.client).await?;
         self.jira.jira_ticket_api(&ticket.key).await?;
         Ok(())
     }
@@ -551,7 +601,12 @@ impl App {
             }
             Focus::CommentsAdd => {
                 if self.comment_add.event(key)?.is_consumed() {
-                    self.add_jira_comment().await?;
+                    if self.comment_add.push_comment {
+                        let comments = &self.comment_add.messages.clone();
+                        self.add_comment(comments).await?;
+                        self.comment_add.messages.clear();
+                        self.comment_add.push_comment = false;
+                    }
                     return Ok(EventState::Consumed);
                 }
             }
@@ -614,11 +669,19 @@ impl App {
             Focus::TicketTransition => {
                 if self.ticket_transition.event(key)?.is_consumed() {
                     if self.ticket_transition.push_transition {
+                        debug!("Transitioning {:?} to {:?}", self.tickets.selected(), self.ticket_transition.selected_transition());
+                        if !self.ticket_transition.comment_float_screen.is_empty() {
+                            debug!("Reason {:?}", self.ticket_transition.selected_transition_reason());
+                            self.add_comment(vec![self.ticket_transition.comment_float_screen.clone()].as_ref())
+                                .await?;
+                            self.ticket_transition.comment_float_screen.clear();
+                        }
                         self.move_ticket().await?;
                         if let Some(t) = self.tickets.selected() {
                             let ticket = t.clone();
                             self.update_single_ticket(&ticket.key).await?;
                         }
+                        self.ticket_transition.push_transition = false;
                         self.focus = Focus::Tickets;
                     }
                     return Ok(EventState::Consumed);
@@ -639,7 +702,7 @@ impl App {
                         OpenHelp => {
                             let mut commands = Vec::with_capacity(
                                 self.comments_key_mappings.len()
-                                + self.comments_list.key_mappings.len()
+                                    + self.comments_list.key_mappings.len(),
                             );
                             for (&key, action) in &self.comments_key_mappings {
                                 let command_text = action.to_command_text(key);
@@ -715,8 +778,7 @@ impl App {
                     match *action {
                         OpenHelp => {
                             let mut commands = Vec::with_capacity(
-                                self.projects_key_mappings.len()
-                                + self.projects.key_mappings.len()
+                                self.projects_key_mappings.len() + self.projects.key_mappings.len(),
                             );
                             for (&key, action) in &self.projects_key_mappings {
                                 let command_text = action.to_command_text(key);
@@ -754,7 +816,8 @@ impl App {
                             self.jira.clear_projects_table().await?;
                             self.jira.clear_tickets_table().await?;
                             let projects = &self.jira.get_jira_projects().await?;
-                            self.projects = ProjectsWidget::new(projects, self.config.key_config.clone());
+                            self.projects =
+                                ProjectsWidget::new(projects, self.config.key_config.clone());
                         }
                     }
                     return Ok(EventState::Consumed);
@@ -803,7 +866,11 @@ impl App {
                         }
                     }
 
-                    match self.jira.search_cache_ticket(ticket_input.clone().as_ref()).await {
+                    match self
+                        .jira
+                        .search_cache_ticket(ticket_input.clone().as_ref())
+                        .await
+                    {
                         Ok(t) => {
                             self.update_single_ticket(&t.key).await?;
                             self.focus = Focus::Tickets;
@@ -843,10 +910,9 @@ impl App {
                         }
                         OpenHelp => {
                             let mut commands = Vec::with_capacity(
-                                self.parent_key_mappings.len()
-                                + self.parent.key_mappings.len()
+                                self.parent_key_mappings.len() + self.parent.key_mappings.len(),
                             );
-                            for (&key, action) in &self.parent_key_mappings{
+                            for (&key, action) in &self.parent_key_mappings {
                                 let command_text = action.to_command_text(key);
                                 commands.push(CommandInfo::new(command_text));
                             }
@@ -908,8 +974,7 @@ impl App {
                         }
                         OpenHelp => {
                             let mut commands = Vec::with_capacity(
-                                self.tickets_key_mappings.len()
-                                + self.tickets.key_mappings.len()
+                                self.tickets_key_mappings.len() + self.tickets.key_mappings.len(),
                             );
                             for (&key, action) in &self.tickets_key_mappings {
                                 let command_text = action.to_command_text(key);
@@ -959,7 +1024,8 @@ impl App {
                             self.jira.clear_projects_table().await?;
                             self.jira.clear_tickets_table().await?;
                             let projects = &self.jira.get_jira_projects().await?;
-                            self.projects = ProjectsWidget::new(projects, self.config.key_config.clone());
+                            self.projects =
+                                ProjectsWidget::new(projects, self.config.key_config.clone());
                         }
                     }
                     return Ok(EventState::Consumed);

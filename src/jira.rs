@@ -40,7 +40,7 @@ pub struct Jira {
     pub tickets_max_results: u32,
     pub tickets: JiraTickets,
     pub user_config_projects: Option<JiraConfigProjects>,
-    pub user_config_tickets: Option<JiraConfigTickets>
+    pub user_config_tickets: Option<JiraConfigTickets>,
 }
 
 impl Jira {
@@ -51,15 +51,14 @@ impl Jira {
         current_user_email: &str,
         user_config_cache: &Option<bool>,
         user_config_project: &Option<JiraConfigProjects>,
-        user_config_tickets: &Option<JiraConfigTickets>
+        user_config_tickets: &Option<JiraConfigTickets>,
     ) -> anyhow::Result<Jira, anyhow::Error> {
-        let auth =
-            jira_authentication(domain, api_key, api_version, current_user_email);
+        let auth = jira_authentication(domain, api_key, api_version, current_user_email);
         let projects: JiraProjects = JiraProjects::new().await?;
         let tickets: JiraTickets = JiraTickets::new().await?;
         let db = match user_config_cache {
             Some(_) => connect("file:///tmp/jirust.db").await?,
-            None => connect("mem://").await?
+            None => connect("mem://").await?,
         };
         db.use_ns("noc").use_db("database").await?;
 
@@ -73,7 +72,7 @@ impl Jira {
             tickets_max_results: 50,
             tickets,
             user_config_projects: user_config_project.clone(),
-            user_config_tickets: user_config_tickets.clone()
+            user_config_tickets: user_config_tickets.clone(),
         })
     }
 
@@ -146,7 +145,10 @@ impl Jira {
             );
             if self.user_config_projects.is_some() {
                 let projects = self.user_config_projects.as_ref().unwrap();
-                url = format!("{}/project/search?keys={}", jira_url, projects.default_projects)
+                url = format!(
+                    "{}/project/search?keys={}",
+                    jira_url, projects.default_projects
+                )
             }
             let resp = self
                 .projects
@@ -184,19 +186,19 @@ impl Jira {
     ) -> anyhow::Result<Vec<TicketData>, anyhow::Error> {
         debug!("Retrieve tickets from API project {project_key}");
         let jira_url = self.client.get_domain();
-        let url = format!("{}/search",jira_url);
+        let url = format!("{}/search", jira_url);
         let max_results = self.tickets_max_results.to_string();
         let start_at = self.tickets_start_at.to_string();
         let mut jql = format!("project = {}", project_key);
         if self.user_config_tickets.is_some() {
-            let config_tickets = self.user_config_tickets.clone().unwrap(); 
+            let config_tickets = self.user_config_tickets.clone().unwrap();
             if let Some(current_user_tickets) = config_tickets.current_user_tickets_only {
                 if current_user_tickets {
                     jql = format!("{jql} AND assignee = currentuser()")
                 }
             }
 
-            let mut ticket_status: Vec<String>  = vec![];
+            let mut ticket_status: Vec<String> = vec![];
             if let Some(specified_ticket_status) = config_tickets.show_ticket_status {
                 ticket_status = specified_ticket_status
             }
@@ -212,10 +214,10 @@ impl Jira {
             }
         }
         let params = vec![
-            ("maxResults", max_results.as_ref()), 
+            ("maxResults", max_results.as_ref()),
             ("jql", jql.as_ref()),
             ("expand", "renderedFields"),
-            ("startAt", start_at.as_ref()), 
+            ("startAt", start_at.as_ref()),
         ];
         debug!("JQL {:?}", params);
         let resp = self
@@ -311,7 +313,10 @@ impl Jira {
         }
     }
 
-    pub async fn jira_ticket_api(&mut self, ticket_key: &str) -> anyhow::Result<TicketData, anyhow::Error> {
+    pub async fn jira_ticket_api(
+        &mut self,
+        ticket_key: &str,
+    ) -> anyhow::Result<TicketData, anyhow::Error> {
         debug!("Retrieve {ticket_key}");
         let ticket = self
             .tickets
@@ -336,16 +341,17 @@ impl Jira {
         let project: Option<Project> = self.db.select(("projects", project_key)).await?;
         match project {
             Some(p) => {
-                self.projects.values.push(p.clone()); 
+                self.projects.values.push(p.clone());
                 Ok(p)
             }
-            None => {
-                self.jira_project_api(project_key).await
-            }
+            None => self.jira_project_api(project_key).await,
         }
     }
 
-    pub async fn jira_project_api(&mut self, project_key: &str) -> anyhow::Result<Project, anyhow::Error> {
+    pub async fn jira_project_api(
+        &mut self,
+        project_key: &str,
+    ) -> anyhow::Result<Project, anyhow::Error> {
         let project = self
             .projects
             .search_jira_project_api(project_key, &self.client)
