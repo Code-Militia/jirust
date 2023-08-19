@@ -125,7 +125,8 @@ impl TicketWidget {
 
         match self.selected() {
             Some(ticket) => {
-                let summary = ticket.fields.summary.clone();
+                // let summary = ticket.fields.summary.clone();
+                let summary = format!("{:} - {:}", ticket.key, ticket.fields.summary.clone());
                 let description = ticket.rendered_fields.description.clone();
                 self.draw_description(f, focused, description_frame, summary, description)
             }
