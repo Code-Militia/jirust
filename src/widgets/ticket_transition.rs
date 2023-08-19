@@ -19,12 +19,12 @@ use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Compo
 #[derive(Debug)]
 pub struct TransitionWidget {
     draw_list_float_screen: Option<bool>,
-    comment_float_screen: String,
     float_screen_list_state: ListState,
     float_screen_list: Option<Vec<CustomFieldAllowedValues>>,
     focus_float_screen: Option<bool>,
     key_config: KeyConfig,
     state: ListState,
+    pub comment_float_screen: String,
     pub push_transition: bool,
     pub push_transition_reason: Option<String>,
     pub transitions: Vec<TicketTransition>,

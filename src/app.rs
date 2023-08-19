@@ -22,6 +22,7 @@ use crate::{
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
 use std::collections::HashMap;
+use log::debug;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
@@ -668,6 +669,13 @@ impl App {
             Focus::TicketTransition => {
                 if self.ticket_transition.event(key)?.is_consumed() {
                     if self.ticket_transition.push_transition {
+                        debug!("Transitioning {:?} to {:?}", self.tickets.selected(), self.ticket_transition.selected_transition());
+                        if !self.ticket_transition.comment_float_screen.is_empty() {
+                            debug!("Reason {:?}", self.ticket_transition.selected_transition_reason());
+                            self.add_comment(vec![self.ticket_transition.comment_float_screen.clone()].as_ref())
+                                .await?;
+                            self.ticket_transition.comment_float_screen.clear();
+                        }
                         self.move_ticket().await?;
                         if let Some(t) = self.tickets.selected() {
                             let ticket = t.clone();
