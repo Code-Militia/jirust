@@ -579,7 +579,6 @@ impl App {
             },
         };
         ticket.transition_ticket(data, &self.jira.client).await?;
-        self.ticket_transition.push_transition = false;
         self.jira.jira_ticket_api(&ticket.key).await?;
         Ok(())
     }
