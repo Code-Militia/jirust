@@ -196,7 +196,12 @@ impl Jira {
                 if current_user_tickets {
                     jql = format!("{jql} AND assignee = currentuser()")
                 }
+                debug!("{jql}");
             }
+            if config_tickets.current_sprint_tickets_only == Some(true) {
+                jql = format!("{jql} AND sprint IN openSprints() AND sprint NOT IN futureSprints() AND sprint NOT IN closedSprints()")
+            }
+            debug!("{jql}");
 
             let mut ticket_status: Vec<String> = vec![];
             if let Some(specified_ticket_status) = config_tickets.show_ticket_status {
@@ -206,11 +211,14 @@ impl Jira {
                 for (index, status) in ticket_status.iter().enumerate() {
                     if index == 0 {
                         jql = format!("{jql} AND (Status = \"{status}\"");
+                        debug!("{jql}");
                     } else {
                         jql = format!("{jql} OR Status = \"{status}\"");
+                        debug!("{jql}");
                     }
                 }
-                jql += ")"
+                jql += ")";
+                debug!("{jql}");
             }
         }
         let params = vec![
