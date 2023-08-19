@@ -4,6 +4,8 @@ user_email = "YOUR_JIRA_EMAIL"
 db_file = true # If true, it will create a cached db in the /tmp directory.  Which can live for 10 days.
 
 [tickets]
+#Show current sprint ticket only
+current_sprint_tickets_only = true
 # Show tickets assigned to you only.  Can include unassigned.
 current_user_tickets_only = true
 # Show tickets in these status only

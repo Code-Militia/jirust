@@ -21,7 +21,10 @@ pub struct JiraConfigFile {
 
 #[derive(Debug, Deserialize, Clone, Default)]
 pub struct JiraConfigTickets {
+    // TODO: This functionality needs to be handled
+    pub current_sprint_tickets_only: Option<bool>,
     pub current_user_tickets_only: Option<bool>,
+    // TODO: This functionality needs to be handled
     pub show_unassgined: Option<bool>,
     pub show_ticket_status: Option<Vec<String>>,
 }
