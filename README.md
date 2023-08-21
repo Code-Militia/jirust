@@ -4,6 +4,10 @@ A terminal UI for jira written in rust.
 An application with developers and engineers in mind.  It is solely focused on updating tickets at the moment.
 ![jirust](https://user-images.githubusercontent.com/7011993/225179809-b4683ea5-93e5-4c4c-abf5-e6534df0f5a3.gif)
 
+
+https://github.com/moali87/jirust/assets/7011993/f3286c68-5dc8-4e90-a43c-a428215b6d96
+
+
 ## Install
 make sure you have Rust installed.  See https://www.rust-lang.org/tools/install
 
