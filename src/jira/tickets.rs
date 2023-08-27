@@ -137,7 +137,7 @@ pub struct CustomFieldAllowedValues {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CustomFieldSchema {
-    pub custom: String,
+    pub custom: Option<String>,
     pub custom_id: u32,
 }
 
