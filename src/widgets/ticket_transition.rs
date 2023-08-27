@@ -73,11 +73,18 @@ impl TransitionWidget {
             let fields = &transition.fields.as_ref().unwrap().values;
             let mut allowed_values: Vec<CustomFieldAllowedValues> = Vec::new();
             for f in &*fields {
-                let field = fields.get(&f.0.to_string()).unwrap();
-                if !field.schema.custom.ends_with(":select") {
-                    continue;
+                debug!("float screen schema {:?}", &f.1.schema);
+                match &f.1.schema.custom {
+                    Some(c) => {
+                        if !c.ends_with(":select") {
+                            continue;
+                        }
+                        allowed_values = f.1.allowed_values.clone().unwrap();
+                    }
+                    None => {
+                        continue;
+                    }
                 }
-                allowed_values = field.allowed_values.as_ref().unwrap().to_vec();
             }
             self.float_screen_list = Some(allowed_values.clone());
             f.render_widget(Clear, area);
