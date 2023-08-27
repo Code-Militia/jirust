@@ -1,8 +1,6 @@
-name: Rust
+name: Build, test, and dry-run
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
     branches: ["main"]
 
@@ -20,6 +18,8 @@ jobs:
         run: |
           cargo build --verbose
 
+      - name: Run tests
+        run: cargo test --verbose
       - uses: katyo/publish-crates@v2
         with:
           dry-run: true
