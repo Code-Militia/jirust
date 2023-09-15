@@ -1,4 +1,5 @@
 use log::{debug, trace};
+use anyhow::anyhow;
 use tui::{
     backend::Backend,
     layout::{Rect, Direction, Layout, Constraint},
@@ -42,9 +43,11 @@ impl TransitionWidget {
         let title = "Transition";
         let mut list_items: Vec<ListItem> = Vec::new();
         for c in &self.transitions {
-            let name = c.name.as_ref().unwrap();
-            list_items
-                .push(ListItem::new(vec![Spans::from(Span::raw(name))]).style(Style::default()))
+            if let Some(name) = c.name.as_ref() {
+                debug!("Transition name: {:?}", name);
+                list_items
+                    .push(ListItem::new(vec![Spans::from(Span::raw(name))]).style(Style::default()))
+            }
         }
 
         let list = List::new(list_items)
@@ -68,18 +71,26 @@ impl TransitionWidget {
             self.draw_list_float_screen
         );
         if self.draw_list_float_screen == Some(true) {
-            let transition = self.selected_transition().unwrap();
-            debug!("{:?}", transition);
-            let fields = &transition.fields.as_ref().unwrap().values;
             let mut allowed_values: Vec<CustomFieldAllowedValues> = Vec::new();
-            for f in &*fields {
+            let transition = match self.selected_transition() {
+                Some(t) => t,
+                None => return Err(anyhow!("Failed to retrieve transition"))
+            };
+            debug!("{:?}", transition);
+            let fields = match &transition.fields {
+                Some(f) => f, 
+                None => return Err(anyhow!("Failed to retrieve fields"))
+            };
+            for f in &fields.values {
                 debug!("float screen schema {:?}", &f.1.schema);
                 match &f.1.schema.custom {
                     Some(c) => {
                         if !c.ends_with(":select") {
                             continue;
                         }
-                        allowed_values = f.1.allowed_values.clone().unwrap();
+                        if let Some(v) = &f.1.allowed_values {
+                            allowed_values = v.clone() 
+                        }
                     }
                     None => {
                         continue;
@@ -110,7 +121,10 @@ impl TransitionWidget {
         self.focus_float_screen = Some(true);
         let title = "Select Transition Reason";
         let mut list_items: Vec<ListItem> = Vec::new();
-        let select_list = self.float_screen_list.clone().unwrap();
+        let select_list = match self.float_screen_list.clone() {
+            Some(s) => s,
+            None => return Err(anyhow!("Failed to retrieve float screen list"))
+        };
         for allowed_value in select_list {
             let value = allowed_value.value;
             list_items

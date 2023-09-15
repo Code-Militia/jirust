@@ -4,7 +4,6 @@ use serde::Serialize;
 use surrealdb::engine::any::connect;
 use surrealdb::engine::any::Any;
 use surrealdb::Surreal;
-use tokio::spawn;
 
 pub type SurrealAny = Surreal<Any>;
 
@@ -100,15 +99,13 @@ impl Jira {
         self.projects = self.projects.get_projects_next_page(&self.client).await?;
 
         for project in &self.projects.values {
-            let db = self.db.clone();
-            let prj = project.clone();
-            spawn(async move {
-                let _projects_insert: Project = db
-                    .update(("projects", &prj.key))
-                    .content(prj)
-                    .await
-                    .expect("projects inserted into db");
-            });
+            // let db = self.db.clone();
+            // let prj = project.clone();
+            let _projects_insert: Project = self.db
+                .update(("projects", &project.key))
+                .content(project)
+                .await?
+                .expect("projects inserted into db");
         }
         Ok(&self.projects.values)
     }
@@ -158,15 +155,13 @@ impl Jira {
 
             debug!("Projects found from JIRA {:?}", self.projects);
             for project in &self.projects.values {
-                let db = self.db.clone();
-                let prj = project.clone();
-                spawn(async move {
-                    let _projects_insert: Project = db
-                        .update(("projects", &prj.key))
-                        .content(prj)
-                        .await
-                        .expect("projects inserted into db");
-                });
+                // let db = self.db.clone();
+                // let prj = project.clone();
+                let _projects_insert: Project = self.db
+                    .update(("projects", &project.key))
+                    .content(project)
+                    .await?
+                    .expect("projects inserted into db");
             }
 
             return Ok(self.projects.values.clone());
@@ -235,16 +230,14 @@ impl Jira {
         debug!("{resp}");
         self.tickets = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
         for ticket in self.tickets.issues.clone() {
-            let db = self.db.clone();
-            let tkt = ticket.clone();
-            spawn(async move {
-                let tickets_insert: TicketData = db
-                    .update(("tickets", &tkt.key))
-                    .content(tkt)
-                    .await
-                    .expect("tickets inserted into db");
-                debug!("{:?}", tickets_insert);
-            });
+            // let db = self.db.clone();
+            // let tkt = ticket.clone();
+            let tickets_insert: TicketData = self.db
+                .update(("tickets", &ticket.key))
+                .content(ticket)
+                .await?
+                .expect("tickets inserted into db");
+            debug!("{:?}", tickets_insert);
         }
 
         Ok(self.tickets.issues.clone())
@@ -335,7 +328,8 @@ impl Jira {
             .db
             .update(("tickets", ticket_key))
             .content(ticket)
-            .await?;
+            .await?
+            .expect("Failed to update ticket record");
 
         debug!("{:?}", update_ticket_record);
 
@@ -368,7 +362,8 @@ impl Jira {
             .db
             .update(("projects", project_key))
             .content(project)
-            .await?;
+            .await?
+            .expect("Failed to update project");
 
         Ok(update_project_record)
     }
