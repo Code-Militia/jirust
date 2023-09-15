@@ -193,7 +193,7 @@ impl TicketData {
 
         let comments: Comments =
             serde_json::from_str(response.as_str()).expect("unable to deserialize comments");
-        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?;
+        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?.expect("Failed to update tickets");
         Ok(comments)
     }
 
@@ -204,7 +204,7 @@ impl TicketData {
     ) -> anyhow::Result<Comments> {
         let ticket: TicketData = db
             .select(("tickets", &self.key))
-            .await
+            .await?
             .expect("Failed to get TicketData from DB in get_comments");
         match ticket.fields.comments {
             None => Ok(self.save_ticket_comments_from_api(db, jira_client).await?),
@@ -229,7 +229,7 @@ impl TicketData {
         let comments: CommentBody =
             serde_json::from_str(response.as_str()).expect("unable to deserialize comments");
 
-        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?;
+        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?.expect("Failed to update tickets");
         Ok(comments)
     }
 
