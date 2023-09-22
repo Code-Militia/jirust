@@ -24,7 +24,11 @@ async fn main() -> anyhow::Result<()> {
 
     let config = config::Config::new().unwrap();
 
-    setup_terminal()?;
+    let mut app: App = App::new(config.clone()).await?;
+    let stdout = io::stdout();
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+    let events = event::event::Events::new(250);
 
     // setup panic handler to restore terminal before exiting
     let original_hook = std::panic::take_hook();
@@ -32,13 +36,7 @@ async fn main() -> anyhow::Result<()> {
         shutdown_terminal();
         original_hook(panic);
     }));
-
-    let mut app: App = App::new(config.clone()).await?;
-    let stdout = io::stdout();
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-    let events = event::event::Events::new(250);
-
+    setup_terminal()?;
     terminal.clear()?;
 
     loop {
