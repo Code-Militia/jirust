@@ -1,0 +1,5 @@
+services:
+  rust:
+    build: .
+    volumes:
+      - .:/usr/src
