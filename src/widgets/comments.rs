@@ -242,6 +242,7 @@ impl CommentsList {
         self.scroll = self.scroll.saturating_sub(lines);
     }
 
+    #[allow(dead_code)]
     pub async fn update(&mut self, comments: Comments) -> anyhow::Result<()> {
         self.comments = Some(comments);
         Ok(())

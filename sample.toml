@@ -1,6 +1,8 @@
 # These two properties are required
 domain = "https://YOUR_DOMAIN.atlassian.net"
 user_email = "YOUR_JIRA_EMAIL"
+api_key = "YOUR_API_KEY"
+api_version = "3"
 db_file = true # If true, it will create a cached db in the /tmp directory.  Which can live for 10 days.
 
 [tickets]

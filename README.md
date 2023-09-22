@@ -19,11 +19,9 @@ Run `cargo install jirust`
 
 ## Current requirements
 
-These are environment variables required to use this tool.
+You will need a config file in `$HOME/.config/jirust/config.toml`.  Please look at the sample.toml for its contents.
 
-* JIRA_API_KEY: "abcdefghijklmnopqrstuvwxyz1234567890"
-
-You will also need a config file in `$HOME/.config/jirust/config.toml`.  Please look at the sample.toml for its contents.
+Instead of specifying `api_key` in `config.toml`, you can instead set the `JIRA_API_KEY` environment variable.
 
 ## Current capabilities
 * List projects
