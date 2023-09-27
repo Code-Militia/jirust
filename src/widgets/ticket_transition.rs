@@ -66,11 +66,11 @@ impl TransitionWidget {
         f.render_widget(Clear, area);
         f.render_stateful_widget(list, area, &mut self.state);
 
-        trace!(
-            "Switch to draw float screen is {:?}",
-            self.draw_list_float_screen
-        );
         if self.draw_list_float_screen == Some(true) {
+            trace!(
+                "Switch to draw float screen is {:?}",
+                self.draw_list_float_screen
+            );
             let mut allowed_values: Vec<CustomFieldAllowedValues> = Vec::new();
             let transition = match self.selected_transition() {
                 Some(t) => t,
@@ -83,19 +83,25 @@ impl TransitionWidget {
             };
             for f in &fields.values {
                 debug!("float screen schema {:?}", &f.1.schema);
-                match &f.1.schema.custom {
-                    Some(c) => {
-                        if !c.ends_with(":select") {
-                            continue;
-                        }
-                        if let Some(v) = &f.1.allowed_values {
-                            allowed_values = v.clone() 
-                        }
-                    }
-                    None => {
-                        continue;
-                    }
+                if !f.1.schema.custom.ends_with(":select") {
+                    continue; 
                 }
+                if let Some(v) = &f.1.allowed_values {
+                    allowed_values = v.clone()
+                }
+                // match &f.1.schema.custom {
+                //     Some(c) => {
+                //         if !c.ends_with(":select") {
+                //             continue;
+                //         }
+                //         if let Some(v) = &f.1.allowed_values {
+                //             allowed_values = v.clone() 
+                //         }
+                //     }
+                //     None => {
+                //         continue;
+                //     }
+                // }
             }
             self.float_screen_list = Some(allowed_values.clone());
             f.render_widget(Clear, area);
@@ -128,7 +134,15 @@ impl TransitionWidget {
         for allowed_value in select_list {
             let value = allowed_value.value;
             list_items
-                .push(ListItem::new(vec![Spans::from(Span::raw(value))]).style(Style::default()))
+                .push(ListItem::new(vec![Spans::from(Span::raw(value))]).style(Style::default()));
+            // match allowed_value.value {
+            //     Some(v) => {
+            //
+            //     list_items
+            //         .push(ListItem::new(vec![Spans::from(Span::raw(v))]).style(Style::default()))
+            //     }
+            //     None => {}
+            // }
         }
         let list = List::new(list_items)
             .block(draw_block_style(true, title))
@@ -225,11 +239,18 @@ impl TransitionWidget {
         match self.selected_transition() {
             None => false,
             Some(t) => {
-                if t.has_screen.unwrap_or_else(|| false) {
-                    self.draw_list_float_screen = Some(true);
-                    return true;
+                match t.has_screen {
+                    Some(s) => {
+                        if s == true {
+                            self.draw_list_float_screen = Some(true);
+                            return true
+                        }
+                        false
+                    }
+                    None => {
+                        return false
+                    }
                 }
-                false
             }
         }
     }
