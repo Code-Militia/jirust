@@ -137,8 +137,10 @@ pub struct CustomFieldAllowedValues {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CustomFieldSchema {
-    pub custom: String,
-    pub custom_id: u32,
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom: Option<String>,
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_id: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -149,7 +151,7 @@ pub struct CustomFieldValues {
     // #[serde(skip_serializing_if = "Option::is_none")]
     pub key: String,
     // #[serde(skip_serializing_if = "Option::is_none")]
-    pub schema: CustomFieldSchema,
+    pub schema: Option<CustomFieldSchema>,
     // #[serde(skip_serializing_if = "Option::is_none")]
     pub allowed_values: Option<Vec<CustomFieldAllowedValues>>,
 }
@@ -158,7 +160,7 @@ pub struct CustomFieldValues {
 #[serde(rename_all = "camelCase")]
 pub struct CustomField {
     #[serde(flatten)]
-    pub values: HashMap<String, CustomFieldValues>,
+    pub values: Option<HashMap<String, CustomFieldValues>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -193,7 +195,11 @@ impl TicketData {
 
         let comments: Comments =
             serde_json::from_str(response.as_str()).expect("unable to deserialize comments");
-        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?.expect("Failed to update tickets");
+        let _db_update: TicketData = db
+            .update(("tickets", &self.key))
+            .merge(&self)
+            .await?
+            .expect("Failed to update tickets");
         Ok(comments)
     }
 
@@ -229,7 +235,11 @@ impl TicketData {
         let comments: CommentBody =
             serde_json::from_str(response.as_str()).expect("unable to deserialize comments");
 
-        let _db_update: TicketData = db.update(("tickets", &self.key)).merge(&self).await?.expect("Failed to update tickets");
+        let _db_update: TicketData = db
+            .update(("tickets", &self.key))
+            .merge(&self)
+            .await?
+            .expect("Failed to update tickets");
         Ok(comments)
     }
 

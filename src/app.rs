@@ -21,8 +21,8 @@ use crate::{
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};
-use std::collections::HashMap;
 use log::debug;
+use std::collections::HashMap;
 use tui::layout::Rect;
 use tui::{
     backend::Backend,
@@ -465,7 +465,7 @@ impl App {
     }
 
     pub async fn single_project_update(&mut self, project: Project) -> anyhow::Result<()> {
-        self.projects.update(&vec![project]).await
+        self.projects.update(&[project]).await
     }
 
     pub async fn next_ticket_page(&mut self) -> anyhow::Result<()> {
@@ -542,7 +542,7 @@ impl App {
         Ok(())
     }
 
-    pub async fn add_comment(&mut self, comments: &Vec<String>) -> anyhow::Result<()> {
+    pub async fn add_comment(&mut self, comments: &[String]) -> anyhow::Result<()> {
         let ticket = match self.tickets.selected() {
             None => return Ok(()),
             Some(t) => t,
@@ -669,11 +669,20 @@ impl App {
             Focus::TicketTransition => {
                 if self.ticket_transition.event(key)?.is_consumed() {
                     if self.ticket_transition.push_transition {
-                        debug!("Transitioning {:?} to {:?}", self.tickets.selected(), self.ticket_transition.selected_transition());
+                        debug!(
+                            "Transitioning {:?} to {:?}",
+                            self.tickets.selected(),
+                            self.ticket_transition.selected_transition()
+                        );
                         if !self.ticket_transition.comment_float_screen.is_empty() {
-                            debug!("Reason {:?}", self.ticket_transition.selected_transition_reason());
-                            self.add_comment(vec![self.ticket_transition.comment_float_screen.clone()].as_ref())
-                                .await?;
+                            debug!(
+                                "Reason {:?}",
+                                self.ticket_transition.selected_transition_reason()
+                            );
+                            self.add_comment(
+                                vec![self.ticket_transition.comment_float_screen.clone()].as_ref(),
+                            )
+                            .await?;
                             self.ticket_transition.comment_float_screen.clear();
                         }
                         self.move_ticket().await?;

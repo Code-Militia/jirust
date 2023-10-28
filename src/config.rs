@@ -163,7 +163,9 @@ impl Default for JiraConfigFile {
 
         let jira_api_key = match env::var("JIRA_API_KEY") {
             Ok(v) => v,
-            Err(_e) => data.api_key.expect("Environment variable JIRA_API_KEY is not set"),
+            Err(_e) => data
+                .api_key
+                .expect("Environment variable JIRA_API_KEY is not set"),
         };
         let jira_api_version = data.api_version.unwrap_or("3".to_string());
 
