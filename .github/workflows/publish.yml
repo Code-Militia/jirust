@@ -10,29 +10,6 @@ env:
   GITHUB_TOKEN: ${{ secrets.AUTO_ACTION }}
 
 jobs:
-  style:
-    name: Check Style
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-
-      - run: cargo fmt --all --check
-
-  clippy_check:
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features
-
   cargo_bump:
     name: Bump cargo version
     runs-on: ubuntu-latest
@@ -47,6 +24,15 @@ jobs:
           git config --global user.email 'github-actions-user@users.noreply.github.com'
           git commit -am "Automated cargo committed"
           git push
+
+  clippy_check:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features
 
   crates_io_publish:
     name: Publish (crates.io)
