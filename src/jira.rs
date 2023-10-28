@@ -99,9 +99,8 @@ impl Jira {
         self.projects = self.projects.get_projects_next_page(&self.client).await?;
 
         for project in &self.projects.values {
-            // let db = self.db.clone();
-            // let prj = project.clone();
-            let _projects_insert: Project = self.db
+            let _projects_insert: Project = self
+                .db
                 .update(("projects", &project.key))
                 .content(project)
                 .await?
@@ -155,9 +154,8 @@ impl Jira {
 
             debug!("Projects found from JIRA {:?}", self.projects);
             for project in &self.projects.values {
-                // let db = self.db.clone();
-                // let prj = project.clone();
-                let _projects_insert: Project = self.db
+                let _projects_insert: Project = self
+                    .db
                     .update(("projects", &project.key))
                     .content(project)
                     .await?
@@ -230,9 +228,8 @@ impl Jira {
         debug!("{resp}");
         self.tickets = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
         for ticket in self.tickets.issues.clone() {
-            // let db = self.db.clone();
-            // let tkt = ticket.clone();
-            let tickets_insert: TicketData = self.db
+            let tickets_insert: TicketData = self
+                .db
                 .update(("tickets", &ticket.key))
                 .content(ticket)
                 .await?

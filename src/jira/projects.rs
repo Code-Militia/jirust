@@ -40,7 +40,13 @@ impl JiraProjects {
             .default_headers(headers)
             .https_only(true)
             .build()?;
-        client.get(url).send().await?.error_for_status()?.text().await
+        client
+            .get(url)
+            .send()
+            .await?
+            .error_for_status()?
+            .text()
+            .await
     }
 
     pub async fn get_projects_next_page(

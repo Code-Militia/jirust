@@ -86,8 +86,7 @@ impl TicketParentWidget {
             Some(i) => {
                 self.parent_ticket = Some(i.clone());
                 i
-            }
-            // _ => unreachable!("If there is a link it should be present")
+            } // _ => unreachable!("If there is a link it should be present")
         };
         let priority = match &ticket_parent.fields.priority {
             Some(i) => i.name.as_str(),
