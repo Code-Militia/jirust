@@ -86,16 +86,16 @@ impl TransitionWidget {
 
         debug!("Ticket Transition: Gather custom field values if they exist");
         let Some(values) = &fields.values else {
-            return Ok(()) 
+            return Ok(()); 
         };
         for value in values.values() {
             debug!("Ticket Transition value: {:?}", value);
             let Some(schema) = &value.schema else {
-                return Ok(()) 
+                return Ok(());
             };
             debug!("Ticket Transition Schema: {:?}", schema);
             let Some(custom_field) = &schema.custom else { 
-                return Ok(()) 
+                return Ok(());
             };
             debug!("Ticket Transition Custom Field: {:?}", custom_field);
             if !custom_field.ends_with(":select") {
@@ -233,14 +233,14 @@ impl TransitionWidget {
 
     pub fn check_transition_floating_screen(&mut self) -> bool {
         let Some(transition) = self.selected_transition() else {
-            return false 
+            return false;
         };
         debug!(
             "Ticket Transition: Selected transition {:?}",
             self.selected_transition()
         );
         let Some(screen) = transition.has_screen else { 
-            return false 
+            return false; 
         };
         debug!("Ticket Transition: Transition has screen {:?}", screen);
         screen
@@ -287,11 +287,11 @@ impl TransitionWidget {
 
     pub fn selected_transition_reason(&self) -> Option<&CustomFieldAllowedValues> {
         let Some(float_screen_element_selected) = self.float_screen_list_state.selected() else {
-            return None
+            return None;
         };
 
         let Some(float_screen_selected) = &self.float_screen_list else {
-            return None 
+            return None;
         };
         float_screen_selected.get(float_screen_element_selected)
     }
