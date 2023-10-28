@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.AUTO_ACTION }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -37,6 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.AUTO_ACTION }}
       - uses: dtolnay/rust-toolchain@stable
       - name: cargo bump
         run: cargo bump $(git describe --tags --abbrev=0)
@@ -86,6 +90,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.AUTO_ACTION }}
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "jirust"
