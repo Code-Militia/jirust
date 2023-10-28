@@ -86,7 +86,7 @@ impl TransitionWidget {
 
         debug!("Ticket Transition: Gather custom field values if they exist");
         let Some(values) = &fields.values else {
-            return Ok(()); 
+            return Ok(());
         };
         for value in values.values() {
             debug!("Ticket Transition value: {:?}", value);
@@ -94,7 +94,7 @@ impl TransitionWidget {
                 return Ok(());
             };
             debug!("Ticket Transition Schema: {:?}", schema);
-            let Some(custom_field) = &schema.custom else { 
+            let Some(custom_field) = &schema.custom else {
                 return Ok(());
             };
             debug!("Ticket Transition Custom Field: {:?}", custom_field);
@@ -239,8 +239,8 @@ impl TransitionWidget {
             "Ticket Transition: Selected transition {:?}",
             self.selected_transition()
         );
-        let Some(screen) = transition.has_screen else { 
-            return false; 
+        let Some(screen) = transition.has_screen else {
+            return false;
         };
         debug!("Ticket Transition: Transition has screen {:?}", screen);
         screen

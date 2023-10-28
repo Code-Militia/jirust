@@ -25,6 +25,15 @@ jobs:
           git commit -am "Automated cargo committed"
           git push
 
+  clippy_check:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features
+
   crates_io_publish:
     name: Publish (crates.io)
 
