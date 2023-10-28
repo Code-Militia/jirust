@@ -38,7 +38,7 @@ jobs:
     name: Bump cargo version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.AUTO_ACTION }}
       - uses: dtolnay/rust-toolchain@stable
@@ -57,7 +57,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.AUTO_ACTION }}
       - uses: dtolnay/rust-toolchain@stable
 
       - name: cargo-release Cache
@@ -89,7 +91,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.AUTO_ACTION }}
       - uses: ncipollo/release-action@v1
