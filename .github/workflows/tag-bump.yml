@@ -16,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          token: ${{ secrets.AUTO_ACTION }}
           ref: ${{ github.event.pull_request.merge_commit_sha }}
           fetch-depth: '0'
 
