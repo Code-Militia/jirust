@@ -27,12 +27,15 @@ jobs:
       - style
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
+
       - name: install cargo-bump
         run: cargo install cargo-bump
+
       - name: cargo bump
         run: cargo bump $(git describe --tags --abbrev=0)
+
       - name: Commit cargo.toml
         run: |
           git config --global user.name 'GITHUB ACTIONS USER'
