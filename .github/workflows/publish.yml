@@ -10,32 +10,6 @@ env:
   GITHUB_TOKEN: ${{ secrets.AUTO_ACTION }}
 
 jobs:
-  cargo_bump:
-    name: Bump cargo version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: install cargo-bump
-        run: cargo install cargo-bump
-      - name: cargo bump
-        run: cargo bump $(git describe --tags --abbrev=0)
-      - name: Commit cargo.toml
-        run: |
-          git config --global user.name 'GITHUB ACTIONS USER'
-          git config --global user.email 'github-actions-user@users.noreply.github.com'
-          git commit -am "Automated cargo committed"
-          git push
-
-  clippy_check:
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features
-
   crates_io_publish:
     name: Publish (crates.io)
 
