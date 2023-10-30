@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     config::KeyConfig,
-    event::key::Key,
+    events::key::Key,
     jira::tickets::{LinkInwardOutwardParent, TicketData},
     widgets::commands::CommandText,
 };

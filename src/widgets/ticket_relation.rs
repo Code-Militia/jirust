@@ -7,7 +7,7 @@ use tui::{
 
 use crate::{
     config::KeyConfig,
-    event::key::Key,
+    events::key::Key,
     jira::tickets::{Links, TicketData},
 };
 

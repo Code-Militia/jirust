@@ -17,7 +17,7 @@ use crate::widgets::tickets::TicketWidget;
 use crate::widgets::{DrawableComponent, InputMode};
 use crate::{
     config::Config,
-    event::key::Key,
+    events::key::Key,
     widgets::{Component, EventState},
 };
 use crate::{jira::Jira, widgets::projects::ProjectsWidget};

@@ -1,4 +1,4 @@
-use crate::{config::KeyConfig, event::key::Key, jira::tickets::TicketData};
+use crate::{config::KeyConfig, events::key::Key, jira::tickets::TicketData};
 use std::collections::HashMap;
 
 use html2md::parse_html;
@@ -306,7 +306,7 @@ impl TicketWidget {
     }
 
     pub fn scroll_down_description(&mut self, lines: u16) {
-        if let Some(..) = self.selected() {
+        if self.selected().is_some() {
             self.scroll = self.scroll.saturating_add(lines);
             if self.scroll >= 100 {
                 self.scroll = 0

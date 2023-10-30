@@ -1,6 +1,6 @@
 use super::{commands::CommandInfo, Component, DrawableComponent, EventState};
 use crate::config::KeyConfig;
-use crate::event::key::Key;
+use crate::events::key::Key;
 use anyhow::Result;
 use tui::{
     backend::Backend,

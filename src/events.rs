@@ -1,4 +1,6 @@
-use crate::event::key::Key;
+pub mod key;
+
+use crate::events::key::Key;
 use crossterm::event;
 use std::{sync::mpsc, thread, time::Duration};
 

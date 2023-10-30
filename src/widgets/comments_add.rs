@@ -1,4 +1,4 @@
-use crate::event::key::Key;
+use crate::events::key::Key;
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
