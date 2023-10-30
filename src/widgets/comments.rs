@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    event::key::Key,
+    events::key::Key,
     jira::tickets::{CommentBody, Comments},
 };
 use html2md::parse_html;

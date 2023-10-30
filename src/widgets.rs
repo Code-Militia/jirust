@@ -81,7 +81,7 @@ pub trait MovableComponent {
 pub trait Component {
     fn commands(&self, out: &mut Vec<CommandInfo>);
 
-    fn event(&mut self, key: crate::event::key::Key) -> anyhow::Result<EventState>;
+    fn event(&mut self, key: crate::events::key::Key) -> anyhow::Result<EventState>;
 
     fn focused(&self) -> bool {
         false

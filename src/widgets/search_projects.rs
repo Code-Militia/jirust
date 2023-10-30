@@ -8,7 +8,7 @@ use tui::{
     Frame,
 };
 
-use crate::{event::key::Key, jira::projects::Project};
+use crate::{events::key::Key, jira::projects::Project};
 
 use super::{draw_highlight_style, EventState, InputMode};
 

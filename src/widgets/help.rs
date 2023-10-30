@@ -1,6 +1,6 @@
 use super::{Component, DrawableComponent, EventState};
 use crate::config::KeyConfig;
-use crate::event::key::Key;
+use crate::events::key::Key;
 use crate::widgets::CommandInfo;
 use anyhow::Result;
 use itertools::Itertools;

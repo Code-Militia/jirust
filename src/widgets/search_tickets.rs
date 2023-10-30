@@ -8,7 +8,7 @@ use tui::{
     Frame,
 };
 
-use crate::{event::key::Key, jira::tickets::TicketData};
+use crate::{events::key::Key, jira::tickets::TicketData};
 
 use super::{draw_highlight_style, EventState, InputMode};
 

@@ -1,4 +1,4 @@
-use crate::{event::key::Key, jira::tickets::Components};
+use crate::{events::key::Key, jira::tickets::Components};
 use tui::{
     backend::Backend,
     layout::Rect,

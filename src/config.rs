@@ -1,7 +1,7 @@
 use std::{env, fs, process::exit};
 
 // use crate::{event::key::Key, log::LogLevel};
-use crate::event::key::Key;
+use crate::events::key::Key;
 
 use serde::Deserialize;
 

@@ -9,7 +9,7 @@ use tui::{
 };
 
 use crate::widgets::commands::CommandText;
-use crate::{config::KeyConfig, event::key::Key, jira::projects::Project};
+use crate::{config::KeyConfig, events::key::Key, jira::projects::Project};
 
 use super::{commands::CommandInfo, draw_block_style, draw_highlight_style, Component, EventState};
 

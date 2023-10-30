@@ -1,12 +1,12 @@
 mod app;
 mod config;
-mod event;
+mod events;
 mod jira;
 mod widgets;
 
 // mod log;
 
-use crate::event::event::Event;
+use crate::events::{Events, Event};
 use app::App;
 use crossterm::{
     cursor,
@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    let events = event::event::Events::new(250);
+    let events = Events::new(250);
 
     // setup panic handler to restore terminal before exiting
     let original_hook = std::panic::take_hook();
