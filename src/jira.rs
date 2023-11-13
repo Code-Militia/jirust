@@ -219,6 +219,7 @@ impl Jira {
             ("jql", jql.as_ref()),
             ("expand", "renderedFields"),
             ("startAt", start_at.as_ref()),
+            ("fields", "assignee,comments,components,creator,description,issuelinks,issuetype,labels,parent,priority,,project,reporter,status,summary")
         ];
         debug!("JQL {:?}", params);
         let resp = self
