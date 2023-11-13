@@ -10,31 +10,31 @@ env:
   GITHUB_TOKEN: ${{ secrets.AUTO_ACTION }}
 
 jobs:
-  cargo_bump:
-    name: Bump cargo version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: install cargo-bump
-        run: cargo install cargo-bump
-      - name: cargo bump
-        run: cargo bump $(git describe --tags --abbrev=0)
-      - name: Commit cargo.toml
-        run: |
-          git config --global user.name 'GITHUB ACTIONS USER'
-          git config --global user.email 'github-actions-user@users.noreply.github.com'
-          git commit -am "Automated cargo committed"
-          git push
+  # cargo_bump:
+  #   name: Bump cargo version
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: dtolnay/rust-toolchain@stable
+  #     - name: install cargo-bump
+  #       run: cargo install cargo-bump
+  #     - name: cargo bump
+  #       run: cargo bump $(git describe --tags --abbrev=0)
+  #     - name: Commit cargo.toml
+  #       run: |
+  #         git config --global user.name 'GITHUB ACTIONS USER'
+  #         git config --global user.email 'github-actions-user@users.noreply.github.com'
+  #         git commit -am "Automated cargo committed"
+  #         git push
 
-  clippy_check:
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features
+  # clippy_check:
+  #   permissions:
+  #     contents: write
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Run Clippy
+  #       run: cargo clippy --all-targets --all-features
 
   crates_io_publish:
     name: Publish (crates.io)
@@ -58,18 +58,23 @@ jobs:
       - name: cargo login
         run: cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-      - name: "cargo release publish"
-        run: |-
-          cargo release \
-            publish \
-            --workspace \
-            --all-features \
-            --allow-branch HEAD \
-            --no-confirm \
-            --no-verify \
-            --execute
+      - name: cargo publish
+        run: cargo publish --config 'package.version="$(git describe --tags --abbrev=0)"'
+
+      # - name: "cargo release publish"
+      #   run: |-
+      #     cargo release \
+      #       publish \
+      #       --workspace \
+      #       --all-features \
+      #       --allow-branch HEAD \
+      #       --no-confirm \
+      #       --no-verify \
+      #       --execute
 
   github_release:
+    needs:
+      - crates_io_publish
     runs-on: ubuntu-latest
     permissions:
       contents: write
