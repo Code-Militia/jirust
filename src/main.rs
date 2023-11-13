@@ -6,7 +6,7 @@ mod widgets;
 
 // mod log;
 
-use crate::events::{Events, Event};
+use crate::events::{Event, Events};
 use app::App;
 use crossterm::{
     cursor,
