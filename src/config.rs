@@ -158,7 +158,11 @@ impl Default for JiraConfigFile {
         };
 
         let db_file = data.db_file;
-        let domain = data.domain;
+        let mut domain = data.domain.clone();
+        if !domain.starts_with("https://") {
+            domain = format!("https://{}", data.domain.clone())
+        }
+
         let jira_user_email = data.user_email;
 
         let jira_api_key = match env::var("JIRA_API_KEY") {
