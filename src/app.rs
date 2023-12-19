@@ -460,7 +460,9 @@ impl App {
 
     pub async fn update_projects(&mut self) -> anyhow::Result<()> {
         self.jira.get_jira_projects().await?;
-        self.projects.update(&self.jira.projects.values).await?;
+        self.projects
+            .update(&self.jira.query_projects.values)
+            .await?;
         Ok(())
     }
 
@@ -472,7 +474,7 @@ impl App {
         let project = self.projects.selected().unwrap();
         self.jira.get_next_ticket_page(&project.key).await?;
         self.tickets
-            .update(self.jira.tickets.issues.clone(), true)
+            .update(self.jira.query_tickets.issues.clone(), true)
             .await?;
         Ok(())
     }
@@ -481,7 +483,7 @@ impl App {
         let project = self.projects.selected().unwrap();
         self.jira.get_previous_tickets_page(&project.key).await?;
         self.tickets
-            .update(self.jira.tickets.issues.clone(), true)
+            .update(self.jira.query_tickets.issues.clone(), true)
             .await?;
         Ok(())
     }
@@ -490,7 +492,7 @@ impl App {
         let project = self.projects.selected().unwrap();
         self.jira.get_jira_tickets(&project.key).await?;
         self.tickets
-            .update(self.jira.tickets.issues.clone(), true)
+            .update(self.jira.query_tickets.issues.clone(), true)
             .await?;
         Ok(())
     }

@@ -14,8 +14,8 @@ use self::projects::Project;
 use self::tickets::TicketData;
 use self::{
     auth::{jira_authentication, JiraClient},
-    projects::JiraProjects,
-    tickets::JiraTickets,
+    projects::JiraProjectsAPI,
+    tickets::JiraTicketsAPI,
 };
 
 pub mod auth;
@@ -32,12 +32,12 @@ pub struct DBTicketData {
 pub struct Jira {
     pub client: JiraClient,
     pub db: SurrealAny,
-    pub projects: JiraProjects,
+    pub query_projects: JiraProjectsAPI,
     pub project_start_at: u32,
     pub project_max_results: u32,
     pub tickets_start_at: u32,
     pub tickets_max_results: u32,
-    pub tickets: JiraTickets,
+    pub query_tickets: JiraTicketsAPI,
     pub user_config_projects: Option<JiraConfigProjects>,
     pub user_config_tickets: Option<JiraConfigTickets>,
 }
@@ -53,8 +53,8 @@ impl Jira {
         user_config_tickets: &Option<JiraConfigTickets>,
     ) -> anyhow::Result<Jira, anyhow::Error> {
         let auth = jira_authentication(domain, api_key, api_version, current_user_email);
-        let projects: JiraProjects = JiraProjects::new().await?;
-        let tickets: JiraTickets = JiraTickets::new().await?;
+        let projects: JiraProjectsAPI = JiraProjectsAPI::new().await?;
+        let tickets: JiraTicketsAPI = JiraTicketsAPI::new().await?;
         let db = match user_config_cache {
             Some(_) => connect("file:///tmp/jirust.db").await?,
             None => connect("mem://").await?,
@@ -64,12 +64,12 @@ impl Jira {
         Ok(Self {
             client: auth,
             db,
-            projects,
+            query_projects: projects,
             project_start_at: 0,
             project_max_results: 50,
             tickets_start_at: 0,
             tickets_max_results: 50,
-            tickets,
+            query_tickets: tickets,
             user_config_projects: user_config_project.clone(),
             user_config_tickets: user_config_tickets.clone(),
         })
@@ -90,15 +90,18 @@ impl Jira {
             .expect("projects selected");
         let projects: Vec<Project> = query.take(0)?;
         if !projects.is_empty() {
-            self.projects.values = projects;
-            return Ok(&self.projects.values);
+            self.query_projects.values = projects;
+            return Ok(&self.query_projects.values);
         }
 
-        self.projects.values.clear();
+        self.query_projects.values.clear();
         self.project_start_at -= self.project_max_results;
-        self.projects = self.projects.get_projects_next_page(&self.client).await?;
+        self.query_projects = self
+            .query_projects
+            .get_projects_next_page(&self.client)
+            .await?;
 
-        for project in &self.projects.values {
+        for project in &self.query_projects.values {
             let _projects_insert: Project = self
                 .db
                 .update(("projects", &project.key))
@@ -106,7 +109,7 @@ impl Jira {
                 .await?
                 .expect("projects inserted into db");
         }
-        Ok(&self.projects.values)
+        Ok(&self.query_projects.values)
     }
 
     pub async fn get_projects_previous_page(
@@ -115,7 +118,7 @@ impl Jira {
         if self.project_start_at >= 1 {
             self.project_start_at -= self.project_max_results;
         }
-        self.projects.values.clear();
+        self.query_projects.values.clear();
         self.get_jira_projects().await
     }
 
@@ -147,13 +150,14 @@ impl Jira {
                 )
             }
             let resp = self
-                .projects
+                .query_projects
                 .get_projects_from_jira_api(&self.client, url)
                 .await?;
-            self.projects = serde_json::from_str(resp.as_str()).expect("projects deserialized");
+            self.query_projects =
+                serde_json::from_str(resp.as_str()).expect("projects deserialized");
 
-            debug!("Projects found from JIRA {:?}", self.projects);
-            for project in &self.projects.values {
+            debug!("Projects found from JIRA {:?}", self.query_projects);
+            for project in &self.query_projects.values {
                 let _projects_insert: Project = self
                     .db
                     .update(("projects", &project.key))
@@ -162,10 +166,10 @@ impl Jira {
                     .expect("projects inserted into db");
             }
 
-            return Ok(self.projects.values.clone());
+            return Ok(self.query_projects.values.clone());
         }
-        self.projects.values = projects;
-        Ok(self.projects.values.clone())
+        self.query_projects.values = projects;
+        Ok(self.query_projects.values.clone())
     }
 
     pub async fn clear_tickets_table(&mut self) -> anyhow::Result<()> {
@@ -223,12 +227,12 @@ impl Jira {
         ];
         debug!("JQL {:?}", params);
         let resp = self
-            .tickets
+            .query_tickets
             .get_tickets_from_jira_api(&self.client, params, &url)
             .await?;
         debug!("{resp}");
-        self.tickets = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
-        for ticket in self.tickets.issues.clone() {
+        self.query_tickets = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
+        for ticket in self.query_tickets.issues.clone() {
             let tickets_insert: TicketData = self
                 .db
                 .update(("tickets", &ticket.key))
@@ -238,7 +242,7 @@ impl Jira {
             debug!("{:?}", tickets_insert);
         }
 
-        Ok(self.tickets.issues.clone())
+        Ok(self.query_tickets.issues.clone())
     }
 
     pub async fn get_next_ticket_page(
@@ -253,17 +257,17 @@ impl Jira {
             .await?;
         let tickets: Vec<TicketData> = query.take(0)?;
         if !tickets.is_empty() {
-            self.tickets.issues = tickets;
-            return Ok(self.tickets.issues.clone());
+            self.query_tickets.issues = tickets;
+            return Ok(self.query_tickets.issues.clone());
         }
         self.tickets_start_at -= self.tickets_max_results;
 
-        if (self.tickets_start_at + self.tickets_max_results) < self.tickets.total {
-            self.tickets.issues.clear();
+        if (self.tickets_start_at + self.tickets_max_results) < self.query_tickets.total {
+            self.query_tickets.issues.clear();
             self.tickets_start_at += self.tickets_max_results;
             return self.get_and_record_tickets(project_key).await;
         }
-        Ok(self.tickets.issues.clone())
+        Ok(self.query_tickets.issues.clone())
     }
 
     pub async fn get_previous_tickets_page(
@@ -273,7 +277,7 @@ impl Jira {
         self.tickets_start_at = self
             .tickets_start_at
             .saturating_sub(self.tickets_max_results);
-        self.tickets.issues.clear();
+        self.query_tickets.issues.clear();
         self.get_jira_tickets(project_key).await
     }
 
@@ -287,12 +291,12 @@ impl Jira {
             .bind(("limit", self.tickets_max_results))
             .bind(("start_at", self.tickets_start_at))
             .await?;
-        self.tickets.issues = query.take(0)?;
-        if self.tickets.issues.is_empty() {
+        self.query_tickets.issues = query.take(0)?;
+        if self.query_tickets.issues.is_empty() {
             self.get_and_record_tickets(project_key).await?;
-            return Ok(self.tickets.issues.clone());
+            return Ok(self.query_tickets.issues.clone());
         }
-        Ok(self.tickets.issues.clone())
+        Ok(self.query_tickets.issues.clone())
     }
 
     pub async fn search_cache_ticket(
@@ -302,7 +306,7 @@ impl Jira {
         let ticket: Option<TicketData> = self.db.select(("tickets", ticket_key)).await?;
         match ticket {
             Some(t) => {
-                self.tickets.issues.push(t.clone());
+                self.query_tickets.issues.push(t.clone());
                 Ok(t)
             }
             None => {
@@ -318,7 +322,7 @@ impl Jira {
     ) -> anyhow::Result<TicketData, anyhow::Error> {
         debug!("Retrieve {ticket_key}");
         let ticket = self
-            .tickets
+            .query_tickets
             .search_jira_ticket_api(ticket_key, &self.client)
             .await?;
         self.jira_project_api(&ticket.fields.project.key).await?;
@@ -341,7 +345,7 @@ impl Jira {
         let project: Option<Project> = self.db.select(("projects", project_key)).await?;
         match project {
             Some(p) => {
-                self.projects.values.push(p.clone());
+                self.query_projects.values.push(p.clone());
                 Ok(p)
             }
             None => self.jira_project_api(project_key).await,
@@ -353,7 +357,7 @@ impl Jira {
         project_key: &str,
     ) -> anyhow::Result<Project, anyhow::Error> {
         let project = self
-            .projects
+            .query_projects
             .search_jira_project_api(project_key, &self.client)
             .await?;
         let update_project_record: Project = self
