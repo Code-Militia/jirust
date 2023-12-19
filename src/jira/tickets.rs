@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use super::auth::JiraClient;
 use super::SurrealAny;
@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinkFields {
-    pub issuetype: Type,
+    pub issuetype: TicketType,
     pub priority: Option<Priority>,
     pub status: Status,
     pub summary: String,
@@ -75,7 +75,7 @@ pub struct Priority {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Type {
+pub struct TicketType {
     pub name: String,
     pub subtask: bool,
 }
@@ -109,7 +109,7 @@ pub struct Fields {
     pub components: Vec<Components>,
     pub creator: Option<CreatorReporter>,
     pub issuelinks: Vec<Links>,
-    pub issuetype: Type,
+    pub issuetype: TicketType,
     pub labels: Vec<String>,
     pub parent: Option<LinkInwardOutwardParent>,
     pub priority: Option<Priority>,
@@ -268,14 +268,22 @@ impl TicketData {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct JiraTickets {
+pub struct CreateJiraTicket {
+    pub description: String,
+    pub project_id: String,
+    pub summary: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct JiraTicketsAPI {
     pub start_at: Option<u32>,
     pub max_results: Option<u32>,
     pub total: u32,
     pub issues: Vec<TicketData>,
 }
 
-impl JiraTickets {
+impl JiraTicketsAPI {
     pub async fn new() -> anyhow::Result<Self> {
         let issues = Vec::new();
         Ok(Self {
@@ -288,11 +296,11 @@ impl JiraTickets {
 
     pub async fn get_tickets_from_jira_api(
         &self,
-        jira_auth: &JiraClient,
+        jira_client: &JiraClient,
         params: Vec<(&str, &str)>,
         url: &str,
     ) -> Result<String, reqwest::Error> {
-        let headers = jira_auth.get_basic_auth();
+        let headers = jira_client.get_basic_auth();
         let client = reqwest::Client::builder()
             .default_headers(headers)
             .https_only(true)
@@ -309,5 +317,16 @@ impl JiraTickets {
         let response = jira_client.get_from_jira_api(&url).await?;
         let obj: TicketData = serde_json::from_str(&response)?;
         Ok(obj)
+    }
+
+    pub async fn create_jira_ticket_api(
+        &self,
+        jira_client: &JiraClient,
+        create_ticket_data: CreateJiraTicket,
+    ) -> anyhow::Result<()> {
+        let url = String::from("rest/api/3/issue");
+        let data = serde_json::to_string(&create_ticket_data)?;
+        let response = jira_client.post_to_jira_api(&url, data).await?;
+        Ok(())
     }
 }
