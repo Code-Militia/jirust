@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 
 use super::auth::JiraClient;
 use super::SurrealAny;
@@ -268,10 +268,20 @@ impl TicketData {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateJiraTicket {
+pub struct CreateTicket {
     pub description: String,
     pub project_id: String,
     pub summary: String,
+}
+
+impl CreateTicket {
+    pub fn new() -> Self {
+        Self {
+            description: String::new(),
+            project_id: String::new(),
+            summary: String::new(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -322,11 +332,12 @@ impl JiraTicketsAPI {
     pub async fn create_jira_ticket_api(
         &self,
         jira_client: &JiraClient,
-        create_ticket_data: CreateJiraTicket,
+        create_ticket_data: CreateTicket,
     ) -> anyhow::Result<()> {
         let url = String::from("rest/api/3/issue");
         let data = serde_json::to_string(&create_ticket_data)?;
-        let response = jira_client.post_to_jira_api(&url, data).await?;
+        todo!("Format data correctly"); // See https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-post
+        jira_client.post_to_jira_api(&url, data).await?;
         Ok(())
     }
 }

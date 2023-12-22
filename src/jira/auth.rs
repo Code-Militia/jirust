@@ -10,18 +10,6 @@ pub struct JiraClient {
 }
 
 impl JiraClient {
-    // pub fn set_domain(&mut self, url: String) {
-    //     self.jira_url = url
-    // }
-    //
-    // pub fn set_api_version(&mut self, api_version: String) {
-    //     self.jira_api_version = api_version
-    // }
-    //
-    // pub fn set_api_key(&mut self, jira_api_key: String) {
-    //     self.jira_api_key = jira_api_key
-    // }
-
     pub fn get_basic_auth(&self) -> HeaderMap {
         let header_content_type = HeaderValue::from_static("application/json");
         let jira_basic_auth_str = format!("Basic {}", self.jira_api_key);
