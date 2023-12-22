@@ -331,6 +331,8 @@ impl App {
         }
 
         if let Focus::CreateTicket = self.focus {
+            todo!("Work on creating a get_ticket_types from tickets_api");
+            todo!("Work on feeding ticket types into a list state in widget");
             self.create_ticket.draw(f)?;
             return Ok(())
         }
@@ -624,7 +626,7 @@ impl App {
             Focus::CreateTicket => {
                 if self.create_ticket.event(key)?.is_consumed() {
                     if self.create_ticket.push_content {
-                        self.jira.tickets_api.create_jira_ticket_api(&self.jira.client, self.create_ticket.contents.clone()).await?;
+                        self.jira.tickets_api.create_ticket_api(&self.jira.client, self.create_ticket.contents.clone()).await?;
                         self.create_ticket.push_content = false;
                     }
                     return Ok(EventState::Consumed);

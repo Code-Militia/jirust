@@ -227,7 +227,7 @@ impl Jira {
         debug!("JQL {:?}", params);
         let resp = self
             .tickets_api
-            .get_tickets_from_jira_api(&self.client, params, &url)
+            .get_tickets_api(&self.client, params, &url)
             .await?;
         debug!("{resp}");
         self.tickets_api = serde_json::from_str(resp.as_str()).expect("tickets deserialized");
@@ -322,7 +322,7 @@ impl Jira {
         debug!("Retrieve {ticket_key}");
         let ticket = self
             .tickets_api
-            .search_jira_ticket_api(ticket_key, &self.client)
+            .search_tickets_api(ticket_key, &self.client)
             .await?;
         self.jira_project_api(&ticket.fields.project.key).await?;
         let update_ticket_record: TicketData = self

@@ -10,8 +10,8 @@ use super::{EventState, InputMode, draw_edit_block_style, draw_block_style};
 #[derive(Debug)]
 pub enum FocusCreateTicket {
     Description,
-    ProjectID,
     Summary,
+    TicketType,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -44,7 +44,7 @@ impl CreateTicketWidget {
 
         Self {
             contents: CreateTicket::new(),
-            focus: FocusCreateTicket::ProjectID,
+            focus: FocusCreateTicket::TicketType,
             input_mode: InputMode::Normal,
             push_content: false,
             key_mappings,
@@ -52,27 +52,45 @@ impl CreateTicketWidget {
     }
 
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>) -> anyhow::Result<()> {
-        let chunk_constraints = [
-            Constraint::Length(1), // Helper message
-            Constraint::Length(4), // ProjectID
-            Constraint::Length(7), // Summary
-            Constraint::Min(1), // Description
-        ]
-        .as_ref();
-        let chunks = Layout::default()
+        let constraints = [
+            Constraint::Percentage(5), // Helper
+            Constraint::Percentage(20), // Ticket type and Summary
+            Constraint::Percentage(75), // Description
+        ];
+
+        let main_chunks = Layout::default()
             .direction(Direction::Vertical)
-            .margin(2)
-            .constraints(chunk_constraints)
+            .constraints(constraints)
             .split(f.size());
-        let helper_chunk = chunks[0];
 
-        let project_id_chunk = chunks[1];
-        let project_id_title = "Project ID";
+        let helper_constraint = [Constraint::Percentage(100)];
+        let helper_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(helper_constraint)
+            .split(main_chunks[0]);
 
-        let summary_chunk = chunks[2];
+        let type_and_summary_constraint = [
+            Constraint::Percentage(50),
+            Constraint::Percentage(50), 
+        ];
+        let type_and_summary_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(type_and_summary_constraint)
+            .split(main_chunks[1]);
+
+        let description_constraint = [Constraint::Percentage(100)];
+        let description_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(description_constraint)
+            .split(main_chunks[2]);
+
+        let ticket_type_chunk = type_and_summary_layout[0];
+        let ticket_type_title = "Ticket Type";
+
+        let summary_chunk = type_and_summary_layout[1];
         let summary_title = "Summary";
 
-        let description_chunk = chunks[3];
+        let description_chunk = description_layout[0];
         let description_title = "Description";
 
         let normal_mode_style = (
@@ -102,13 +120,13 @@ impl CreateTicketWidget {
         let mut text = Text::from(Spans::from(msg));
         text.patch_style(style);
         let help_message = Paragraph::new(text);
-        f.render_widget(help_message, helper_chunk);
+        f.render_widget(help_message, helper_layout[0]);
 
-        let project_id_input = Paragraph::new(self.contents.project_id.as_ref())
+        let ticket_type_input = Paragraph::new(self.contents.ticket_type.as_ref())
             .wrap(Wrap { trim: true })
-            .style(draw_edit_block_style(matches!(self.focus, FocusCreateTicket::ProjectID), &self.input_mode))
-            .block(draw_block_style(matches!(self.focus, FocusCreateTicket::ProjectID), project_id_title));
-        f.render_widget(project_id_input, project_id_chunk);
+            .style(draw_edit_block_style(matches!(self.focus, FocusCreateTicket::TicketType), &self.input_mode))
+            .block(draw_block_style(matches!(self.focus, FocusCreateTicket::TicketType), ticket_type_title));
+        f.render_widget(ticket_type_input, ticket_type_chunk);
 
         let summary_input = Paragraph::new(self.contents.summary.as_ref())
             .wrap(Wrap { trim: true })
@@ -123,54 +141,35 @@ impl CreateTicketWidget {
         f.render_widget(description_input, description_chunk);
 
 
-        // Make the cursor visible and ask tui-rs to put it at the specified coordinates after rendering
-        let cursor_end_of_text = match self.focus {
-                FocusCreateTicket::ProjectID => (
-                    project_id_chunk.x + self.contents.project_id.len() as u16 + 1, project_id_chunk.y + 1
-                ),
-                FocusCreateTicket::Summary => (
-                    summary_chunk.x + self.contents.summary.len() as u16 + 1, summary_chunk.y + 1
-                ),
-                FocusCreateTicket::Description => (
-                    description_chunk.x + self.contents.description.len() as u16 + 1, description_chunk.y + 1
-                )
-            };
-        match self.input_mode {
-            InputMode::Normal =>
-                // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
-                {}
-
-            InputMode::Editing => f.set_cursor(cursor_end_of_text.0, cursor_end_of_text.1),
-        }
         Ok(())
     }
 
     pub fn input_pop(&mut self) {
         match self.focus {
-            FocusCreateTicket::ProjectID => self.contents.project_id.pop(),
             FocusCreateTicket::Description => self.contents.description.pop(),
             FocusCreateTicket::Summary => self.contents.summary.pop(),
+            FocusCreateTicket::TicketType => self.contents.ticket_type.pop(),
         };
     }
     pub fn input(&mut self, c: char) {
         match self.focus {
-            FocusCreateTicket::ProjectID => self.contents.project_id.push(c),
             FocusCreateTicket::Description => self.contents.description.push(c),
             FocusCreateTicket::Summary => self.contents.summary.push(c),
+            FocusCreateTicket::TicketType => self.contents.ticket_type.push(c),
         }; 
     }
 
     pub fn next_focus(&mut self) {
         match self.focus {
-            FocusCreateTicket::ProjectID => self.focus = FocusCreateTicket::Summary,
+            FocusCreateTicket::TicketType => self.focus = FocusCreateTicket::Summary,
             FocusCreateTicket::Summary => self.focus = FocusCreateTicket::Description,
-            FocusCreateTicket::Description=> self.focus = FocusCreateTicket::ProjectID,
+            FocusCreateTicket::Description=> self.focus = FocusCreateTicket::TicketType,
         };
     }
     pub fn previous_focus(&mut self) {
         match self.focus {
-            FocusCreateTicket::ProjectID => self.focus = FocusCreateTicket::Description,
-            FocusCreateTicket::Summary => self.focus = FocusCreateTicket::ProjectID,
+            FocusCreateTicket::TicketType=> self.focus = FocusCreateTicket::Description,
+            FocusCreateTicket::Summary => self.focus = FocusCreateTicket::TicketType,
             FocusCreateTicket::Description=> self.focus = FocusCreateTicket::Summary,
         };
     }
