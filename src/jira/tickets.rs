@@ -272,6 +272,7 @@ pub struct CreateTicket {
     pub description: String,
     pub project_id: String,
     pub summary: String,
+    pub ticket_type: String,
 }
 
 impl CreateTicket {
@@ -280,6 +281,7 @@ impl CreateTicket {
             description: String::new(),
             project_id: String::new(),
             summary: String::new(),
+            ticket_type: String::new(),
         }
     }
 }
@@ -304,7 +306,7 @@ impl JiraTicketsAPI {
         })
     }
 
-    pub async fn get_tickets_from_jira_api(
+    pub async fn get_tickets_api(
         &self,
         jira_client: &JiraClient,
         params: Vec<(&str, &str)>,
@@ -318,7 +320,7 @@ impl JiraTicketsAPI {
         client.get(url).query(&params).send().await?.text().await
     }
 
-    pub async fn search_jira_ticket_api(
+    pub async fn search_tickets_api(
         &self,
         ticket_key: &str,
         jira_client: &JiraClient,
@@ -329,7 +331,17 @@ impl JiraTicketsAPI {
         Ok(obj)
     }
 
-    pub async fn create_jira_ticket_api(
+    pub async fn get_ticket_types(
+        &self,
+        jira_client: &JiraClient,
+        project_name: &str,
+        user_id: &str,
+        url: &str
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    pub async fn create_ticket_api(
         &self,
         jira_client: &JiraClient,
         create_ticket_data: CreateTicket,
