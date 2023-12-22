@@ -1,4 +1,7 @@
-use crate::events::key::Key;
+use std::collections::HashMap;
+
+use crate::{events::key::Key, config::KeyConfig};
+use log::debug;
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -10,6 +13,19 @@ use tui::{
 
 use super::{EventState, InputMode};
 
+#[derive(Debug, Clone, Copy)]
+pub enum NormalModeAction {
+    EditMode,
+    Push,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum EditModeAction {
+    Backspace,
+    Enter,
+    Esc,
+}
+
 // CommentPopup holds the state of the application
 #[derive(Debug)]
 pub struct CommentAdd {
@@ -20,6 +36,8 @@ pub struct CommentAdd {
     /// History of recorded messages
     pub messages: Vec<String>,
     pub push_comment: bool,
+    pub normal_key_mappings: HashMap<Key, NormalModeAction>,
+    pub edit_key_mappings: HashMap<Key, EditModeAction>,
 }
 
 impl CommentAdd {
@@ -44,7 +62,7 @@ impl CommentAdd {
                 Span::raw(" to exit, "),
                 Span::styled("e", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" to start editing."),
-                Span::styled("P", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled(" P", Style::default().add_modifier(Modifier::BOLD)),
                 Span::raw(" to push comments to jira."),
             ],
             Style::default().add_modifier(Modifier::UNDERLINED),
@@ -109,12 +127,28 @@ impl CommentAdd {
 }
 
 impl CommentAdd {
-    pub fn new() -> Self {
+    pub fn new(key_config: KeyConfig) -> Self {
+        let normal_key_mappings = {
+            let mut normal_map = HashMap::new();
+            normal_map.insert(key_config.edit, NormalModeAction::EditMode);
+            normal_map.insert(key_config.push, NormalModeAction::Push);
+            normal_map
+        };
+
+        let edit_key_mappings = {
+            let mut edit_map = HashMap::new();
+            edit_map.insert(key_config.backspace, EditModeAction::Backspace);
+            edit_map.insert(key_config.enter, EditModeAction::Enter);
+            edit_map.insert(key_config.esc, EditModeAction::Esc);
+            edit_map
+        };
         Self {
             input: String::new(),
             input_mode: InputMode::Normal,
             messages: Vec::new(),
             push_comment: false,
+            edit_key_mappings,
+            normal_key_mappings,
         }
     }
 
@@ -127,39 +161,48 @@ impl CommentAdd {
     }
 
     fn normal_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        match key {
-            Key::Char('e') => {
-                self.edit_mode();
-                Ok(EventState::Consumed)
+        if let Some(action) = self.normal_key_mappings.get(&key) {
+            use NormalModeAction::*;
+            match *action {
+                EditMode =>  self.edit_mode(),
+                Push => self.push_comment = true
             }
-            Key::Char('P') => {
-                self.push_comment = true;
-                Ok(EventState::Consumed)
-            }
-            _ => Ok(EventState::NotConsumed),
+            Ok(EventState::Consumed)
+        } else {
+            Ok(EventState::NotConsumed)
         }
     }
 
     fn edit_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        match key {
-            Key::Char(c) => {
-                self.input.push(c);
-                Ok(EventState::Consumed)
+        debug!("Received key {:?}", key);
+        if let Some(action) = self.edit_key_mappings.get(&key) {
+
+            use EditModeAction::*;
+            match *action {
+                Backspace => {
+                    debug!("Backspace event");
+                    self.input.pop();
+                }
+                Enter => {
+                    self.messages.push(self.input.clone());
+                    self.input.clear();
+                }
+                Esc => {
+                    debug!("Going back to normal mode");
+                    self.normal_mode();
+                }
             }
-            Key::Backspace => {
-                self.input.pop();
-                Ok(EventState::Consumed)
+            Ok(EventState::Consumed)
+        } else {
+            match key {
+                Key::Char(c) => {
+                    self.input.push(c);
+                    Ok(EventState::Consumed)
+                }
+                _ => {
+                    Ok(EventState::NotConsumed)
+                }
             }
-            Key::Esc => {
-                self.normal_mode();
-                Ok(EventState::Consumed)
-            }
-            Key::Enter => {
-                self.messages.push(self.input.clone());
-                self.input.clear();
-                Ok(EventState::Consumed)
-            }
-            _ => Ok(EventState::NotConsumed),
         }
     }
 

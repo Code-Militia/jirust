@@ -2,6 +2,7 @@ pub mod commands;
 pub mod comments;
 pub mod comments_add;
 pub mod components;
+pub mod create_ticket;
 pub mod error;
 pub mod help;
 pub mod labels;
@@ -124,6 +125,18 @@ pub fn draw_block_style(focused: bool, title: &str) -> Block {
             .title(title)
             .title_alignment(tui::layout::Alignment::Center)
     }
+}
+
+pub fn draw_edit_block_style(focused: bool, input_mode: &InputMode) -> Style {
+    if focused && matches!(input_mode, InputMode::Editing) {
+        return Style::default().fg(Color::Yellow)
+    }
+
+    if focused && matches!(input_mode, InputMode::Normal) {
+        return Style::default().fg(Color::Green)
+    }
+
+    Style::default()
 }
 
 pub fn draw_highlight_style() -> Style {

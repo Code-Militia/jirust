@@ -5,6 +5,7 @@ use crate::widgets::commands::{self, CommandInfo};
 use crate::widgets::comments::CommentsList;
 use crate::widgets::comments_add::CommentAdd;
 use crate::widgets::components::ComponentsWidget;
+use crate::widgets::create_ticket::CreateTicketWidget;
 use crate::widgets::error::ErrorComponent;
 use crate::widgets::help::HelpWidget;
 use crate::widgets::labels::LabelsWidget;
@@ -30,15 +31,11 @@ use tui::{
     Frame,
 };
 
-// pub enum LoadState {
-//     Complete,
-//     Loading,
-// }
-
 pub enum Focus {
     CommentsAdd,
     CommentsList,
     Components,
+    CreateTicket,
     Labels,
     Projects,
     SearchProjects,
@@ -104,11 +101,11 @@ impl ParentAction {
 
 #[derive(Debug, Clone, Copy)]
 enum TicketsAction {
-    // FocusDescription,
-    FocusRelation,
     FocusLabels,
+    FocusRelation,
     NextPage,
     OpenComments,
+    OpenCreateTicket,
     OpenHelp,
     OpenProjects,
     OpenTicketTransition,
@@ -128,6 +125,9 @@ impl TicketsAction {
                 CommandText::new(format!("Focus on Labels pane [{key}]"), CMD_GROUP_GENERAL)
             }
             Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
+            Self::OpenCreateTicket => {
+                CommandText::new(format!("Create ticket [{key}]"), CMD_GROUP_GENERAL)
+            }
             Self::OpenComments => {
                 CommandText::new(format!("Open Comments View [{key}]"), CMD_GROUP_GENERAL)
             }
@@ -174,11 +174,11 @@ impl CommentsAction {
 }
 
 pub struct App {
-    // load_state: LoadState,
     comment_add: CommentAdd,
     comments_list: CommentsList,
     comments_key_mappings: HashMap<Key, CommentsAction>,
     components: ComponentsWidget,
+    create_ticket: CreateTicketWidget,
     focus: Focus,
     help: HelpWidget,
     jira: Jira,
@@ -213,7 +213,7 @@ impl App {
 
         Ok(Self {
             comments_list: CommentsList::new(config.key_config.clone()),
-            comment_add: CommentAdd::new(),
+            comment_add: CommentAdd::new(config.key_config.clone()),
             comments_key_mappings: {
                 let mut map = HashMap::new();
                 map.insert(config.key_config.open_help, CommentsAction::OpenHelp);
@@ -225,13 +225,13 @@ impl App {
                 map
             },
             components: ComponentsWidget::new(config.key_config.clone()),
+            create_ticket: CreateTicketWidget::new(config.key_config.clone()),
             config: config.clone(),
             error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,
             help: HelpWidget::new(config.key_config.clone()),
             jira,
             labels: LabelsWidget::new(config.key_config.clone()),
-            // load_state: LoadState::Complete,
             parent_key_mappings: {
                 let mut map = HashMap::new();
                 map.insert(config.key_config.open_help, ParentAction::OpenHelp);
@@ -271,6 +271,7 @@ impl App {
                     config.key_config.ticket_view_comments,
                     TicketsAction::OpenComments,
                 );
+                map.insert(config.key_config.open_create_ticket, TicketsAction::OpenCreateTicket);
                 map.insert(config.key_config.esc, TicketsAction::OpenProjects);
                 map.insert(
                     config.key_config.ticket_transition,
@@ -327,6 +328,11 @@ impl App {
 
         if let Focus::TicketTransition = self.focus {
             return Ok(());
+        }
+
+        if let Focus::CreateTicket = self.focus {
+            self.create_ticket.draw(f)?;
+            return Ok(())
         }
 
         let main_chunks = Layout::default()
@@ -460,9 +466,7 @@ impl App {
 
     pub async fn update_projects(&mut self) -> anyhow::Result<()> {
         self.jira.get_jira_projects().await?;
-        self.projects
-            .update(&self.jira.query_projects.values)
-            .await?;
+        self.projects.update(&self.jira.projects_api.values).await?;
         Ok(())
     }
 
@@ -474,7 +478,7 @@ impl App {
         let project = self.projects.selected().unwrap();
         self.jira.get_next_ticket_page(&project.key).await?;
         self.tickets
-            .update(self.jira.query_tickets.issues.clone(), true)
+            .update(self.jira.tickets_api.issues.clone(), true)
             .await?;
         Ok(())
     }
@@ -483,7 +487,7 @@ impl App {
         let project = self.projects.selected().unwrap();
         self.jira.get_previous_tickets_page(&project.key).await?;
         self.tickets
-            .update(self.jira.query_tickets.issues.clone(), true)
+            .update(self.jira.tickets_api.issues.clone(), true)
             .await?;
         Ok(())
     }
@@ -492,7 +496,7 @@ impl App {
         let project = self.projects.selected().unwrap();
         self.jira.get_jira_tickets(&project.key).await?;
         self.tickets
-            .update(self.jira.query_tickets.issues.clone(), true)
+            .update(self.jira.tickets_api.issues.clone(), true)
             .await?;
         Ok(())
     }
@@ -614,6 +618,15 @@ impl App {
             }
             Focus::Components => {
                 if self.components.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::CreateTicket => {
+                if self.create_ticket.event(key)?.is_consumed() {
+                    if self.create_ticket.push_content {
+                        self.jira.tickets_api.create_jira_ticket_api(&self.jira.client, self.create_ticket.contents.clone()).await?;
+                        self.create_ticket.push_content = false;
+                    }
                     return Ok(EventState::Consumed);
                 }
             }
@@ -763,6 +776,12 @@ impl App {
                 if key == self.config.key_config.ticket_view_comments {
                     self.update_comments_view().await?;
                     self.focus = Focus::CommentsList;
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::CreateTicket => {
+                if key == self.config.key_config.esc {
+                    self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
             }
@@ -959,7 +978,6 @@ impl App {
 
                 if key == self.config.key_config.next || key == self.config.key_config.move_right {
                     self.focus = Focus::Tickets;
-                    // self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
 
@@ -981,6 +999,10 @@ impl App {
                         FocusLabels => {
                             self.update_labels().await?;
                             self.focus = Focus::Labels;
+                            return Ok(EventState::Consumed);
+                        }
+                        OpenCreateTicket => {
+                            self.focus = Focus::CreateTicket;
                             return Ok(EventState::Consumed);
                         }
                         OpenHelp => {
