@@ -156,8 +156,7 @@ impl CreateTicketWidget {
             ))
             .widths(&[
                 Constraint::Percentage(20),
-                Constraint::Percentage(20),
-                Constraint::Percentage(60),
+                Constraint::Percentage(80),
             ]);
         f.render_stateful_widget(
             ticket_type_table,
