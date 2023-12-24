@@ -166,22 +166,9 @@ impl Jira {
             debug!("Projects found from JIRA {:?}", self.projects_api);
             for project in &self.projects_api.values {
                 debug!("Recording to cache {:?}", project);
-                // let sql = "
-                //     Create projects CONTENT {
-                //         project_id: $project_id,
-                //         key: $key,
-                //         name: $name,
-                //     };
-                // ";
-                // let _project_insert = self.db
-                //     .query(sql)
-                //     .bind(("project_id", project.project_id.clone()))
-                //     .bind(("key", project.key.clone()))
-                //     .bind(("name", project.name.clone()))
-                //     .await?;
                 let _project_insert: Vec<ProjectRecord> = self
                     .db
-                    .create("projects") // It returns Option<_> when you put `id` here
+                    .create("projects")
                     .content(project)
                     .await?;
                 debug!("Project created {:?}", _project_insert);
