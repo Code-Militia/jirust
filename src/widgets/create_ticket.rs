@@ -3,7 +3,7 @@ use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Modifier, Style},
     text::{Span, Spans, Text},
-    widgets::{Paragraph, Wrap, TableState, Table, Row, Cell},
+    widgets::{Cell, Paragraph, Row, Table, TableState, Wrap},
     Frame,
 };
 
@@ -58,7 +58,7 @@ impl CreateTicketWidget {
             input_mode: InputMode::Normal,
             push_content: false,
             key_mappings,
-            ticket_type_state
+            ticket_type_state,
         }
     }
 
@@ -130,20 +130,16 @@ impl CreateTicketWidget {
         let help_message = Paragraph::new(text);
         f.render_widget(help_message, helper_layout[0]);
 
-        let ticket_type_headers_cells = [
-            "Id", "Name", "Description"
-        ];
+        let ticket_type_headers_cells = ["Id", "Name", "Description"];
         let ticket_type_headers = Row::new(ticket_type_headers_cells);
         let ticket_type_row = self.contents.ticket_types.iter().map(|ticket_type| {
-            let item = [
-                ticket_type.id.as_str(),
-                ticket_type.name.as_str(),
-            ];
+            let item = [ticket_type.id.as_str(), ticket_type.name.as_str()];
             let height = item
                 .iter()
                 .map(|content| content.chars().filter(|c| *c == '\n').count())
                 .max()
-                .unwrap_or(0) + 1;
+                .unwrap_or(0)
+                + 1;
             let cells = item.iter().map(|c| Cell::from(*c));
             Row::new(cells).height(height as u16)
         });
@@ -163,7 +159,11 @@ impl CreateTicketWidget {
                 Constraint::Percentage(20),
                 Constraint::Percentage(60),
             ]);
-        f.render_stateful_widget(ticket_type_table, ticket_type_chunk, &mut self.ticket_type_state);
+        f.render_stateful_widget(
+            ticket_type_table,
+            ticket_type_chunk,
+            &mut self.ticket_type_state,
+        );
 
         let summary_input = Paragraph::new(self.contents.summary.as_ref())
             .wrap(Wrap { trim: true })
@@ -194,8 +194,12 @@ impl CreateTicketWidget {
 
     pub fn input_pop(&mut self) {
         match self.focus {
-            FocusCreateTicket::Description => {self.contents.description.pop();},
-            FocusCreateTicket::Summary => {self.contents.summary.pop();},
+            FocusCreateTicket::Description => {
+                self.contents.description.pop();
+            }
+            FocusCreateTicket::Summary => {
+                self.contents.summary.pop();
+            }
             _ => {}
         };
     }
@@ -203,7 +207,7 @@ impl CreateTicketWidget {
         match self.focus {
             FocusCreateTicket::Description => self.contents.description.push(c),
             FocusCreateTicket::Summary => self.contents.summary.push(c),
-            _ => ()
+            _ => (),
         };
     }
 
