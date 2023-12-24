@@ -946,7 +946,6 @@ impl App {
                 Ok(EventState::Consumed)
             }
             OpenCreateTicket => {
-                self.focus = Focus::CreateTicket;
                 let project = self
                     .projects
                     .selected()
@@ -956,7 +955,8 @@ impl App {
                     .tickets_api
                     .get_ticket_types(&self.jira.client, &project.project_id)
                     .await?;
-                self.create_ticket.contents.ticket_type = ticket_type_response;
+                self.create_ticket.contents.ticket_types = ticket_type_response;
+                self.focus = Focus::CreateTicket;
                 Ok(EventState::Consumed)
             }
             OpenHelp => {
