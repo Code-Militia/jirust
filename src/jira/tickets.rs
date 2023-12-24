@@ -273,7 +273,7 @@ pub struct CreateTicket {
     pub description: String,
     pub project_id: String,
     pub summary: String,
-    pub ticket_type: String,
+    pub ticket_types: Vec<TicketType>,
 }
 
 impl CreateTicket {
@@ -282,7 +282,7 @@ impl CreateTicket {
             description: String::new(),
             project_id: String::new(),
             summary: String::new(),
-            ticket_type: String::new(),
+            ticket_types: vec![],
         }
     }
 }
@@ -336,10 +336,11 @@ impl JiraTicketsAPI {
         &self,
         jira_client: &JiraClient,
         project_id: &str,
-    ) -> anyhow::Result<String> {
+    ) -> anyhow::Result<Vec<TicketType>> {
         let url = format!("/issuetype/project?projectId={}", project_id);
-        let get = jira_client.get_from_jira_api(&url).await?;
-        Ok(get)
+        let response = jira_client.get_from_jira_api(&url).await?;
+        let obj: Vec<TicketType> = serde_json::from_str(&response)?;
+        Ok(obj)
     }
 
     pub async fn create_ticket_api(
