@@ -157,12 +157,21 @@ impl Jira {
 
             debug!("Projects found from JIRA {:?}", self.projects_api);
             for project in &self.projects_api.values {
-                let _projects_insert: Project = self
-                    .db
-                    .update(("projects", &project.key))
-                    .content(project)
-                    .await?
-                    .expect("projects inserted into db");
+                debug!("Recording to cache {:?}", project);
+                let sql = "
+                    Create projects CONTENT {
+                        project_id: $project_id,
+                        key: $key,
+                        name: $name,
+                    };
+                ";
+                let _project_insert = self.db
+                    .query(sql)
+                    .bind(("project_id", project.project_id.clone()))
+                    .bind(("key", project.key.clone()))
+                    .bind(("name", project.name.clone()))
+                    .await?;
+                debug!("Project created {:?}", _project_insert);
             }
 
             return Ok(self.projects_api.values.clone());

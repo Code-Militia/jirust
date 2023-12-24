@@ -331,8 +331,6 @@ impl App {
         }
 
         if let Focus::CreateTicket = self.focus {
-            todo!("Work on creating a get_ticket_types from tickets_api");
-            todo!("Work on feeding ticket types into a list state in widget");
             self.create_ticket.draw(f)?;
             return Ok(())
         }
@@ -624,6 +622,7 @@ impl App {
                 }
             }
             Focus::CreateTicket => {
+                debug!("Hello from debug");
                 if self.create_ticket.event(key)?.is_consumed() {
                     if self.create_ticket.push_content {
                         self.jira.tickets_api.create_ticket_api(&self.jira.client, self.create_ticket.contents.clone()).await?;
@@ -782,6 +781,10 @@ impl App {
                 }
             }
             Focus::CreateTicket => {
+                if let Some(project) = self.projects.selected() {
+                    let ticket_type_response = self.jira.tickets_api.get_ticket_types(&self.jira.client, &project.project_id).await?;
+                    self.create_ticket.contents.ticket_type = ticket_type_response;
+                }
                 if key == self.config.key_config.esc {
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
@@ -1005,6 +1008,10 @@ impl App {
                         }
                         OpenCreateTicket => {
                             self.focus = Focus::CreateTicket;
+                            // let ticket_type_response = match self.jira.tickets_api.get_ticket_types(&self.jira.client, self.projects.selected()).await? {
+                            //     Some(s) => s,
+                            //     None => String::new()
+                            // };
                             return Ok(EventState::Consumed);
                         }
                         OpenHelp => {
