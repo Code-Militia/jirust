@@ -5,7 +5,7 @@ use html2md::parse_html;
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    widgets::{Cell, Clear, ListState, Paragraph, Row, Table, TableState, Wrap},
+    widgets::{Cell, Clear, Paragraph, Row, Table, TableState, Wrap},
     Frame,
 };
 
@@ -184,11 +184,11 @@ impl TicketWidget {
 
 impl TicketWidget {
     pub fn new(key_config: KeyConfig, jira_domain: String) -> Self {
-        let mut components_state = ListState::default();
-        let mut labels_state = ListState::default();
+        // let mut components_state = ListState::default();
+        // let mut labels_state = ListState::default();
         let mut state = TableState::default();
-        components_state.select(Some(0));
-        labels_state.select(Some(0));
+        // components_state.select(Some(0));
+        // labels_state.select(Some(0));
         state.select(Some(0));
 
         let key_mappings = {
@@ -295,6 +295,7 @@ impl TicketWidget {
         }
     }
 
+    // TODO: This needs to be refactored it always returns an OK
     pub fn select_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
         let ticket_index = self
             .tickets
