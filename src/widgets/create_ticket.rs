@@ -80,7 +80,7 @@ impl CreateTicketWidget {
             .constraints(helper_constraint)
             .split(main_chunks[0]);
 
-        let type_and_summary_constraint = [Constraint::Percentage(50), Constraint::Percentage(50)];
+        let type_and_summary_constraint = [Constraint::Percentage(30), Constraint::Percentage(70)];
         let type_and_summary_layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(type_and_summary_constraint)
@@ -154,10 +154,7 @@ impl CreateTicketWidget {
                 matches!(self.focus, FocusCreateTicket::TicketType),
                 ticket_type_title,
             ))
-            .widths(&[
-                Constraint::Percentage(20),
-                Constraint::Percentage(80),
-            ]);
+            .widths(&[Constraint::Percentage(20), Constraint::Percentage(80)]);
         f.render_stateful_widget(
             ticket_type_table,
             ticket_type_chunk,
