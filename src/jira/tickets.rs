@@ -337,7 +337,7 @@ impl JiraTicketsAPI {
         jira_client: &JiraClient,
         project_id: &str,
     ) -> anyhow::Result<String> {
-        let url = format!("rest/api/3/issuetype/project?projectId={}", project_id);
+        let url = format!("/issuetype/project?projectId={}", project_id);
         let get = jira_client.get_from_jira_api(&url).await?;
         Ok(get)
     }

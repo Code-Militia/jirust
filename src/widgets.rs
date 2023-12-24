@@ -129,11 +129,11 @@ pub fn draw_block_style(focused: bool, title: &str) -> Block {
 
 pub fn draw_edit_block_style(focused: bool, input_mode: &InputMode) -> Style {
     if focused && matches!(input_mode, InputMode::Editing) {
-        return Style::default().fg(Color::Yellow)
+        return Style::default().fg(Color::Yellow);
     }
 
     if focused && matches!(input_mode, InputMode::Normal) {
-        return Style::default().fg(Color::Green)
+        return Style::default().fg(Color::Green);
     }
 
     Style::default()

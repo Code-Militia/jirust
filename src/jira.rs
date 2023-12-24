@@ -134,13 +134,14 @@ impl Jira {
             .await
             .expect("projects selected");
         let projects: Vec<ProjectRecord> = query.take(0)?;
-        let projects: Vec<_> = projects.into_iter().map(|project| {
-            Project {
+        let projects: Vec<_> = projects
+            .into_iter()
+            .map(|project| Project {
                 project_id: project.project_id,
                 key: project.key,
                 name: project.name,
-            }
-        }).collect();
+            })
+            .collect();
         debug!("Projects found on cache {:?}", projects);
 
         // Get initial projects request
@@ -166,11 +167,8 @@ impl Jira {
             debug!("Projects found from JIRA {:?}", self.projects_api);
             for project in &self.projects_api.values {
                 debug!("Recording to cache {:?}", project);
-                let _project_insert: Vec<ProjectRecord> = self
-                    .db
-                    .create("projects")
-                    .content(project)
-                    .await?;
+                let _project_insert: Vec<ProjectRecord> =
+                    self.db.create("projects").content(project).await?;
                 debug!("Project created {:?}", _project_insert);
             }
 

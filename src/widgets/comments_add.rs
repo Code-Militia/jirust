@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{events::key::Key, config::KeyConfig};
+use crate::{config::KeyConfig, events::key::Key};
 use log::debug;
 use tui::{
     backend::Backend,
@@ -164,8 +164,8 @@ impl CommentAdd {
         if let Some(action) = self.normal_key_mappings.get(&key) {
             use NormalModeAction::*;
             match *action {
-                EditMode =>  self.edit_mode(),
-                Push => self.push_comment = true
+                EditMode => self.edit_mode(),
+                Push => self.push_comment = true,
             }
             Ok(EventState::Consumed)
         } else {
@@ -176,7 +176,6 @@ impl CommentAdd {
     fn edit_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
         debug!("Received key {:?}", key);
         if let Some(action) = self.edit_key_mappings.get(&key) {
-
             use EditModeAction::*;
             match *action {
                 Backspace => {
@@ -199,9 +198,7 @@ impl CommentAdd {
                     self.input.push(c);
                     Ok(EventState::Consumed)
                 }
-                _ => {
-                    Ok(EventState::NotConsumed)
-                }
+                _ => Ok(EventState::NotConsumed),
             }
         }
     }

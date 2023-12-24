@@ -1,11 +1,18 @@
-use tui::{Frame, backend::Backend, layout::{Constraint, Layout, Direction}, style::{Style, Modifier}, text::{Span, Text, Spans}, widgets::{Paragraph, Wrap}};
+use tui::{
+    backend::Backend,
+    layout::{Constraint, Direction, Layout},
+    style::{Modifier, Style},
+    text::{Span, Spans, Text},
+    widgets::{Paragraph, Wrap},
+    Frame,
+};
 
 use crate::{config::KeyConfig, events::key::Key};
-use std::{collections::HashMap, char};
+use std::{char, collections::HashMap};
 
 use crate::jira::tickets::CreateTicket;
 
-use super::{EventState, InputMode, draw_edit_block_style, draw_block_style};
+use super::{draw_block_style, draw_edit_block_style, EventState, InputMode};
 
 #[derive(Debug)]
 pub enum FocusCreateTicket {
@@ -53,7 +60,7 @@ impl CreateTicketWidget {
 
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>) -> anyhow::Result<()> {
         let constraints = [
-            Constraint::Percentage(5), // Helper
+            Constraint::Percentage(5),  // Helper
             Constraint::Percentage(20), // Ticket type and Summary
             Constraint::Percentage(75), // Description
         ];
@@ -69,10 +76,7 @@ impl CreateTicketWidget {
             .constraints(helper_constraint)
             .split(main_chunks[0]);
 
-        let type_and_summary_constraint = [
-            Constraint::Percentage(50),
-            Constraint::Percentage(50), 
-        ];
+        let type_and_summary_constraint = [Constraint::Percentage(50), Constraint::Percentage(50)];
         let type_and_summary_layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(type_and_summary_constraint)
@@ -109,7 +113,7 @@ impl CreateTicketWidget {
             vec![
                 Span::raw("Press "),
                 Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
-                Span::raw(" to stop editing, ")
+                Span::raw(" to stop editing, "),
             ],
             Style::default(),
         );
@@ -124,22 +128,39 @@ impl CreateTicketWidget {
 
         let ticket_type_input = Paragraph::new(self.contents.ticket_type.as_ref())
             .wrap(Wrap { trim: true })
-            .style(draw_edit_block_style(matches!(self.focus, FocusCreateTicket::TicketType), &self.input_mode))
-            .block(draw_block_style(matches!(self.focus, FocusCreateTicket::TicketType), ticket_type_title));
+            .style(draw_edit_block_style(
+                matches!(self.focus, FocusCreateTicket::TicketType),
+                &self.input_mode,
+            ))
+            .block(draw_block_style(
+                matches!(self.focus, FocusCreateTicket::TicketType),
+                ticket_type_title,
+            ));
         f.render_widget(ticket_type_input, ticket_type_chunk);
 
         let summary_input = Paragraph::new(self.contents.summary.as_ref())
             .wrap(Wrap { trim: true })
-            .style(draw_edit_block_style(matches!(self.focus, FocusCreateTicket::Summary), &self.input_mode))
-            .block(draw_block_style(matches!(self.focus, FocusCreateTicket::Summary), summary_title));
+            .style(draw_edit_block_style(
+                matches!(self.focus, FocusCreateTicket::Summary),
+                &self.input_mode,
+            ))
+            .block(draw_block_style(
+                matches!(self.focus, FocusCreateTicket::Summary),
+                summary_title,
+            ));
         f.render_widget(summary_input, summary_chunk);
 
         let description_input = Paragraph::new(self.contents.description.as_ref())
             .wrap(Wrap { trim: true })
-            .style(draw_edit_block_style(matches!(self.focus, FocusCreateTicket::Description), &self.input_mode))
-            .block(draw_block_style(matches!(self.focus, FocusCreateTicket::Description), description_title));
+            .style(draw_edit_block_style(
+                matches!(self.focus, FocusCreateTicket::Description),
+                &self.input_mode,
+            ))
+            .block(draw_block_style(
+                matches!(self.focus, FocusCreateTicket::Description),
+                description_title,
+            ));
         f.render_widget(description_input, description_chunk);
-
 
         Ok(())
     }
@@ -156,21 +177,21 @@ impl CreateTicketWidget {
             FocusCreateTicket::Description => self.contents.description.push(c),
             FocusCreateTicket::Summary => self.contents.summary.push(c),
             FocusCreateTicket::TicketType => self.contents.ticket_type.push(c),
-        }; 
+        };
     }
 
     pub fn next_focus(&mut self) {
         match self.focus {
             FocusCreateTicket::TicketType => self.focus = FocusCreateTicket::Summary,
             FocusCreateTicket::Summary => self.focus = FocusCreateTicket::Description,
-            FocusCreateTicket::Description=> self.focus = FocusCreateTicket::TicketType,
+            FocusCreateTicket::Description => self.focus = FocusCreateTicket::TicketType,
         };
     }
     pub fn previous_focus(&mut self) {
         match self.focus {
-            FocusCreateTicket::TicketType=> self.focus = FocusCreateTicket::Description,
+            FocusCreateTicket::TicketType => self.focus = FocusCreateTicket::Description,
             FocusCreateTicket::Summary => self.focus = FocusCreateTicket::TicketType,
-            FocusCreateTicket::Description=> self.focus = FocusCreateTicket::Summary,
+            FocusCreateTicket::Description => self.focus = FocusCreateTicket::Summary,
         };
     }
 }
@@ -217,7 +238,7 @@ impl CreateTicketWidget {
                 self.input_mode = InputMode::Normal;
                 Ok(EventState::Consumed)
             }
-            _ => Ok(EventState::NotConsumed)
+            _ => Ok(EventState::NotConsumed),
         }
     }
     pub fn event(&mut self, key: Key) -> anyhow::Result<EventState> {
