@@ -1,10 +1,13 @@
-use super::{auth::JiraClient, tickets::TicketData};
+use super::auth::JiraClient;
+use log::debug;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Project {
+    #[serde(alias = "id")]
+    pub project_id: String,
     pub key: String,
-    pub tickets: Option<Vec<TicketData>>,
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -73,6 +76,7 @@ impl JiraProjectsAPI {
         let url = format!("project/{}", project_key);
         let response = jira_client.get_from_jira_api(&url).await?;
         let obj: Project = serde_json::from_str(&response)?;
+        debug!("Projects from JIRA: {:?}", obj);
         Ok(obj)
     }
 }

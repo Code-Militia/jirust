@@ -76,6 +76,7 @@ pub struct Priority {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TicketType {
+    pub id: String,
     pub name: String,
     pub subtask: bool,
 }
@@ -258,11 +259,11 @@ impl TicketData {
         &self,
         transition: PostTicketTransition,
         jira_client: &JiraClient,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<String> {
         let url = format!("/issue/{}/transitions", self.key);
         let data = serde_json::to_string(&transition)?;
-        jira_client.post_to_jira_api(&url, data).await?;
-        Ok(())
+        let post = jira_client.post_to_jira_api(&url, data).await?;
+        Ok(post)
     }
 }
 
@@ -334,11 +335,11 @@ impl JiraTicketsAPI {
     pub async fn get_ticket_types(
         &self,
         jira_client: &JiraClient,
-        project_name: &str,
-        user_id: &str,
-        url: &str
-    ) -> anyhow::Result<()> {
-        Ok(())
+        project_id: &str,
+    ) -> anyhow::Result<String> {
+        let url = format!("rest/api/3/issuetype/project?projectId={}", project_id);
+        let get = jira_client.get_from_jira_api(&url).await?;
+        Ok(get)
     }
 
     pub async fn create_ticket_api(
