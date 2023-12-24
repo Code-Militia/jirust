@@ -1,6 +1,15 @@
 use super::auth::JiraClient;
 use log::debug;
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::Thing;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ProjectRecord {
+    pub id: Thing,
+    pub key: String,
+    pub name: String,
+    pub project_id: String,
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Project {

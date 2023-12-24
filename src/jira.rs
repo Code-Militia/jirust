@@ -9,6 +9,7 @@ pub type SurrealAny = Surreal<Any>;
 
 use crate::config::JiraConfigProjects;
 use crate::config::JiraConfigTickets;
+use crate::jira::projects::ProjectRecord;
 
 use self::projects::Project;
 use self::tickets::TicketData;
@@ -132,7 +133,14 @@ impl Jira {
             .bind(("start_at", self.project_start_at))
             .await
             .expect("projects selected");
-        let projects: Vec<Project> = query.take(0)?;
+        let projects: Vec<ProjectRecord> = query.take(0)?;
+        let projects: Vec<_> = projects.into_iter().map(|project| {
+            Project {
+                project_id: project.project_id,
+                key: project.key,
+                name: project.name,
+            }
+        }).collect();
         debug!("Projects found on cache {:?}", projects);
 
         // Get initial projects request
@@ -158,18 +166,23 @@ impl Jira {
             debug!("Projects found from JIRA {:?}", self.projects_api);
             for project in &self.projects_api.values {
                 debug!("Recording to cache {:?}", project);
-                let sql = "
-                    Create projects CONTENT {
-                        project_id: $project_id,
-                        key: $key,
-                        name: $name,
-                    };
-                ";
-                let _project_insert = self.db
-                    .query(sql)
-                    .bind(("project_id", project.project_id.clone()))
-                    .bind(("key", project.key.clone()))
-                    .bind(("name", project.name.clone()))
+                // let sql = "
+                //     Create projects CONTENT {
+                //         project_id: $project_id,
+                //         key: $key,
+                //         name: $name,
+                //     };
+                // ";
+                // let _project_insert = self.db
+                //     .query(sql)
+                //     .bind(("project_id", project.project_id.clone()))
+                //     .bind(("key", project.key.clone()))
+                //     .bind(("name", project.name.clone()))
+                //     .await?;
+                let _project_insert: Vec<ProjectRecord> = self
+                    .db
+                    .create("projects") // It returns Option<_> when you put `id` here
+                    .content(project)
                     .await?;
                 debug!("Project created {:?}", _project_insert);
             }
