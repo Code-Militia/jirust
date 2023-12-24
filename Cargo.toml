@@ -3,10 +3,10 @@ authors = ["Akhter (Mo) Ali <akali1987@gmail.com"]
 name = "jirust"
 description = "A JIRA terminal user interface"
 edition = "2021"
-homepage = "https://github.com/moali87/jirust"
+homepage = "https://github.com/Code-Militia/jirust"
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/moali87/jirust"
+repository = "https://github.com/Code-Militia/jirust"
 version = "1.1.6"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -48,11 +48,3 @@ rustls-webpki = ">=0.101.4"
 time = ">=0.2.23"
 tungstenite = ">=0.20.1"
 cargo-release = "0.24.12"
-
-[build]
-targets = [
-        "aarch64-apple-darwin",
-        "x86_64-apple-darwin",
-        "x86_64-unknown-linux-gnu",
-        "x86_64-pc-windows-msvc"
-]
