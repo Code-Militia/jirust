@@ -130,7 +130,7 @@ impl CreateTicketWidget {
         let help_message = Paragraph::new(text);
         f.render_widget(help_message, helper_layout[0]);
 
-        let ticket_type_headers_cells = ["Id", "Name", "Description"];
+        let ticket_type_headers_cells = ["Id", "Name"];
         let ticket_type_headers = Row::new(ticket_type_headers_cells);
         let ticket_type_row = self.contents.ticket_types.iter().map(|ticket_type| {
             let item = [ticket_type.id.as_str(), ticket_type.name.as_str()];
