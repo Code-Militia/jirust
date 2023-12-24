@@ -529,18 +529,18 @@ impl App {
     //     Ok(())
     // }
 
-    pub async fn update_components(&mut self) -> anyhow::Result<()> {
-        let empty_vec = Vec::new();
-        match self.tickets.selected() {
-            None => {
-                self.components.update(&empty_vec).await?;
-            }
-            Some(t) => {
-                self.components.update(&t.fields.components).await?;
-            }
-        };
-        Ok(())
-    }
+    // pub async fn update_components(&mut self) -> anyhow::Result<()> {
+    //     let empty_vec = Vec::new();
+    //     match self.tickets.selected() {
+    //         None => {
+    //             self.components.update(&empty_vec).await?;
+    //         }
+    //         Some(t) => {
+    //             self.components.update(&t.fields.components).await?;
+    //         }
+    //     };
+    //     Ok(())
+    // }
 
     pub async fn update_comments_view(&mut self) -> anyhow::Result<()> {
         let comments = match self.tickets.selected() {
@@ -1060,11 +1060,12 @@ impl App {
             }
             Focus::Labels => {
                 if key == self.config.key_config.previous || key == self.config.key_config.move_up {
+                    // self.update_labels().await?;
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
                 if key == self.config.key_config.next || key == self.config.key_config.move_down {
-                    self.update_components().await?;
+                    // self.update_components().await?;
                     self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
                 }
