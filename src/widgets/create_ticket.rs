@@ -13,7 +13,7 @@ use std::{char, collections::HashMap};
 
 use crate::jira::tickets::CreateTicket;
 
-use super::{draw_block_style, draw_edit_block_style, EventState, InputMode, draw_highlight_style};
+use super::{draw_block_style, draw_edit_block_style, draw_highlight_style, EventState, InputMode};
 
 #[derive(Debug)]
 pub enum FocusCreateTicket {
@@ -78,7 +78,7 @@ impl CreateTicketWidget {
             push_content: false,
             key_mappings,
             ticket_type_state,
-            ticket_type_key_mapping
+            ticket_type_key_mapping,
         }
     }
 
@@ -290,7 +290,7 @@ impl CreateTicketWidget {
                 Previous(line) => self.previous_ticket_type(line),
                 Last => self.go_to_bottom_ticket_type(),
                 First => self.go_to_top_ticket_type(),
-                NextFocus => self.next_focus()
+                NextFocus => self.next_focus(),
             }
             return Ok(EventState::Consumed);
         }
@@ -315,16 +315,16 @@ impl CreateTicketWidget {
                 NextFocus => {
                     debug!("Going to next focus");
                     self.next_focus()
-                },
+                }
                 PreviousFocus => {
                     debug!("Going to previous focus");
                     self.previous_focus()
                 }
             }
-            return Ok(EventState::Consumed)
+            return Ok(EventState::Consumed);
         }
         if let FocusCreateTicket::TicketType = self.focus {
-            return self.ticket_type_key_event(key)
+            return self.ticket_type_key_event(key);
         }
         Ok(EventState::NotConsumed)
     }
