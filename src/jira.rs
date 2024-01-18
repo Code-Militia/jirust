@@ -187,12 +187,12 @@ impl Jira {
             let config_tickets = self.user_config_tickets.clone().unwrap();
             if let Some(current_user_tickets) = config_tickets.current_user_tickets_only {
                 if current_user_tickets {
-                    jql = format!("{jql} AND assignee = currentuser()")
+                    jql = format!("{jql} AND assignee = currentUser()")
                 }
                 debug!("{jql}");
             }
             if config_tickets.current_sprint_tickets_only == Some(true) {
-                jql = format!("{jql} AND sprint IN openSprints() AND sprint NOT IN futureSprints() AND sprint NOT IN closedSprints()")
+                jql = format!("{jql} AND sprint IN openSprints()")
             }
             debug!("{jql}");
 
