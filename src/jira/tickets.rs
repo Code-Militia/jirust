@@ -350,7 +350,7 @@ impl JiraTicketsAPI {
     ) -> anyhow::Result<()> {
         let url = String::from("rest/api/3/issue");
         let data = serde_json::to_string(&create_ticket_data)?;
-        todo!("Format data correctly"); // See https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-post
+        todo!("Format data correctly https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-post");
         jira_client.post_to_jira_api(&url, data).await?;
         Ok(())
     }
