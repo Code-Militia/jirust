@@ -13,8 +13,6 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-// use log::{debug, error, info, log_enabled, Level};
-// use serde::{Deserialize, Serialize};
 use std::io;
 use tui::{backend::CrosstermBackend, Terminal};
 
