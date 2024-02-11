@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinkFields {
-    pub issuetype: Type,
+    pub issuetype: TicketType,
     pub priority: Option<Priority>,
     pub status: Status,
     pub summary: String,
@@ -75,7 +75,8 @@ pub struct Priority {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Type {
+pub struct TicketType {
+    pub id: String,
     pub name: String,
     pub subtask: bool,
 }
@@ -109,7 +110,7 @@ pub struct Fields {
     pub components: Vec<Components>,
     pub creator: Option<CreatorReporter>,
     pub issuelinks: Vec<Links>,
-    pub issuetype: Type,
+    pub issuetype: TicketType,
     pub labels: Vec<String>,
     pub parent: Option<LinkInwardOutwardParent>,
     pub priority: Option<Priority>,
@@ -258,24 +259,44 @@ impl TicketData {
         &self,
         transition: PostTicketTransition,
         jira_client: &JiraClient,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<String> {
         let url = format!("/issue/{}/transitions", self.key);
         let data = serde_json::to_string(&transition)?;
-        jira_client.post_to_jira_api(&url, data).await?;
-        Ok(())
+        let post = jira_client.post_to_jira_api(&url, data).await?;
+        Ok(post)
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct JiraTickets {
+pub struct CreateTicket {
+    pub description: String,
+    pub project_id: String,
+    pub summary: String,
+    pub ticket_types: Vec<TicketType>,
+}
+
+impl CreateTicket {
+    pub fn new() -> Self {
+        Self {
+            description: String::new(),
+            project_id: String::new(),
+            summary: String::new(),
+            ticket_types: vec![],
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct JiraTicketsAPI {
     pub start_at: Option<u32>,
     pub max_results: Option<u32>,
     pub total: u32,
     pub issues: Vec<TicketData>,
 }
 
-impl JiraTickets {
+impl JiraTicketsAPI {
     pub async fn new() -> anyhow::Result<Self> {
         let issues = Vec::new();
         Ok(Self {
@@ -286,13 +307,13 @@ impl JiraTickets {
         })
     }
 
-    pub async fn get_tickets_from_jira_api(
+    pub async fn get_tickets_api(
         &self,
-        jira_auth: &JiraClient,
+        jira_client: &JiraClient,
         params: Vec<(&str, &str)>,
         url: &str,
     ) -> Result<String, reqwest::Error> {
-        let headers = jira_auth.get_basic_auth();
+        let headers = jira_client.get_basic_auth();
         let client = reqwest::Client::builder()
             .default_headers(headers)
             .https_only(true)
@@ -300,7 +321,7 @@ impl JiraTickets {
         client.get(url).query(&params).send().await?.text().await
     }
 
-    pub async fn search_jira_ticket_api(
+    pub async fn search_tickets_api(
         &self,
         ticket_key: &str,
         jira_client: &JiraClient,
@@ -309,5 +330,28 @@ impl JiraTickets {
         let response = jira_client.get_from_jira_api(&url).await?;
         let obj: TicketData = serde_json::from_str(&response)?;
         Ok(obj)
+    }
+
+    pub async fn get_ticket_types(
+        &self,
+        jira_client: &JiraClient,
+        project_id: &str,
+    ) -> anyhow::Result<Vec<TicketType>> {
+        let url = format!("/issuetype/project?projectId={}", project_id);
+        let response = jira_client.get_from_jira_api(&url).await?;
+        let obj: Vec<TicketType> = serde_json::from_str(&response)?;
+        Ok(obj)
+    }
+
+    pub async fn create_ticket_api(
+        &self,
+        jira_client: &JiraClient,
+        create_ticket_data: CreateTicket,
+    ) -> anyhow::Result<()> {
+        let url = String::from("rest/api/3/issue");
+        let data = serde_json::to_string(&create_ticket_data)?;
+        todo!("Format data correctly https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-post");
+        jira_client.post_to_jira_api(&url, data).await?;
+        Ok(())
     }
 }
