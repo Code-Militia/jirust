@@ -282,6 +282,12 @@ impl CreateTicketWidget {
         }
     }
 
+    // get_ticket_type returns the index of selected ticket type
+    pub fn get_ticket_type(&self) -> usize {
+        let index = self.ticket_type_state.selected();
+        index.unwrap_or(0)
+    }
+
     fn ticket_type_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
         if let Some(ticket_type_action) = self.ticket_type_key_mapping.get(&key) {
             use TicketTypeAction::*;

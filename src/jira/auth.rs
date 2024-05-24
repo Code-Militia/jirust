@@ -1,4 +1,5 @@
 use base64::{engine::general_purpose, Engine as _};
+use log::debug;
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -35,6 +36,7 @@ impl JiraClient {
             .https_only(true)
             .build()?;
         let response = client.post(api_url).body(data).send().await?.text().await?;
+        debug!("{response}");
         Ok(response)
     }
 

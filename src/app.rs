@@ -626,14 +626,19 @@ impl App {
             }
             Focus::CreateTicket => {
                 if self.create_ticket.event(key)?.is_consumed() {
+                    let project = self
+                        .projects
+                        .selected()
+                        .expect("Project should have been selected");
                     if self.create_ticket.push_content {
                         self.jira
                             .tickets_api
                             .create_ticket_api(
                                 &self.jira.client,
                                 self.create_ticket.contents.clone(),
-                            )
-                            .await?;
+                                self.create_ticket.get_ticket_type(),
+                                &project.project_id,
+                            ).await?;
                         self.create_ticket.push_content = false;
                     }
                     return Ok(EventState::Consumed);

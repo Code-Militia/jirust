@@ -5,6 +5,7 @@ use super::SurrealAny;
 use htmltoadf::convert_html_str_to_adf_str;
 use log::debug;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinkFields {
@@ -271,7 +272,6 @@ impl TicketData {
 #[serde(rename_all = "camelCase")]
 pub struct CreateTicket {
     pub description: String,
-    pub project_id: String,
     pub summary: String,
     pub ticket_types: Vec<TicketType>,
 }
@@ -280,10 +280,38 @@ impl CreateTicket {
     pub fn new() -> Self {
         Self {
             description: String::new(),
-            project_id: String::new(),
             summary: String::new(),
             ticket_types: vec![],
         }
+    }
+
+    // transcode_jira returns serde_json string version of struct
+    // it is ready to be sent to jira
+    pub fn transcode_jira(&self, ticket_type_id: String, project_id: String) -> anyhow::Result<String> {
+        let data = json!({
+            "fields": {
+                "description": {
+                    "content": [{
+                        "content": [{
+                            "text": self.description,
+                            "type": "text"
+                        }],
+                        "type": "paragraph"
+                    }],
+                    "type": "doc",
+                    "version": 1
+                },
+                "issuetype": {
+                    "id": ticket_type_id
+                },
+                "project": {
+                    "id": project_id
+                },
+                "summary": self.summary
+            }
+        });
+
+        Ok(serde_json::to_string(&data)?)
     }
 }
 
@@ -325,6 +353,7 @@ impl JiraTicketsAPI {
         &self,
         ticket_key: &str,
         jira_client: &JiraClient,
+
     ) -> anyhow::Result<TicketData> {
         let url = format!("/issue/{}?expand=renderedFields", ticket_key);
         let response = jira_client.get_from_jira_api(&url).await?;
@@ -343,14 +372,18 @@ impl JiraTicketsAPI {
         Ok(obj)
     }
 
+    // create_ticket_api posts to JIRA API to create ticket
     pub async fn create_ticket_api(
         &self,
         jira_client: &JiraClient,
         create_ticket_data: CreateTicket,
+        ticket_type_id_index: usize,
+        project_id: &str
     ) -> anyhow::Result<()> {
-        let url = String::from("rest/api/3/issue");
-        let data = serde_json::to_string(&create_ticket_data)?;
-        todo!("Format data correctly https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-post");
+        let url = String::from("/issue");
+        let ticket_type_id = &create_ticket_data.ticket_types[ticket_type_id_index].id;
+        let data = create_ticket_data.transcode_jira(ticket_type_id.to_string(), project_id.to_string())?;
+        debug!("{data}");
         jira_client.post_to_jira_api(&url, data).await?;
         Ok(())
     }
