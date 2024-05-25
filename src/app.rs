@@ -610,7 +610,7 @@ impl App {
             }
             Focus::CommentsAdd => {
                 if self.comment_add.event(key)?.is_consumed() {
-                    if self.comment_add.push_comment {
+                    if self.comment_add.push_comment && !self.comment_add.messages.is_empty() {
                         let comments = &self.comment_add.messages.clone();
                         self.add_comment(comments).await?;
                         self.comment_add.messages.clear();
@@ -638,8 +638,12 @@ impl App {
                                 self.create_ticket.contents.clone(),
                                 self.create_ticket.get_ticket_type(),
                                 &project.project_id,
-                            ).await?;
+                            )
+                            .await?;
                         self.create_ticket.push_content = false;
+                        self.create_ticket.contents.summary.clear();
+                        self.create_ticket.contents.description.clear();
+                        self.focus = Focus::Tickets;
                     }
                     return Ok(EventState::Consumed);
                 }
@@ -1031,6 +1035,7 @@ impl App {
             Focus::CommentsAdd => {
                 if key == self.config.key_config.esc {
                     self.update_comments_view().await?;
+                    self.comment_add.messages.clear();
                     self.focus = Focus::CommentsList;
                     return Ok(EventState::Consumed);
                 }
@@ -1059,6 +1064,8 @@ impl App {
             }
             Focus::CreateTicket => {
                 if key == self.config.key_config.esc {
+                    self.create_ticket.contents.description.clear();
+                    self.create_ticket.contents.summary.clear();
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }

@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, trace};
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -337,7 +337,7 @@ impl CreateTicketWidget {
 
     pub fn edit_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
         debug!("Edit mode event");
-        debug!("Key: {:?}", key);
+        trace!("Key: {:?}", key);
         match key {
             Key::Tab => {
                 self.next_focus();

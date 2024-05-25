@@ -287,7 +287,11 @@ impl CreateTicket {
 
     // transcode_jira returns serde_json string version of struct
     // it is ready to be sent to jira
-    pub fn transcode_jira(&self, ticket_type_id: String, project_id: String) -> anyhow::Result<String> {
+    pub fn transcode_jira(
+        &self,
+        ticket_type_id: String,
+        project_id: String,
+    ) -> anyhow::Result<String> {
         let data = json!({
             "fields": {
                 "description": {
@@ -353,7 +357,6 @@ impl JiraTicketsAPI {
         &self,
         ticket_key: &str,
         jira_client: &JiraClient,
-
     ) -> anyhow::Result<TicketData> {
         let url = format!("/issue/{}?expand=renderedFields", ticket_key);
         let response = jira_client.get_from_jira_api(&url).await?;
@@ -378,11 +381,12 @@ impl JiraTicketsAPI {
         jira_client: &JiraClient,
         create_ticket_data: CreateTicket,
         ticket_type_id_index: usize,
-        project_id: &str
+        project_id: &str,
     ) -> anyhow::Result<()> {
         let url = String::from("/issue");
         let ticket_type_id = &create_ticket_data.ticket_types[ticket_type_id_index].id;
-        let data = create_ticket_data.transcode_jira(ticket_type_id.to_string(), project_id.to_string())?;
+        let data = create_ticket_data
+            .transcode_jira(ticket_type_id.to_string(), project_id.to_string())?;
         debug!("{data}");
         jira_client.post_to_jira_api(&url, data).await?;
         Ok(())

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{config::KeyConfig, events::key::Key};
-use log::debug;
+use log::{debug, trace};
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -174,12 +174,12 @@ impl CommentAdd {
     }
 
     fn edit_mode_key_event(&mut self, key: Key) -> anyhow::Result<EventState> {
-        debug!("Received key {:?}", key);
+        trace!("Received key {:?}", key);
         if let Some(action) = self.edit_key_mappings.get(&key) {
             use EditModeAction::*;
             match *action {
                 Backspace => {
-                    debug!("Backspace event");
+                    trace!("Backspace event");
                     self.input.pop();
                 }
                 Enter => {
