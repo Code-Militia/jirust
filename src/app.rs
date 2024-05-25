@@ -678,6 +678,14 @@ impl App {
             }
             Focus::Tickets => {
                 if key == self.config.key_config.reset {
+                    if self.tickets.ticket_description.is_some() {
+                        self.tickets
+                            .ticket_description
+                            .as_mut()
+                            .expect("description should be some")
+                            .clear();
+                    }
+                    self.tickets.ticket_description = None;
                     self.tickets.tickets.clear();
                     self.jira.clear_tickets_table().await?;
                     self.update_all_tickets().await?;

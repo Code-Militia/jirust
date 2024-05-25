@@ -55,7 +55,7 @@ pub struct TicketWidget {
     jira_domain: String,
     state: TableState,
     scroll: u16,
-    ticket_description: Option<String>,
+    pub ticket_description: Option<String>,
     pub tickets: Vec<TicketData>,
     pub key_mappings: HashMap<Key, Action>,
 }
