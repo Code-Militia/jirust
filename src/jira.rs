@@ -63,7 +63,7 @@ impl Jira {
         db.use_ns("noc").use_db("database").await?;
 
         Ok(Self {
-            client: auth,
+            client: auth.await,
             db,
             projects_api: projects,
             project_start_at: 0,

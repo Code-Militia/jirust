@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use super::auth::JiraClient;
 use super::SurrealAny;
+use anyhow::{anyhow, Ok};
 use htmltoadf::convert_html_str_to_adf_str;
-use log::debug;
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -231,7 +232,7 @@ impl TicketData {
         let adf = convert_html_str_to_adf_str(html);
         let adf = format!("{{ \"body\": {} }}", adf);
         let response = jira_client
-            .post_to_jira_api(&url, adf)
+            .post_to_jira_api(&url, Some(adf))
             .await
             .expect("unable to save comment");
         let comments: CommentBody =
@@ -263,7 +264,7 @@ impl TicketData {
     ) -> anyhow::Result<String> {
         let url = format!("/issue/{}/transitions", self.key);
         let data = serde_json::to_string(&transition)?;
-        let post = jira_client.post_to_jira_api(&url, data).await?;
+        let post = jira_client.post_to_jira_api(&url, Some(data)).await?;
         Ok(post)
     }
 }
@@ -291,9 +292,13 @@ impl CreateTicket {
         &self,
         ticket_type_id: String,
         project_id: String,
+        user_id: String,
     ) -> anyhow::Result<String> {
         let data = json!({
             "fields": {
+                "assignee": {
+                    "id": user_id
+                },
                 "description": {
                     "content": [{
                         "content": [{
@@ -383,12 +388,23 @@ impl JiraTicketsAPI {
         ticket_type_id_index: usize,
         project_id: &str,
     ) -> anyhow::Result<()> {
+        let user_data = jira_client.user.clone();
+        let user_id = match user_data {
+            Some(data) => data.account_id,
+            None => {
+                debug!("Unable to locate user data");
+                String::new()
+            }
+        };
         let url = String::from("/issue");
         let ticket_type_id = &create_ticket_data.ticket_types[ticket_type_id_index].id;
-        let data = create_ticket_data
-            .transcode_jira(ticket_type_id.to_string(), project_id.to_string())?;
+        let data = create_ticket_data.transcode_jira(
+            ticket_type_id.to_string(),
+            project_id.to_string(),
+            user_id,
+        )?;
         debug!("{data}");
-        jira_client.post_to_jira_api(&url, data).await?;
+        jira_client.post_to_jira_api(&url, Some(data)).await?;
         Ok(())
     }
 }

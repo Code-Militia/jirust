@@ -644,6 +644,10 @@ impl App {
                         self.create_ticket.contents.summary.clear();
                         self.create_ticket.contents.description.clear();
                         self.focus = Focus::Tickets;
+                        self.tickets.tickets.clear();
+                        self.tickets.ticket_description = None;
+                        self.jira.clear_tickets_table().await?;
+                        self.update_all_tickets().await?;
                     }
                     return Ok(EventState::Consumed);
                 }
@@ -678,13 +682,6 @@ impl App {
             }
             Focus::Tickets => {
                 if key == self.config.key_config.reset {
-                    if self.tickets.ticket_description.is_some() {
-                        self.tickets
-                            .ticket_description
-                            .as_mut()
-                            .expect("description should be some")
-                            .clear();
-                    }
                     self.tickets.ticket_description = None;
                     self.tickets.tickets.clear();
                     self.jira.clear_tickets_table().await?;
