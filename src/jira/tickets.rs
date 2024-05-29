@@ -2,13 +2,15 @@ use std::collections::HashMap;
 
 use super::auth::JiraClient;
 use super::SurrealAny;
+use anyhow::{anyhow, Ok};
 use htmltoadf::convert_html_str_to_adf_str;
-use log::debug;
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LinkFields {
-    pub issuetype: Type,
+    pub issuetype: TicketType,
     pub priority: Option<Priority>,
     pub status: Status,
     pub summary: String,
@@ -75,7 +77,8 @@ pub struct Priority {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Type {
+pub struct TicketType {
+    pub id: String,
     pub name: String,
     pub subtask: bool,
 }
@@ -109,7 +112,7 @@ pub struct Fields {
     pub components: Vec<Components>,
     pub creator: Option<CreatorReporter>,
     pub issuelinks: Vec<Links>,
-    pub issuetype: Type,
+    pub issuetype: TicketType,
     pub labels: Vec<String>,
     pub parent: Option<LinkInwardOutwardParent>,
     pub priority: Option<Priority>,
@@ -229,7 +232,7 @@ impl TicketData {
         let adf = convert_html_str_to_adf_str(html);
         let adf = format!("{{ \"body\": {} }}", adf);
         let response = jira_client
-            .post_to_jira_api(&url, adf)
+            .post_to_jira_api(&url, Some(adf))
             .await
             .expect("unable to save comment");
         let comments: CommentBody =
@@ -258,24 +261,79 @@ impl TicketData {
         &self,
         transition: PostTicketTransition,
         jira_client: &JiraClient,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<String> {
         let url = format!("/issue/{}/transitions", self.key);
         let data = serde_json::to_string(&transition)?;
-        jira_client.post_to_jira_api(&url, data).await?;
-        Ok(())
+        let post = jira_client.post_to_jira_api(&url, Some(data)).await?;
+        Ok(post)
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct JiraTickets {
+pub struct CreateTicket {
+    pub description: String,
+    pub summary: String,
+    pub ticket_types: Vec<TicketType>,
+}
+
+impl CreateTicket {
+    pub fn new() -> Self {
+        Self {
+            description: String::new(),
+            summary: String::new(),
+            ticket_types: vec![],
+        }
+    }
+
+    // transcode_jira returns serde_json string version of struct
+    // it is ready to be sent to jira
+    pub fn transcode_jira(
+        &self,
+        ticket_type_id: String,
+        project_id: String,
+        user_id: String,
+    ) -> anyhow::Result<String> {
+        let data = json!({
+            "fields": {
+                "assignee": {
+                    "id": user_id
+                },
+                "description": {
+                    "content": [{
+                        "content": [{
+                            "text": self.description,
+                            "type": "text"
+                        }],
+                        "type": "paragraph"
+                    }],
+                    "type": "doc",
+                    "version": 1
+                },
+                "issuetype": {
+                    "id": ticket_type_id
+                },
+                "project": {
+                    "id": project_id
+                },
+                "summary": self.summary
+            }
+        });
+
+        Ok(serde_json::to_string(&data)?)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct JiraTicketsAPI {
     pub start_at: Option<u32>,
     pub max_results: Option<u32>,
     pub total: u32,
     pub issues: Vec<TicketData>,
 }
 
-impl JiraTickets {
+impl JiraTicketsAPI {
     pub async fn new() -> anyhow::Result<Self> {
         let issues = Vec::new();
         Ok(Self {
@@ -286,13 +344,13 @@ impl JiraTickets {
         })
     }
 
-    pub async fn get_tickets_from_jira_api(
+    pub async fn get_tickets_api(
         &self,
-        jira_auth: &JiraClient,
+        jira_client: &JiraClient,
         params: Vec<(&str, &str)>,
         url: &str,
     ) -> Result<String, reqwest::Error> {
-        let headers = jira_auth.get_basic_auth();
+        let headers = jira_client.get_basic_auth();
         let client = reqwest::Client::builder()
             .default_headers(headers)
             .https_only(true)
@@ -300,7 +358,7 @@ impl JiraTickets {
         client.get(url).query(&params).send().await?.text().await
     }
 
-    pub async fn search_jira_ticket_api(
+    pub async fn search_tickets_api(
         &self,
         ticket_key: &str,
         jira_client: &JiraClient,
@@ -309,5 +367,44 @@ impl JiraTickets {
         let response = jira_client.get_from_jira_api(&url).await?;
         let obj: TicketData = serde_json::from_str(&response)?;
         Ok(obj)
+    }
+
+    pub async fn get_ticket_types(
+        &self,
+        jira_client: &JiraClient,
+        project_id: &str,
+    ) -> anyhow::Result<Vec<TicketType>> {
+        let url = format!("/issuetype/project?projectId={}", project_id);
+        let response = jira_client.get_from_jira_api(&url).await?;
+        let obj: Vec<TicketType> = serde_json::from_str(&response)?;
+        Ok(obj)
+    }
+
+    // create_ticket_api posts to JIRA API to create ticket
+    pub async fn create_ticket_api(
+        &self,
+        jira_client: &JiraClient,
+        create_ticket_data: CreateTicket,
+        ticket_type_id_index: usize,
+        project_id: &str,
+    ) -> anyhow::Result<()> {
+        let user_data = jira_client.user.clone();
+        let user_id = match user_data {
+            Some(data) => data.account_id,
+            None => {
+                debug!("Unable to locate user data");
+                String::new()
+            }
+        };
+        let url = String::from("/issue");
+        let ticket_type_id = &create_ticket_data.ticket_types[ticket_type_id_index].id;
+        let data = create_ticket_data.transcode_jira(
+            ticket_type_id.to_string(),
+            project_id.to_string(),
+            user_id,
+        )?;
+        debug!("{data}");
+        jira_client.post_to_jira_api(&url, Some(data)).await?;
+        Ok(())
     }
 }

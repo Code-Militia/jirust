@@ -5,6 +5,7 @@ use crate::widgets::commands::{self, CommandInfo};
 use crate::widgets::comments::CommentsList;
 use crate::widgets::comments_add::CommentAdd;
 use crate::widgets::components::ComponentsWidget;
+use crate::widgets::create_ticket::CreateTicketWidget;
 use crate::widgets::error::ErrorComponent;
 use crate::widgets::help::HelpWidget;
 use crate::widgets::labels::LabelsWidget;
@@ -30,15 +31,11 @@ use tui::{
     Frame,
 };
 
-// pub enum LoadState {
-//     Complete,
-//     Loading,
-// }
-
 pub enum Focus {
     CommentsAdd,
     CommentsList,
     Components,
+    CreateTicket,
     Labels,
     Projects,
     SearchProjects,
@@ -104,11 +101,11 @@ impl ParentAction {
 
 #[derive(Debug, Clone, Copy)]
 enum TicketsAction {
-    // FocusDescription,
-    FocusRelation,
     FocusLabels,
+    FocusRelation,
     NextPage,
     OpenComments,
+    OpenCreateTicket,
     OpenHelp,
     OpenProjects,
     OpenTicketTransition,
@@ -128,6 +125,9 @@ impl TicketsAction {
                 CommandText::new(format!("Focus on Labels pane [{key}]"), CMD_GROUP_GENERAL)
             }
             Self::OpenHelp => CommandText::new(format!("Open Help [{key}]"), CMD_GROUP_GENERAL),
+            Self::OpenCreateTicket => {
+                CommandText::new(format!("Create ticket [{key}]"), CMD_GROUP_GENERAL)
+            }
             Self::OpenComments => {
                 CommandText::new(format!("Open Comments View [{key}]"), CMD_GROUP_GENERAL)
             }
@@ -174,11 +174,11 @@ impl CommentsAction {
 }
 
 pub struct App {
-    // load_state: LoadState,
     comment_add: CommentAdd,
     comments_list: CommentsList,
     comments_key_mappings: HashMap<Key, CommentsAction>,
     components: ComponentsWidget,
+    create_ticket: CreateTicketWidget,
     focus: Focus,
     help: HelpWidget,
     jira: Jira,
@@ -213,7 +213,7 @@ impl App {
 
         Ok(Self {
             comments_list: CommentsList::new(config.key_config.clone()),
-            comment_add: CommentAdd::new(),
+            comment_add: CommentAdd::new(config.key_config.clone()),
             comments_key_mappings: {
                 let mut map = HashMap::new();
                 map.insert(config.key_config.open_help, CommentsAction::OpenHelp);
@@ -225,13 +225,13 @@ impl App {
                 map
             },
             components: ComponentsWidget::new(config.key_config.clone()),
+            create_ticket: CreateTicketWidget::new(config.key_config.clone()),
             config: config.clone(),
             error: ErrorComponent::new(config.key_config.clone()),
             focus: Focus::Projects,
             help: HelpWidget::new(config.key_config.clone()),
             jira,
             labels: LabelsWidget::new(config.key_config.clone()),
-            // load_state: LoadState::Complete,
             parent_key_mappings: {
                 let mut map = HashMap::new();
                 map.insert(config.key_config.open_help, ParentAction::OpenHelp);
@@ -270,6 +270,10 @@ impl App {
                 map.insert(
                     config.key_config.ticket_view_comments,
                     TicketsAction::OpenComments,
+                );
+                map.insert(
+                    config.key_config.open_create_ticket,
+                    TicketsAction::OpenCreateTicket,
                 );
                 map.insert(config.key_config.esc, TicketsAction::OpenProjects);
                 map.insert(
@@ -326,6 +330,11 @@ impl App {
         }
 
         if let Focus::TicketTransition = self.focus {
+            return Ok(());
+        }
+
+        if let Focus::CreateTicket = self.focus {
+            self.create_ticket.draw(f)?;
             return Ok(());
         }
 
@@ -460,7 +469,7 @@ impl App {
 
     pub async fn update_projects(&mut self) -> anyhow::Result<()> {
         self.jira.get_jira_projects().await?;
-        self.projects.update(&self.jira.projects.values).await?;
+        self.projects.update(&self.jira.projects_api.values).await?;
         Ok(())
     }
 
@@ -472,7 +481,7 @@ impl App {
         let project = self.projects.selected().unwrap();
         self.jira.get_next_ticket_page(&project.key).await?;
         self.tickets
-            .update(self.jira.tickets.issues.clone(), true)
+            .update(self.jira.tickets_api.issues.clone(), true)
             .await?;
         Ok(())
     }
@@ -481,7 +490,7 @@ impl App {
         let project = self.projects.selected().unwrap();
         self.jira.get_previous_tickets_page(&project.key).await?;
         self.tickets
-            .update(self.jira.tickets.issues.clone(), true)
+            .update(self.jira.tickets_api.issues.clone(), true)
             .await?;
         Ok(())
     }
@@ -490,7 +499,7 @@ impl App {
         let project = self.projects.selected().unwrap();
         self.jira.get_jira_tickets(&project.key).await?;
         self.tickets
-            .update(self.jira.tickets.issues.clone(), true)
+            .update(self.jira.tickets_api.issues.clone(), true)
             .await?;
         Ok(())
     }
@@ -507,31 +516,31 @@ impl App {
         Ok(())
     }
 
-    pub async fn update_labels(&mut self) -> anyhow::Result<()> {
-        let empty_vec = Vec::new();
-        match self.tickets.selected() {
-            None => {
-                self.labels.update(&empty_vec).await?;
-            }
-            Some(t) => {
-                self.labels.update(&t.fields.labels).await?;
-            }
-        };
-        Ok(())
-    }
+    // pub async fn update_labels(&mut self) -> anyhow::Result<()> {
+    //     let empty_vec = Vec::new();
+    //     match self.tickets.selected() {
+    //         None => {
+    //             self.labels.update(&empty_vec).await?;
+    //         }
+    //         Some(t) => {
+    //             self.labels.update(&t.fields.labels).await?;
+    //         }
+    //     };
+    //     Ok(())
+    // }
 
-    pub async fn update_components(&mut self) -> anyhow::Result<()> {
-        let empty_vec = Vec::new();
-        match self.tickets.selected() {
-            None => {
-                self.components.update(&empty_vec).await?;
-            }
-            Some(t) => {
-                self.components.update(&t.fields.components).await?;
-            }
-        };
-        Ok(())
-    }
+    // pub async fn update_components(&mut self) -> anyhow::Result<()> {
+    //     let empty_vec = Vec::new();
+    //     match self.tickets.selected() {
+    //         None => {
+    //             self.components.update(&empty_vec).await?;
+    //         }
+    //         Some(t) => {
+    //             self.components.update(&t.fields.components).await?;
+    //         }
+    //     };
+    //     Ok(())
+    // }
 
     pub async fn update_comments_view(&mut self) -> anyhow::Result<()> {
         let comments = match self.tickets.selected() {
@@ -601,7 +610,7 @@ impl App {
             }
             Focus::CommentsAdd => {
                 if self.comment_add.event(key)?.is_consumed() {
-                    if self.comment_add.push_comment {
+                    if self.comment_add.push_comment && !self.comment_add.messages.is_empty() {
                         let comments = &self.comment_add.messages.clone();
                         self.add_comment(comments).await?;
                         self.comment_add.messages.clear();
@@ -612,6 +621,34 @@ impl App {
             }
             Focus::Components => {
                 if self.components.event(key)?.is_consumed() {
+                    return Ok(EventState::Consumed);
+                }
+            }
+            Focus::CreateTicket => {
+                if self.create_ticket.event(key)?.is_consumed() {
+                    let project = self
+                        .projects
+                        .selected()
+                        .expect("Project should have been selected");
+                    if self.create_ticket.push_content {
+                        self.jira
+                            .tickets_api
+                            .create_ticket_api(
+                                &self.jira.client,
+                                self.create_ticket.contents.clone(),
+                                self.create_ticket.get_ticket_type(),
+                                &project.project_id,
+                            )
+                            .await?;
+                        self.create_ticket.push_content = false;
+                        self.create_ticket.contents.summary.clear();
+                        self.create_ticket.contents.description.clear();
+                        self.focus = Focus::Tickets;
+                        self.tickets.tickets.clear();
+                        self.tickets.ticket_description = None;
+                        self.jira.clear_tickets_table().await?;
+                        self.update_all_tickets().await?;
+                    }
                     return Ok(EventState::Consumed);
                 }
             }
@@ -645,6 +682,7 @@ impl App {
             }
             Focus::Tickets => {
                 if key == self.config.key_config.reset {
+                    self.tickets.ticket_description = None;
                     self.tickets.tickets.clear();
                     self.jira.clear_tickets_table().await?;
                     self.update_all_tickets().await?;
@@ -701,43 +739,308 @@ impl App {
         Ok(EventState::NotConsumed)
     }
 
+    async fn project_move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if let Some(action) = self.projects_key_mappings.get(&key) {
+            log::debug!("got projects focus event: {key:?}");
+            use ProjectsAction::*;
+            match *action {
+                OpenHelp => {
+                    let mut commands = Vec::with_capacity(
+                        self.projects_key_mappings.len() + self.projects.key_mappings.len(),
+                    );
+                    for (&key, action) in &self.projects_key_mappings {
+                        let command_text = action.to_command_text(key);
+                        commands.push(CommandInfo::new(command_text));
+                    }
+                    for (&key, action) in &self.projects.key_mappings {
+                        let command_text = action.to_command_text(key);
+                        commands.push(CommandInfo::new(command_text));
+                    }
+
+                    self.help.set_cmds(commands);
+                    self.help.show()?;
+                }
+                SelectProject => {
+                    self.update_all_tickets().await?;
+                    self.focus = Focus::Tickets;
+                }
+                SearchProjects => {
+                    self.focus = Focus::SearchProjects;
+                    self.search_projects.input_mode = InputMode::Editing;
+                }
+                NextPage => {
+                    self.next_project_page().await?;
+                    self.update_projects().await?;
+                    self.focus = Focus::Projects;
+                }
+                PreviousPage => {
+                    self.previous_project_page().await?;
+                    self.update_projects().await?;
+                    self.focus = Focus::Projects;
+                }
+                Reset => {
+                    self.projects.projects.clear();
+                    self.tickets.tickets.clear();
+                    self.jira.clear_projects_table().await?;
+                    self.jira.clear_tickets_table().await?;
+                    let projects = &self.jira.get_jira_projects().await?;
+                    self.projects = ProjectsWidget::new(projects, self.config.key_config.clone());
+                }
+            }
+            return Ok(EventState::Consumed);
+        }
+        Ok(EventState::NotConsumed)
+    }
+    async fn comments_move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if let Some(action) = self.comments_key_mappings.get(&key) {
+            log::debug!("got comments focus event: {key:?}");
+            use CommentsAction::*;
+            match *action {
+                OpenHelp => {
+                    let mut commands = Vec::with_capacity(
+                        self.comments_key_mappings.len() + self.comments_list.key_mappings.len(),
+                    );
+                    for (&key, action) in &self.comments_key_mappings {
+                        let command_text = action.to_command_text(key);
+                        commands.push(CommandInfo::new(command_text));
+                    }
+                    for (&key, action) in &self.comments_list.key_mappings {
+                        let command_text = action.to_command_text(key);
+                        commands.push(CommandInfo::new(command_text));
+                    }
+
+                    self.help.set_cmds(commands);
+                    self.help.show()?;
+                }
+                AddComment => {
+                    self.focus = Focus::CommentsAdd;
+                    return Ok(EventState::Consumed);
+                }
+                FocusTickets => {
+                    self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+            }
+        }
+        Ok(EventState::Consumed)
+    }
+
+    async fn search_projects_move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if key == self.config.key_config.enter {
+            let project_input = &self.search_projects.input.clone();
+            if self.search_projects.selected().is_some() {
+                let project = self.search_projects.selected().unwrap();
+                if self.projects.select_project(project).is_ok() {
+                    self.update_all_tickets().await?;
+                    self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+            }
+
+            match self.jira.search_cache_projects(project_input).await {
+                Ok(p) => {
+                    self.single_project_update(p).await?;
+                    self.projects.select_project(project_input)?;
+                    self.update_all_tickets().await?;
+                    self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+                Err(_) => {
+                    self.error.set("Unable to locate project in cache and in JIRA \n You may not have access to view project".to_string())?;
+                    return Ok(EventState::NotConsumed);
+                }
+            }
+        }
+
+        if key == self.config.key_config.esc {
+            self.focus = Focus::Projects;
+            return Ok(EventState::Consumed);
+        }
+
+        Ok(EventState::NotConsumed)
+    }
+
+    async fn search_tickets_move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
+        let ticket_input = &self.search_tickets.input;
+        if key == self.config.key_config.enter {
+            if let Some(ticket_key) = self.search_tickets.selected() {
+                if self.tickets.select_ticket(ticket_key).is_ok() {
+                    self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+            }
+
+            match self
+                .jira
+                .search_cache_ticket(ticket_input.clone().as_ref())
+                .await
+            {
+                Ok(t) => {
+                    self.update_single_ticket(&t.key).await?;
+                    self.focus = Focus::Tickets;
+
+                    if self
+                        .tickets
+                        .select_ticket(&self.search_tickets.input)
+                        .is_ok()
+                    {
+                        self.focus = Focus::Tickets;
+                        return Ok(EventState::Consumed);
+                    }
+                }
+                Err(_) => {
+                    self.error.set("Unable to locate ticket in cache and in JIRA \n You may not have access to view ticket".to_string())?;
+                    return Ok(EventState::NotConsumed);
+                }
+            }
+        }
+        if key == self.config.key_config.esc {
+            self.focus = Focus::Tickets;
+            return Ok(EventState::Consumed);
+        }
+
+        Ok(EventState::NotConsumed)
+    }
+
+    async fn ticket_parent_move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
+        if key == self.config.key_config.previous || key == self.config.key_config.move_up {
+            self.focus = Focus::Components;
+            return Ok(EventState::Consumed);
+        }
+        if key == self.config.key_config.next || key == self.config.key_config.move_right {
+            self.focus = Focus::TicketRelation;
+            return Ok(EventState::Consumed);
+        }
+        let Some(action) = self.parent_key_mappings.get(&key) else {
+            return Ok(EventState::NotConsumed);
+        };
+        log::debug!("got ticket parent focus event: {key:?}");
+        use ParentAction::*;
+        match *action {
+            FocusComponent => {
+                self.focus = Focus::Components;
+                Ok(EventState::Consumed)
+            }
+            FocusRelation => {
+                self.focus = Focus::TicketRelation;
+                Ok(EventState::Consumed)
+            }
+            OpenHelp => {
+                let mut commands = Vec::with_capacity(
+                    self.parent_key_mappings.len() + self.parent.key_mappings.len(),
+                );
+                for (&key, action) in &self.parent_key_mappings {
+                    let command_text = action.to_command_text(key);
+                    commands.push(CommandInfo::new(command_text));
+                }
+                for (&key, action) in &self.parent.key_mappings {
+                    let command_text = action.to_command_text(key);
+                    commands.push(CommandInfo::new(command_text));
+                }
+
+                self.help.set_cmds(commands);
+                self.help.show()?;
+                Ok(EventState::Consumed)
+            }
+        }
+    }
+    async fn ticket_move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
+        let Some(action) = self.tickets_key_mappings.get(&key) else {
+            return Ok(EventState::NotConsumed);
+        };
+        log::debug!("got tickets focus event: {key:?}");
+        use TicketsAction::*;
+        match *action {
+            FocusRelation => {
+                self.focus = Focus::TicketRelation;
+                Ok(EventState::Consumed)
+            }
+            FocusLabels => {
+                self.focus = Focus::Labels;
+                Ok(EventState::Consumed)
+            }
+            OpenCreateTicket => {
+                let project = self
+                    .projects
+                    .selected()
+                    .expect("Project should have been selected");
+                let ticket_type_response = self
+                    .jira
+                    .tickets_api
+                    .get_ticket_types(&self.jira.client, &project.project_id)
+                    .await?;
+                self.create_ticket.contents.ticket_types = ticket_type_response;
+                self.focus = Focus::CreateTicket;
+                Ok(EventState::Consumed)
+            }
+            OpenHelp => {
+                let mut commands = Vec::with_capacity(
+                    self.tickets_key_mappings.len() + self.tickets.key_mappings.len(),
+                );
+                for (&key, action) in &self.tickets_key_mappings {
+                    let command_text = action.to_command_text(key);
+                    commands.push(CommandInfo::new(command_text));
+                }
+                for (&key, action) in &self.tickets.key_mappings {
+                    let command_text = action.to_command_text(key);
+                    commands.push(CommandInfo::new(command_text));
+                }
+
+                self.help.set_cmds(commands);
+                self.help.show()?;
+                Ok(EventState::Consumed)
+            }
+            OpenComments => {
+                self.update_comments_view().await?;
+                self.focus = Focus::CommentsList;
+                Ok(EventState::Consumed)
+            }
+            OpenProjects => {
+                self.focus = Focus::Projects;
+                Ok(EventState::Consumed)
+            }
+            OpenTicketTransition => {
+                self.update_ticket_transitions().await?;
+                self.focus = Focus::TicketTransition;
+                Ok(EventState::Consumed)
+            }
+            SearchTickets => {
+                self.focus = Focus::SearchTickets;
+                self.search_tickets.input_mode = InputMode::Editing;
+                self.update_search_tickets().await?;
+                Ok(EventState::Consumed)
+            }
+            NextPage => {
+                self.next_ticket_page().await?;
+                self.focus = Focus::Tickets;
+                Ok(EventState::Consumed)
+            }
+            PreviousPage => {
+                self.previous_ticket_page().await?;
+                self.focus = Focus::Tickets;
+                Ok(EventState::Consumed)
+            }
+            Reset => {
+                self.projects.projects.clear();
+                self.tickets.tickets.clear();
+                self.jira.clear_projects_table().await?;
+                self.jira.clear_tickets_table().await?;
+                let projects = &self.jira.get_jira_projects().await?;
+                self.projects = ProjectsWidget::new(projects, self.config.key_config.clone());
+                Ok(EventState::Consumed)
+            }
+        }
+    }
+
     async fn move_focus(&mut self, key: Key) -> anyhow::Result<EventState> {
         match self.focus {
             Focus::CommentsList => {
-                if let Some(action) = self.comments_key_mappings.get(&key) {
-                    log::debug!("got comments focus event: {key:?}");
-                    use CommentsAction::*;
-                    match *action {
-                        OpenHelp => {
-                            let mut commands = Vec::with_capacity(
-                                self.comments_key_mappings.len()
-                                    + self.comments_list.key_mappings.len(),
-                            );
-                            for (&key, action) in &self.comments_key_mappings {
-                                let command_text = action.to_command_text(key);
-                                commands.push(CommandInfo::new(command_text));
-                            }
-                            for (&key, action) in &self.comments_list.key_mappings {
-                                let command_text = action.to_command_text(key);
-                                commands.push(CommandInfo::new(command_text));
-                            }
-
-                            self.help.set_cmds(commands);
-                            self.help.show()?;
-                        }
-                        AddComment => {
-                            self.focus = Focus::CommentsAdd;
-                            return Ok(EventState::Consumed);
-                        }
-                        FocusTickets => {
-                            self.focus = Focus::Tickets;
-                            return Ok(EventState::Consumed);
-                        }
-                    }
-                }
+                self.comments_move_focus(key).await?;
             }
             Focus::CommentsAdd => {
                 if key == self.config.key_config.esc {
+                    self.update_comments_view().await?;
+                    self.comment_add.messages.clear();
                     self.focus = Focus::CommentsList;
                     return Ok(EventState::Consumed);
                 }
@@ -764,13 +1067,22 @@ impl App {
                     return Ok(EventState::Consumed);
                 }
             }
+            Focus::CreateTicket => {
+                if key == self.config.key_config.esc {
+                    self.create_ticket.contents.description.clear();
+                    self.create_ticket.contents.summary.clear();
+                    self.focus = Focus::Tickets;
+                    return Ok(EventState::Consumed);
+                }
+            }
             Focus::Labels => {
                 if key == self.config.key_config.previous || key == self.config.key_config.move_up {
+                    // self.update_labels().await?;
                     self.focus = Focus::Tickets;
                     return Ok(EventState::Consumed);
                 }
                 if key == self.config.key_config.next || key == self.config.key_config.move_down {
-                    self.update_components().await?;
+                    // self.update_components().await?;
                     self.focus = Focus::Components;
                     return Ok(EventState::Consumed);
                 }
@@ -781,168 +1093,16 @@ impl App {
                 }
             }
             Focus::Projects => {
-                if let Some(action) = self.projects_key_mappings.get(&key) {
-                    log::debug!("got projects focus event: {key:?}");
-                    use ProjectsAction::*;
-                    match *action {
-                        OpenHelp => {
-                            let mut commands = Vec::with_capacity(
-                                self.projects_key_mappings.len() + self.projects.key_mappings.len(),
-                            );
-                            for (&key, action) in &self.projects_key_mappings {
-                                let command_text = action.to_command_text(key);
-                                commands.push(CommandInfo::new(command_text));
-                            }
-                            for (&key, action) in &self.projects.key_mappings {
-                                let command_text = action.to_command_text(key);
-                                commands.push(CommandInfo::new(command_text));
-                            }
-
-                            self.help.set_cmds(commands);
-                            self.help.show()?;
-                        }
-                        SelectProject => {
-                            self.update_all_tickets().await?;
-                            self.focus = Focus::Tickets;
-                        }
-                        SearchProjects => {
-                            self.focus = Focus::SearchProjects;
-                            self.search_projects.input_mode = InputMode::Editing;
-                        }
-                        NextPage => {
-                            self.next_project_page().await?;
-                            self.update_projects().await?;
-                            self.focus = Focus::Projects;
-                        }
-                        PreviousPage => {
-                            self.previous_project_page().await?;
-                            self.update_projects().await?;
-                            self.focus = Focus::Projects;
-                        }
-                        Reset => {
-                            self.projects.projects.clear();
-                            self.tickets.tickets.clear();
-                            self.jira.clear_projects_table().await?;
-                            self.jira.clear_tickets_table().await?;
-                            let projects = &self.jira.get_jira_projects().await?;
-                            self.projects =
-                                ProjectsWidget::new(projects, self.config.key_config.clone());
-                        }
-                    }
-                    return Ok(EventState::Consumed);
-                }
+                self.project_move_focus(key).await?;
             }
             Focus::SearchProjects => {
-                if key == self.config.key_config.enter {
-                    let project_input = &self.search_projects.input.clone();
-                    if self.search_projects.selected().is_some() {
-                        let project = self.search_projects.selected().unwrap();
-                        if self.projects.select_project(project).is_ok() {
-                            self.update_all_tickets().await?;
-                            self.focus = Focus::Tickets;
-                            return Ok(EventState::Consumed);
-                        }
-                    }
-
-                    match self.jira.search_cache_projects(project_input).await {
-                        Ok(p) => {
-                            self.single_project_update(p).await?;
-                            self.projects.select_project(project_input)?;
-                            self.update_all_tickets().await?;
-                            self.focus = Focus::Tickets;
-                            return Ok(EventState::Consumed);
-                        }
-                        Err(_) => {
-                            self.error.set("Unable to locate project in cache and in JIRA \n You may not have access to view project".to_string())?;
-                            return Ok(EventState::NotConsumed);
-                        }
-                    }
-                }
-
-                if key == self.config.key_config.esc {
-                    self.focus = Focus::Projects;
-                    return Ok(EventState::Consumed);
-                }
+                self.search_projects_move_focus(key).await?;
             }
             Focus::SearchTickets => {
-                let ticket_input = &self.search_tickets.input;
-                if key == self.config.key_config.enter {
-                    if self.search_tickets.selected().is_some() {
-                        let ticket = self.search_tickets.selected().unwrap();
-                        if self.tickets.select_ticket(ticket).is_ok() {
-                            self.focus = Focus::Tickets;
-                            return Ok(EventState::Consumed);
-                        }
-                    }
-
-                    match self
-                        .jira
-                        .search_cache_ticket(ticket_input.clone().as_ref())
-                        .await
-                    {
-                        Ok(t) => {
-                            self.update_single_ticket(&t.key).await?;
-                            self.focus = Focus::Tickets;
-
-                            if self
-                                .tickets
-                                .select_ticket(&self.search_tickets.input)
-                                .is_ok()
-                            {
-                                self.focus = Focus::Tickets;
-                                return Ok(EventState::Consumed);
-                            }
-                        }
-                        Err(_) => {
-                            self.error.set("Unable to locate ticket in cache and in JIRA \n You may not have access to view ticket".to_string())?;
-                            return Ok(EventState::NotConsumed);
-                        }
-                    }
-                }
-                if key == self.config.key_config.esc {
-                    self.focus = Focus::Tickets;
-                    return Ok(EventState::Consumed);
-                }
+                self.search_tickets_move_focus(key).await?;
             }
             Focus::TicketParent => {
-                if let Some(action) = self.parent_key_mappings.get(&key) {
-                    log::debug!("got tickets focus event: {key:?}");
-                    use ParentAction::*;
-                    match *action {
-                        FocusComponent => {
-                            self.focus = Focus::Components;
-                            return Ok(EventState::Consumed);
-                        }
-                        FocusRelation => {
-                            self.focus = Focus::TicketRelation;
-                            return Ok(EventState::Consumed);
-                        }
-                        OpenHelp => {
-                            let mut commands = Vec::with_capacity(
-                                self.parent_key_mappings.len() + self.parent.key_mappings.len(),
-                            );
-                            for (&key, action) in &self.parent_key_mappings {
-                                let command_text = action.to_command_text(key);
-                                commands.push(CommandInfo::new(command_text));
-                            }
-                            for (&key, action) in &self.parent.key_mappings {
-                                let command_text = action.to_command_text(key);
-                                commands.push(CommandInfo::new(command_text));
-                            }
-
-                            self.help.set_cmds(commands);
-                            self.help.show()?;
-                        }
-                    }
-                }
-                if key == self.config.key_config.previous || key == self.config.key_config.move_up {
-                    self.focus = Focus::Components;
-                    return Ok(EventState::Consumed);
-                }
-                if key == self.config.key_config.next || key == self.config.key_config.move_right {
-                    self.focus = Focus::TicketRelation;
-                    return Ok(EventState::Consumed);
-                }
+                self.ticket_parent_move_focus(key).await?;
             }
             Focus::TicketRelation => {
                 if key == self.config.key_config.esc {
@@ -957,7 +1117,6 @@ impl App {
 
                 if key == self.config.key_config.next || key == self.config.key_config.move_right {
                     self.focus = Focus::Tickets;
-                    // self.focus = Focus::Description;
                     return Ok(EventState::Consumed);
                 }
 
@@ -968,77 +1127,7 @@ impl App {
                 }
             }
             Focus::Tickets => {
-                if let Some(action) = self.tickets_key_mappings.get(&key) {
-                    log::debug!("got tickets focus event: {key:?}");
-                    use TicketsAction::*;
-                    match *action {
-                        FocusRelation => {
-                            self.focus = Focus::TicketRelation;
-                            return Ok(EventState::Consumed);
-                        }
-                        FocusLabels => {
-                            self.update_labels().await?;
-                            self.focus = Focus::Labels;
-                            return Ok(EventState::Consumed);
-                        }
-                        OpenHelp => {
-                            let mut commands = Vec::with_capacity(
-                                self.tickets_key_mappings.len() + self.tickets.key_mappings.len(),
-                            );
-                            for (&key, action) in &self.tickets_key_mappings {
-                                let command_text = action.to_command_text(key);
-                                commands.push(CommandInfo::new(command_text));
-                            }
-                            for (&key, action) in &self.tickets.key_mappings {
-                                let command_text = action.to_command_text(key);
-                                commands.push(CommandInfo::new(command_text));
-                            }
-
-                            self.help.set_cmds(commands);
-                            self.help.show()?;
-                        }
-                        OpenComments => {
-                            self.update_comments_view().await?;
-                            self.focus = Focus::CommentsList;
-                            return Ok(EventState::Consumed);
-                        }
-                        OpenProjects => {
-                            self.focus = Focus::Projects;
-                            return Ok(EventState::Consumed);
-                        }
-                        OpenTicketTransition => {
-                            self.update_ticket_transitions().await?;
-                            self.focus = Focus::TicketTransition;
-                            return Ok(EventState::Consumed);
-                        }
-                        SearchTickets => {
-                            self.focus = Focus::SearchTickets;
-                            self.search_tickets.input_mode = InputMode::Editing;
-                            self.update_search_tickets().await?;
-                            return Ok(EventState::Consumed);
-                        }
-                        NextPage => {
-                            self.next_ticket_page().await?;
-                            self.focus = Focus::Tickets;
-                            return Ok(EventState::Consumed);
-                        }
-                        PreviousPage => {
-                            self.previous_ticket_page().await?;
-                            self.focus = Focus::Tickets;
-                            return Ok(EventState::Consumed);
-                        }
-                        Reset => {
-                            self.projects.projects.clear();
-                            self.tickets.tickets.clear();
-                            self.jira.clear_projects_table().await?;
-                            self.jira.clear_tickets_table().await?;
-                            let projects = &self.jira.get_jira_projects().await?;
-                            self.projects =
-                                ProjectsWidget::new(projects, self.config.key_config.clone());
-                        }
-                    }
-                    return Ok(EventState::Consumed);
-                }
+                self.ticket_move_focus(key).await?;
             }
             Focus::TicketTransition => {
                 if key == self.config.key_config.esc {

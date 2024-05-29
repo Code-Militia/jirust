@@ -5,7 +5,7 @@ use html2md::parse_html;
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    widgets::{Cell, Clear, ListState, Paragraph, Row, Table, TableState, Wrap},
+    widgets::{Cell, Clear, Paragraph, Row, Table, TableState, Wrap},
     Frame,
 };
 
@@ -55,7 +55,7 @@ pub struct TicketWidget {
     jira_domain: String,
     state: TableState,
     scroll: u16,
-    ticket_description: Option<String>,
+    pub ticket_description: Option<String>,
     pub tickets: Vec<TicketData>,
     pub key_mappings: HashMap<Key, Action>,
 }
@@ -125,7 +125,6 @@ impl TicketWidget {
 
         match self.selected() {
             Some(ticket) => {
-                // let summary = ticket.fields.summary.clone();
                 let summary = format!("{:} - {:}", ticket.key, ticket.fields.summary.clone());
                 let description = ticket.rendered_fields.description.clone();
                 self.draw_description(f, focused, description_frame, summary, description)
@@ -185,11 +184,7 @@ impl TicketWidget {
 
 impl TicketWidget {
     pub fn new(key_config: KeyConfig, jira_domain: String) -> Self {
-        let mut components_state = ListState::default();
-        let mut labels_state = ListState::default();
         let mut state = TableState::default();
-        components_state.select(Some(0));
-        labels_state.select(Some(0));
         state.select(Some(0));
 
         let key_mappings = {
@@ -296,6 +291,7 @@ impl TicketWidget {
         }
     }
 
+    // TODO: This needs to be refactored it always returns an OK
     pub fn select_ticket(&mut self, ticket_key: &str) -> anyhow::Result<()> {
         let ticket_index = self
             .tickets
