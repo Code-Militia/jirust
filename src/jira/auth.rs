@@ -38,39 +38,24 @@ impl JiraClient {
         &self.url
     }
 
-    pub async fn post_to_jira_api(
-        &self,
-        api_url: &str,
-        data: Option<String>,
-    ) -> anyhow::Result<String> {
+    pub async fn post_to_jira_api(&self, api_url: &str, data: String) -> anyhow::Result<String> {
         let headers = self.get_basic_auth();
         let api_url = format!("{}/{}", self.get_domain(), api_url);
         let client = reqwest::Client::builder()
             .default_headers(headers)
             .https_only(true)
             .build()?;
-        match data {
-            Some(d) => {
-                let response = client
-                    .post(api_url.clone())
-                    .body(d.clone())
-                    .send()
-                    .await?
-                    .text()
-                    .await?;
-                debug!("client {:#?}", client);
-                debug!("api url {}", api_url);
-                debug!("api response {} ", response);
-                Ok(response)
-            }
-            None => {
-                let response = client.post(api_url.clone()).send().await?.text().await?;
-                debug!("client {:#?}", client);
-                debug!("api url {}", api_url);
-                debug!("api response {} ", response);
-                Ok(response)
-            }
-        }
+        let response = client
+            .post(api_url.clone())
+            .body(data.clone())
+            .send()
+            .await?
+            .text()
+            .await?;
+        debug!("client {:#?}", client);
+        debug!("api url {}", api_url);
+        debug!("api response {} ", response);
+        Ok(response)
     }
 
     pub async fn get_from_jira_api(&self, api_url: &str) -> anyhow::Result<String> {

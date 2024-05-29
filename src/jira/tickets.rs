@@ -2,9 +2,8 @@ use std::collections::HashMap;
 
 use super::auth::JiraClient;
 use super::SurrealAny;
-use anyhow::{anyhow, Ok};
 use htmltoadf::convert_html_str_to_adf_str;
-use log::{debug, error};
+use log::debug;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -26,8 +25,6 @@ pub struct LinkType {
 pub struct LinkInwardOutwardParent {
     pub fields: LinkFields,
     pub key: String,
-    // #[serde(alias = "self")]
-    // pub parent_self: String
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -232,7 +229,7 @@ impl TicketData {
         let adf = convert_html_str_to_adf_str(html);
         let adf = format!("{{ \"body\": {} }}", adf);
         let response = jira_client
-            .post_to_jira_api(&url, Some(adf))
+            .post_to_jira_api(&url, adf)
             .await
             .expect("unable to save comment");
         let comments: CommentBody =
@@ -264,7 +261,7 @@ impl TicketData {
     ) -> anyhow::Result<String> {
         let url = format!("/issue/{}/transitions", self.key);
         let data = serde_json::to_string(&transition)?;
-        let post = jira_client.post_to_jira_api(&url, Some(data)).await?;
+        let post = jira_client.post_to_jira_api(&url, data).await?;
         Ok(post)
     }
 }
@@ -403,8 +400,8 @@ impl JiraTicketsAPI {
             project_id.to_string(),
             user_id,
         )?;
-        debug!("{data}");
-        jira_client.post_to_jira_api(&url, Some(data)).await?;
+        debug!("{:#?}", data);
+        jira_client.post_to_jira_api(&url, data).await?;
         Ok(())
     }
 }
