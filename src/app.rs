@@ -516,32 +516,6 @@ impl App {
         Ok(())
     }
 
-    // pub async fn update_labels(&mut self) -> anyhow::Result<()> {
-    //     let empty_vec = Vec::new();
-    //     match self.tickets.selected() {
-    //         None => {
-    //             self.labels.update(&empty_vec).await?;
-    //         }
-    //         Some(t) => {
-    //             self.labels.update(&t.fields.labels).await?;
-    //         }
-    //     };
-    //     Ok(())
-    // }
-
-    // pub async fn update_components(&mut self) -> anyhow::Result<()> {
-    //     let empty_vec = Vec::new();
-    //     match self.tickets.selected() {
-    //         None => {
-    //             self.components.update(&empty_vec).await?;
-    //         }
-    //         Some(t) => {
-    //             self.components.update(&t.fields.components).await?;
-    //         }
-    //     };
-    //     Ok(())
-    // }
-
     pub async fn update_comments_view(&mut self) -> anyhow::Result<()> {
         let comments = match self.tickets.selected() {
             None => return Ok(()),

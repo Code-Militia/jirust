@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use log::debug;
 use serde::Deserialize;
 use serde::Serialize;
@@ -331,7 +332,6 @@ impl Jira {
             .tickets_api
             .search_tickets_api(ticket_key, &self.client)
             .await?;
-        self.jira_project_api(&ticket.fields.project.key).await?;
         let update_ticket_record: TicketData = self
             .db
             .update(("tickets", ticket_key))
@@ -366,13 +366,14 @@ impl Jira {
             .projects_api
             .search_jira_project_api(project_key, &self.client)
             .await?;
-        let update_project_record: Project = self
+        debug!("{:#?}", project);
+        debug!("{:#?}", project_key);
+        let update_project_record = self
             .db
             .update(("projects", project_key))
             .content(project)
-            .await?
-            .expect("Failed to update project");
-
-        Ok(update_project_record)
+            .await?;
+        debug!("{:#?}", update_project_record);
+        Ok(update_project_record.expect("should be updated"))
     }
 }
